@@ -109,6 +109,35 @@ Commit: `aa838b2`.
 
 ## History
 
+### 2026-04-06 — Repaso final librería + expansión universal (sesión 5)
+
+**Bugs corregidos:**
+- `set-theory.ts` — `getPitchClassesC0` usaba shift +3 en lugar de +9 (A=0→C=0 requiere +9)
+- `harmony.ts` — `getSuggestedScales` devolvía `dorian` con hint "Locrian #2" para m7b5; corregido a `locrian #2`
+
+**Fixes menores:**
+- `abc-bridge.ts` — `noteToABC` siempre usaba `preferFlats: true`; ahora usa `note.getName()` para respetar la preferencia de la nota. Eliminado import huérfano de `get12TETName`
+- `tuning.ts` — Añadido comentario clarificador en `CentTuning.getInterval` (octava siempre 1200, no el último valor del array)
+- `circle.ts` — JSDoc que documenta la convención de minúsculas para tonalidades menores
+- `chord.ts` — Nota en `getVoicing('quartal')` que el multiplicador 5 es específico de 12-TET
+
+**Expansión de `dictionaries.ts` (rewrite completo):**
+
+Acordes añadidos: `5` (power), `add9`, `madd9`, `add11`, `add#11`, `m6/9`, `dimM7`, `7b5`, `7#5`, `7b9#9`, `7b13`, `7#11`, `mM9`, `9sus4`, `9b5`, `9#11`, `maj7#11`, `maj9#11`, `13sus4`
+Aliases añadidos: `m(maj7)` (→mM7), `7#5` (→aug7)
+
+Escalas añadidas:
+- Modos de menor melódica completos: `dorian b2`, `lydian augmented`, `mixolydian b6`, `locrian #2`
+- Modos de menor armónica: `locrian #6`, `ionian #5`, `dorian #4`, `phrygian dominant`, `lydian #2`, `super locrian bb7`
+- `harmonic major`, `blues major`
+- Bebop: `bebop dominant`, `bebop major`, `bebop dorian`
+- Exóticas: `persian`, `prometheus`, `in`, `iwato`, `yo`
+- Aliases: `natural minor`, `jazz minor`, `acoustic`, `super locrian`, `spanish`, `flamenco`, `freygish`, `hindu`, `romanian minor`
+
+**Harmony:**
+- `detectChords` actualizado para saltar aliases `m(maj7)` y `7#5`
+- `getSuggestedScales` (modal ruleset) también devuelve `locrian #2` para m7b5
+
 ### 2026-04-06 — Diseño y plan de migración demo vanilla (sesión 4)
 
 Brainstorming completo + spec + plan de implementación para migrar la demo de Next.js a HTML vanilla.

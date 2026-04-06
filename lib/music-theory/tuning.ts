@@ -87,6 +87,8 @@ export class CentTuning extends TuningSystem {
   getInterval(steps: number): Interval {
     const octave = Math.floor(steps / this.cents.length);
     const degree = ((steps % this.cents.length) + this.cents.length) % this.cents.length;
+    // Octave is always 1200 cents (2:1), regardless of the last value in the array.
+    // Historical temperaments define pitch classes within the octave, not the octave itself.
     return new Interval(this.cents[degree] + octave * 1200);
   }
 

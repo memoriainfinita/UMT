@@ -1,3 +1,8 @@
+/**
+ * Circle of Fifths utility.
+ * Convention: major keys use uppercase ('C', 'G'...), minor keys use lowercase ('a', 'e'...).
+ * Methods that return keys follow this same convention — callers should use case to distinguish mode.
+ */
 export class CircleOfFifths {
   static readonly majorKeys = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Db', 'Ab', 'Eb', 'Bb', 'F'];
   static readonly minorKeys = ['a', 'e', 'b', 'f#', 'c#', 'g#', 'd#', 'bb', 'f', 'c', 'g', 'd'];

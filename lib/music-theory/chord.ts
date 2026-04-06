@@ -93,8 +93,9 @@ export class Chord {
     }
 
     if (type === 'quartal') {
-      // Heuristic for quartal voicings: sort notes by their position in the circle of fourths
-      // (step * 5) % 12 arranges 12-TET notes in perfect fourths.
+      // Heuristic for quartal voicings: sort notes by their position in the circle of fourths.
+      // NOTE: multiplier 5 (perfect fourth in 12-TET) is 12-TET specific and produces
+      // approximate results in other tuning systems.
       const sorted = [...notes].sort((a, b) => {
         const aFourths = ((a.stepsFromBase * 5) % this.tuningSystem.octaveSteps + this.tuningSystem.octaveSteps) % this.tuningSystem.octaveSteps;
         const bFourths = ((b.stepsFromBase * 5) % this.tuningSystem.octaveSteps + this.tuningSystem.octaveSteps) % this.tuningSystem.octaveSteps;
