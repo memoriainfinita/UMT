@@ -1,47 +1,110 @@
-import { TuningSystem } from './tuning';
+import { TuningSystem, EDO } from './tuning';
 import { Note } from './note';
-import { get12TETBaseName } from './utils';
+import { get12TETBaseName, usesFlats } from './utils';
 
+/**
+ * A chord: a root pitch plus a set of intervals defining the chord quality, within a tuning system.
+ *
+ * `intervalsInSteps` contains the offset in tuning steps from the root for each chord tone,
+ * including the root itself (offset 0) as the first element.
+ * Example: `[0, 4, 7]` = major triad in 12-TET (root, major third, perfect fifth).
+ */
 export class Chord {
+  /**
+   * @param name - Human-readable chord name (e.g. "Cmaj7", "Bb7", "G/B").
+   * @param tuningSystem - The tuning system this chord operates in.
+   * @param rootStep - Step offset of the root from A4 (= 0).
+   * @param intervalsInSteps - Intervals from the root for each chord tone, in tuning steps.
+   *   Must include 0 (the root) as the first element.
+   * @param bassStep - Optional bass note step for slash chords (e.g. C/E). If provided and
+   *   higher than the root, it is automatically moved an octave down.
+   */
   constructor(
     public name: string,
     public tuningSystem: TuningSystem,
     public rootStep: number,
-    public intervalsInSteps: number[], // e.g., [0, 4, 7] for major triad in 12-TET
-    public bassStep?: number // For slash chords (e.g., C/E)
+    public readonly intervalsInSteps: readonly number[],
+    public bassStep?: number
   ) {}
 
+  /**
+   * Returns the notes of the chord in root position, with accidental spelling
+   * matching the chord root (e.g. Bb chords use flat note names).
+   * For slash chords, the bass note is prepended below the root.
+   */
   getNotes(): Note[] {
-    const notes = this.intervalsInSteps.map(step => 
-      new Note(this.tuningSystem, this.rootStep + step)
+    // Determine accidental preference from the root name (flat spelling).
+    const rootFlatName = new Note(this.tuningSystem, this.rootStep).getName({ preferFlats: true });
+    const preferFlats = usesFlats(rootFlatName);
+
+    const createNote = (step: number) => {
+      const n = new Note(this.tuningSystem, step);
+      if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
+        return new Note(this.tuningSystem, step, n.getName({ preferFlats }));
+      }
+      return n;
+    };
+
+    const notes = this.intervalsInSteps.map(interval =>
+      createNote(this.rootStep + interval)
     );
 
-    // If it's a slash chord, prepend the bass note an octave lower (or at the exact step)
     if (this.bassStep !== undefined) {
-      // Ensure bass note is lower than the root
       let actualBassStep = this.bassStep;
       while (actualBassStep >= this.rootStep) {
         actualBassStep -= this.tuningSystem.octaveSteps;
       }
-      notes.unshift(new Note(this.tuningSystem, actualBassStep));
+      notes.unshift(createNote(actualBassStep));
     }
 
     return notes;
   }
 
+  /**
+   * Returns the pitch classes of all chord tones as step offsets within one period
+   * (0 to `octaveSteps - 1`). Does not include the bass note of slash chords.
+   */
+  getPitchClasses(): number[] {
+    const os = this.tuningSystem.octaveSteps;
+    return this.intervalsInSteps.map(interval => {
+      const step = this.rootStep + interval;
+      return ((step % os) + os) % os;
+    });
+  }
+
+  /**
+   * Returns true if the given step (or its pitch class) is a tone of this chord.
+   * Comparison is by pitch class — octave is ignored.
+   */
+  contains(step: number): boolean {
+    const os = this.tuningSystem.octaveSteps;
+    const pc = ((step % os) + os) % os;
+    return this.getPitchClasses().includes(pc);
+  }
+
+  /**
+   * Returns a new chord transposed by the given number of steps.
+   * The name is updated to reflect the new root note.
+   */
   transpose(steps: number): Chord {
+    const newRoot = this.rootStep + steps;
+    const newRootName = new Note(this.tuningSystem, newRoot).getName({ preferFlats: usesFlats(new Note(this.tuningSystem, newRoot).getName({ preferFlats: true })) });
+    const match = this.name.match(/^[A-G][#b]*(.*)/);
+    const suffix = match ? match[1] : '';
     return new Chord(
-      `${this.name} (Transposed)`, 
-      this.tuningSystem, 
-      this.rootStep + steps, 
-      this.intervalsInSteps,
+      `${newRootName}${suffix}`,
+      this.tuningSystem,
+      newRoot,
+      [...this.intervalsInSteps],
       this.bassStep !== undefined ? this.bassStep + steps : undefined
     );
   }
 
   /**
    * Returns the notes of the chord in a specific inversion.
-   * @param inversion 0 = root position, 1 = 1st inversion, 2 = 2nd inversion, etc.
+   * @param inversion - 0 = root position, 1 = 1st inversion, 2 = 2nd inversion, etc.
+   *   Values ≥ `notes.length` wrap around (modulo). Slash chord bass notes participate
+   *   in the inversion logic and may not stay at the bottom.
    */
   getInversion(inversion: number): Note[] {
     const notes = this.getNotes();
@@ -63,6 +126,12 @@ export class Chord {
 
   /**
    * Returns a specific voicing of the chord.
+   * - `close` — notes in root position, as compact as possible (default stack).
+   * - `drop2` — second note from the top dropped one octave (requires ≥ 4 voices).
+   * - `drop3` — third note from the top dropped one octave (requires ≥ 4 voices).
+   * - `rootless` — root note omitted (common in jazz piano comping).
+   * - `open` — every other upper voice raised an octave (wider spacing).
+   * - `quartal` — notes stacked by fourths (approximate; 12-TET–optimised).
    */
   getVoicing(type: 'close' | 'drop2' | 'drop3' | 'rootless' | 'open' | 'quartal'): Note[] {
     const notes = this.getNotes();
