@@ -7,17 +7,19 @@ import { get12TETName, get12TETBaseName, parseNoteToStep12TET } from './utils';
 
 /**
  * Normalizes chord suffix shorthands to canonical dictionary keys.
- * Context-independent: '-7' -> 'm7', 'Δ' -> 'maj7', 'ø' -> 'm7b5', etc.
+ * Context-independent: '-7' → 'm7', 'Δ' → 'maj7', 'ø' → 'm7b5', etc.
  */
 function normalizeSuffix(type: string): string {
   if (type === '') return 'M';
   if (type === '-') return 'm';
+  if (type === 'maj' || type === 'Maj') return 'M';
   if (type === '-7') return 'm7';
-  if (type === 'Δ') return 'maj7';
-  if (type === 'ø') return 'm7b5';
+  if (type === 'Δ' || type === '△' || type === 'Δ7' || type === '△7' || type === 'M7') return 'maj7';
+  if (type === 'ø' || type === 'ø7') return 'm7b5';
   if (type === 'o' || type === '°') return 'dim';
   if (type === 'o7' || type === '°7') return 'dim7';
   if (type === '+') return 'aug';
+  if (type === '+7') return 'aug7';
   if (type === '7alt') return 'alt';
   return type;
 }
@@ -39,65 +41,97 @@ function inferRomanSuffix(raw: string, isMinor: boolean, degree: number): string
 }
 
 /**
- * Parses a standard chord symbol (e.g., "C#maj7", "D-7b5", "C/E") into a Chord object.
- * @param tuning Target tuning system. Intervals from CHORD_FORMULAS are mapped via getStepFromStandard.
+ * Parses a standard chord symbol into a `Chord` object.
+ *
+ * Supported formats:
+ * - Triads: `C`, `Cm`, `Cdim`, `Caug`, `Csus2`, `Csus4`
+ * - Seventh chords: `Cmaj7`, `Cm7`, `C7`, `Cdim7`, `Cm7b5`, `CmM7`
+ * - Extended: `C9`, `C11`, `C13`, `Cmaj9`, etc.
+ * - Altered: `C7b9`, `C7#11`, `C7alt`, `Calt`
+ * - Slash chords: `C/E`, `Cmaj7/G`
+ * - Shorthands: `CΔ`, `CΔ7`, `Cø`, `C-7`, `C°`, `C°7`, `C+`
+ *
+ * Root is case-insensitive (`cmaj7` = `Cmaj7`).
+ *
+ * @param symbol - Chord symbol string.
+ * @param tuning - Target tuning system (default: 12-TET). Intervals are mapped via `getStepFromStandard`.
+ * @param octave - Octave for the root note (default: 4).
+ * @throws if the symbol cannot be parsed or the chord type is unknown.
  */
 export function parseChordSymbol(symbol: string, tuning: TuningSystem = TET12, octave: number = 4): Chord {
-  // Check for slash chord
-  const [mainSymbol, bassSymbol] = symbol.split('/');
+  // Normalize root to uppercase (e.g. "cmaj7" → "Cmaj7")
+  const normalizedSymbol = symbol.trim().charAt(0).toUpperCase() + symbol.trim().slice(1);
 
-  // Extract root note and chord type
+  // Separate main symbol and bass note for slash chords
+  const [mainSymbol, bassSymbol] = normalizedSymbol.split('/');
+
   const match = mainSymbol.match(/^([A-G][#b]*)(.*)$/);
-  if (!match) throw new Error(`Invalid chord symbol: ${mainSymbol}`);
+  if (!match) throw new Error(`parseChordSymbol: invalid chord symbol "${symbol}".`);
 
   const [, rootName, typeRaw] = match;
   const type = normalizeSuffix(typeRaw.trim());
 
   const intervals12TET = CHORD_FORMULAS[type];
-  if (!intervals12TET) throw new Error(`Unknown chord type: ${type}`);
+  if (!intervals12TET) throw new Error(`parseChordSymbol: unknown chord type "${typeRaw}" in "${symbol}".`);
 
   const intervals = intervals12TET.map(s => tuning.getStepFromStandard(s));
   const rootStep = tuning.getStepFromStandard(parseNoteToStep12TET(rootName, octave));
 
   let bassStep: number | undefined = undefined;
   if (bassSymbol) {
-    bassStep = tuning.getStepFromStandard(parseNoteToStep12TET(bassSymbol, octave));
+    const bassNormalized = bassSymbol.trim().charAt(0).toUpperCase() + bassSymbol.trim().slice(1);
+    bassStep = tuning.getStepFromStandard(parseNoteToStep12TET(bassNormalized, octave));
   }
 
-  return new Chord(symbol, tuning, rootStep, intervals, bassStep);
+  return new Chord(normalizedSymbol, tuning, rootStep, intervals, bassStep);
 }
 
 /**
- * Parses a scale symbol (e.g., "C# dorian", "Bb harmonic minor") into a Scale object.
- * @param tuning Target tuning system. Pattern steps are mapped via getStepFromStandard.
+ * Parses a scale symbol into a `Scale` object.
+ *
+ * Format: `"<Root> <type>"`, e.g. `"C# dorian"`, `"Bb harmonic minor"`, `"D melodic minor"`.
+ * Root is case-insensitive. Scale type must match a key in `SCALE_PATTERNS` (case-insensitive).
+ *
+ * @param symbol - Scale symbol string with root and type separated by a space.
+ * @param tuning - Target tuning system (default: 12-TET). Pattern steps are mapped via `getStepFromStandard`.
+ * @param octave - Octave for the root note (default: 4).
+ * @throws if the symbol cannot be parsed or the scale type is unknown.
  */
 export function parseScaleSymbol(symbol: string, tuning: TuningSystem = TET12, octave: number = 4): Scale {
   const match = symbol.match(/^([A-G][#b]*)\s+(.*)$/i);
-  if (!match) throw new Error(`Invalid scale symbol: ${symbol}`);
+  if (!match) throw new Error(`parseScaleSymbol: invalid scale symbol "${symbol}". Expected format: "C dorian", "Bb major".`);
 
   const [, rootName, typeRaw] = match;
   const type = typeRaw.trim().toLowerCase();
 
   const pattern12TET = SCALE_PATTERNS[type];
-  if (!pattern12TET) throw new Error(`Unknown scale type: ${type}`);
+  if (!pattern12TET) throw new Error(`parseScaleSymbol: unknown scale type "${typeRaw}" in "${symbol}".`);
 
   const pattern = pattern12TET.map(s => tuning.getStepFromStandard(s));
-  const rootStep = tuning.getStepFromStandard(parseNoteToStep12TET(rootName, octave));
+  const rootStep = tuning.getStepFromStandard(parseNoteToStep12TET(rootName.charAt(0).toUpperCase() + rootName.slice(1), octave));
   return new Scale(symbol, tuning, rootStep, pattern);
 }
 
 /**
- * Parses a note string (e.g., "C4", "Bb3", "F#") into a Note object in 12-TET.
+ * Parses a note string into a `Note` object in 12-TET.
+ *
+ * Accepts: `"C4"`, `"Bb3"`, `"F#"`, `"c#5"` (case-insensitive root).
+ * The original spelling (sharp or flat) is preserved in the returned Note's name.
+ *
+ * @param noteStr - Note string with optional octave number.
+ * @param defaultOctave - Octave to use if none is specified (default: 4).
+ * @throws if the string cannot be parsed.
  */
 export function parseNote(noteStr: string, defaultOctave: number = 4): Note {
-  const match = noteStr.match(/^([A-G])([#b]*)(-?\d+)?$/i);
-  if (!match) throw new Error(`Invalid note string: ${noteStr}`);
-  
-  const name = match[1].toUpperCase() + match[2].toLowerCase();
+  const match = noteStr.trim().match(/^([A-G])([#b]*)(-?\d+)?$/i);
+  if (!match) throw new Error(`parseNote: invalid note string "${noteStr}".`);
+
+  const name = match[1].toUpperCase() + match[2];
   const oct = match[3] ? parseInt(match[3], 10) : defaultOctave;
-  
+
   const step = parseNoteToStep12TET(name, oct);
-  return new Note(TET12, step);
+  // Preserve the original spelling so "Bb4" returns a Note named "Bb4", not "A#4".
+  return new Note(TET12, step, `${name}${oct}`);
 }
 
 const ROMAN_VALUES: Record<string, number> = {
@@ -105,9 +139,26 @@ const ROMAN_VALUES: Record<string, number> = {
 };
 
 /**
- * Parses a Roman Numeral progression in a given key.
- * Example: parseRomanProgression("ii7 - V7/ii - subV7 - Imaj7", "C major")
- * @param tuning Target tuning system. All resulting Chord objects will use this tuning.
+ * Parses a Roman numeral progression in a given key into an array of `Chord` objects.
+ *
+ * Supported syntax:
+ * - Uppercase numerals = major quality: `I`, `IV`, `V`
+ * - Lowercase numerals = minor quality: `ii`, `iii`, `vi`
+ * - `7` suffix: degree-sensitive — `ii7` = m7, `V7` = dom7, `I7` = maj7
+ * - Other suffixes delegate to `normalizeSuffix`: `IVmaj7`, `iiø`, etc.
+ * - Chromatic accidentals: `bVII`, `#IV`
+ * - Applied chords: `V7/ii`, `IV/V`
+ * - Tritone substitution: `subV7`, `subV7/ii`
+ *
+ * Example: `parseRomanProgression("ii7 V7 subV7/ii Imaj7", "C major")`
+ *
+ * **Note:** Applied chord names use 12-TET note names regardless of the target tuning.
+ * This is a known limitation for non-12-TET tunings.
+ *
+ * @param progression - Space- or hyphen-separated Roman numeral tokens.
+ * @param keySymbol - Key and scale type, e.g. `"C major"`, `"D dorian"`.
+ * @param tuning - Target tuning system (default: 12-TET).
+ * @param octave - Octave for root notes (default: 4).
  */
 export function parseRomanProgression(progression: string, keySymbol: string, tuning: TuningSystem = TET12, octave: number = 4): Chord[] {
   const keyScale = parseScaleSymbol(keySymbol, tuning, octave);
@@ -145,6 +196,7 @@ export function parseRomanProgression(progression: string, keySymbol: string, tu
 
       const [, isSub, aAcc, aRom, aSuffixRaw] = appliedMatch;
       const aDegree = ROMAN_VALUES[aRom.toLowerCase()];
+      if (!aDegree) throw new Error(`parseRomanProgression: unknown Roman numeral "${aRom}" in applied chord "${token}".`);
       const isMinor = aRom === aRom.toLowerCase();
       const aSuffix = inferRomanSuffix(aSuffixRaw, isMinor, aDegree);
 
