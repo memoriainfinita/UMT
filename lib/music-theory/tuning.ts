@@ -125,3 +125,6 @@ export class NonOctaveTuning extends TuningSystem {
     return this.stepsPerPeriod; // Steps per period (not necessarily an octave)
   }
 }
+
+// Standard 12-TET singleton — used as the default tuning throughout the library.
+export const TET12 = new EDO(12);

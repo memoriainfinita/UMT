@@ -1,6 +1,26 @@
 export const NOTE_NAMES_12TET_SHARP = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
 export const NOTE_NAMES_12TET_FLAT = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab'];
 
+const NOTE_REGEX = /^([A-G])([#b]*)/;
+
+/**
+ * Converts a standard note name (e.g., "C#", "Bb") + octave to steps from A4 in 12-TET.
+ * A4 = 0. C4 = -9.
+ */
+export function parseNoteToStep12TET(noteName: string, octave: number = 4): number {
+  const baseNotes: Record<string, number> = { 'C': -9, 'D': -7, 'E': -5, 'F': -4, 'G': -2, 'A': 0, 'B': 2 };
+  const match = noteName.match(NOTE_REGEX);
+  if (!match) throw new Error(`Invalid note name: ${noteName}`);
+  const [, note, accidentals] = match;
+  let step = baseNotes[note];
+  for (const acc of accidentals) {
+    if (acc === '#') step += 1;
+    if (acc === 'b') step -= 1;
+  }
+  step += (octave - 4) * 12;
+  return step;
+}
+
 export function get12TETName(stepsFromA4: number, preferFlats: boolean = false): string {
   const normalizedStep = ((stepsFromA4 % 12) + 12) % 12;
   const octave = Math.floor((stepsFromA4 + 9) / 12) + 4; // A4 is step 0. C4 is step -9.
