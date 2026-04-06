@@ -148,6 +148,25 @@ Escalas añadidas:
 - `detectChords` actualizado para saltar aliases `m(maj7)` y `7#5`
 - `getSuggestedScales` (modal ruleset) también devuelve `locrian #2` para m7b5
 
+### 2026-04-06 — Revisión capa base (sesión 6)
+
+Revisión sistemática archivo a archivo. Commits: f3496ca, 251d30c, 2f23bc8, 6d6f8e7.
+
+**Archivos revisados:** types.ts, interval.ts, tuning.ts, note.ts, scale.ts, chord.ts, dictionaries.ts, parser.ts, presets.ts
+
+**Cambios principales:**
+- `types.ts`: JSDoc, `MidiNote` alias
+- `interval.ts`: guard ratio inválido, `inOctave()`, `semitones`, `divide()`, `negate()`, `equals()`
+- `tuning.ts`: guards en 4 constructores, `getStepFromStandard` en todas las subclases, `EDO.getNoteName` 12-TET, JSDoc
+- `note.ts`: throw en `getIntervalTo` freq inválida, `pitchClass`, `octave`, `equals()`
+- `scale.ts`: fix bug flats en `getNotes`, `getPitchClasses()`, `contains()`, `getDegree()`, `stepPattern readonly`, `transpose` con nombre correcto
+- `chord.ts`: fix bug flats en `getNotes`/bass, `getPitchClasses()`, `contains()`, `intervalsInSteps readonly`, `transpose` con nombre correcto
+- `dictionaries.ts`: `readonly` en ambos records; acordes: augM7, 7sus2, m11b5, 13b9, 13#11, aug(maj7); escalas: augmented, pelog, kumoi, balinese, chinese, egyptian, byzantine, gypsy major/minor; fix TET12 import en presets
+- `parser.ts`: normalización mayúsculas raíz, `parseNote` preserva nombre, nuevos shorthands (M7, Δ7, +7, maj), guard en acordes aplicados, errores descriptivos
+- `presets.ts`: TET19, TET53, MinorTriad genérico, fix PtolemaicJI, `MajorTriad` usa `getStepFromStandard`, JSDoc
+
+**Pendiente:** harmony.ts, circle.ts, set-theory.ts, key-detection.ts, neo-riemannian.ts, scala.ts, rhythm.ts, abc-bridge.ts, utils.ts, index.ts, umt.ts
+
 ### 2026-04-06 — Diseño y plan de migración demo vanilla (sesión 4)
 
 Brainstorming completo + spec + plan de implementación para migrar la demo de Next.js a HTML vanilla.
@@ -169,3 +188,4 @@ Decisiones clave:
 - [ ] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas) — librería lista para esto
 - [ ] Test completo de la demo en navegador (probar todas las secciones)
 - [ ] Considerar añadir tests unitarios para los módulos core
+- [ ] Continuar revisión archivo a archivo — quedan: harmony.ts, circle.ts, set-theory.ts, key-detection.ts, neo-riemannian.ts, scala.ts, rhythm.ts, abc-bridge.ts, utils.ts, index.ts, umt.ts
