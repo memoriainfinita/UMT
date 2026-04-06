@@ -77,7 +77,8 @@ export class Harmony {
     const bassStep = ((notes[0].stepsFromBase % octave) + octave) % octave;
 
     const matches: string[] = [];
-    const aliases = ['major', 'minor', 'dominant7', 'half-diminished'];
+    // Skip aliases (same formula as canonical key) to avoid duplicate matches.
+    const aliases = ['major', 'minor', 'dominant7', 'half-diminished', 'm(maj7)', '7#5'];
 
     for (const root of pitchClasses) {
       // Input intervals relative to root, mod octave, sorted
@@ -281,7 +282,7 @@ export class Harmony {
       if (isMaj7) return [s(`${root} ionian`), s(`${root} lydian`)];
       if (isMin7) return [s(`${root} dorian`), s(`${root} phrygian`), s(`${root} aeolian`)];
       if (isDom7) return [s(`${root} mixolydian`)];
-      if (isHalfDim) return [s(`${root} locrian`)];
+      if (isHalfDim) return [s(`${root} locrian`), s(`${root} locrian #2`)];
     }
 
     // Default: 'berklee' (Jazz Chord-Scale Theory)
@@ -321,7 +322,7 @@ export class Harmony {
     }
 
     if (isHalfDim) {
-      return [s(`${root} locrian`), s(`${root} dorian`, 'Locrian #2 — jazz standard')];
+      return [s(`${root} locrian #2`, 'jazz standard'), s(`${root} locrian`)];
     }
 
     if (isDim) {

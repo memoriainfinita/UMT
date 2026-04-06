@@ -1,7 +1,6 @@
 import { Note } from './note';
 import { Chord } from './chord';
 import { Scale } from './scale';
-import { get12TETName } from './utils';
 import { MusicStream } from './stream';
 
 /**
@@ -17,8 +16,8 @@ export class ABCBridge {
    * C5 (step 3) -> c
    */
   static noteToABC(note: Note): string {
-    // We use get12TETName to get the closest standard note name
-    const name = get12TETName(note.stepsFromBase, true); // Prefer flats for ABC or we can parse both
+    // Use the note's own name to preserve sharp/flat preference; getName() defaults to sharps.
+    const name = note.getName();
     const match = name.match(/^([A-G])([#b]*)(\d+)$/);
     if (!match) return 'C'; // Fallback
 

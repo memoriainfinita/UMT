@@ -16,8 +16,8 @@ export class SetTheory {
    * C=0, C#=1, D=2, ..., B=11.
    */
   static getPitchClassesC0(notes: Note[]): number[] {
-    // A=0 in our system, C is 3 semitones above A, so shift by +3 to align C to 0.
-    const pcs = notes.map(n => ((n.stepsFromBase + 3) % 12 + 12) % 12);
+    // A=0 in UMT. Standard set theory uses C=0. A=9 in C-based space, so shift by +9.
+    const pcs = notes.map(n => ((n.stepsFromBase + 9) % 12 + 12) % 12);
     return Array.from(new Set(pcs)).sort((a, b) => a - b);
   }
 
