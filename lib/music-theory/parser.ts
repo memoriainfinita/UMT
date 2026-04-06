@@ -3,9 +3,42 @@ import { TET12 } from './presets';
 import { Chord } from './chord';
 import { Scale } from './scale';
 import { Note } from './note';
-import { get12TETName } from './utils';
+import { get12TETName, get12TETBaseName } from './utils';
 
 const NOTE_REGEX = /^([A-G])([#b]*)/;
+
+/**
+ * Normalizes chord suffix shorthands to canonical dictionary keys.
+ * Context-independent: '-7' -> 'm7', 'Δ' -> 'maj7', 'ø' -> 'm7b5', etc.
+ */
+function normalizeSuffix(type: string): string {
+  if (type === '') return 'M';
+  if (type === '-') return 'm';
+  if (type === '-7') return 'm7';
+  if (type === 'Δ') return 'maj7';
+  if (type === 'ø') return 'm7b5';
+  if (type === 'o' || type === '°') return 'dim';
+  if (type === 'o7' || type === '°7') return 'dim7';
+  if (type === '+') return 'aug';
+  if (type === '7alt') return 'alt';
+  return type;
+}
+
+/**
+ * Infers the canonical chord suffix for a Roman numeral token.
+ * Handles the context-dependent '7' rule (ii7=m7, V7=dom7, I7=maj7),
+ * then delegates shorthands to normalizeSuffix.
+ */
+function inferRomanSuffix(raw: string, isMinor: boolean, degree: number): string {
+  let s = raw.trim();
+  if (s === '') return isMinor ? 'm' : 'M';
+  if (s === '7') {
+    if (isMinor) return 'm7';
+    if (degree === 5) return '7';
+    return 'maj7';
+  }
+  return normalizeSuffix(s);
+}
 
 /**
  * Converts a standard note name (e.g., "C#", "Bb") to steps from A4 in 12-TET.
@@ -42,17 +75,7 @@ export function parseChordSymbol(symbol: string, octave: number = 4): Chord {
   if (!match) throw new Error(`Invalid chord symbol: ${mainSymbol}`);
   
   const [, rootName, typeRaw] = match;
-  let type = typeRaw.trim();
-  
-  // Handle common shorthand notations
-  if (type === '') type = 'M';
-  if (type === '-') type = 'm';
-  if (type === '-7') type = 'm7';
-  if (type === 'Δ') type = 'maj7';
-  if (type === 'ø') type = 'm7b5';
-  if (type === 'o' || type === '°') type = 'dim';
-  if (type === 'o7' || type === '°7') type = 'dim7';
-  if (type === '+') type = 'aug';
+  const type = normalizeSuffix(typeRaw.trim());
 
   const intervals = CHORD_FORMULAS[type];
   if (!intervals) throw new Error(`Unknown chord type: ${type}`);
@@ -130,7 +153,7 @@ export function parseRomanProgression(progression: string, keySymbol: string, oc
       if (tAcc === '#') targetRootStep += 1;
       
       // 2. Create a temporary major scale based on that target root
-      const targetRootName = get12TETName(targetRootStep).replace(/\d+/, '');
+      const targetRootName = get12TETBaseName(targetRootStep);
       // Determine if target is minor based on roman numeral casing
       const isTargetMinor = tRom === tRom.toLowerCase();
       const tempKeyScale = parseScaleSymbol(`${targetRootName} ${isTargetMinor ? 'minor' : 'major'}`, octave);
@@ -143,19 +166,8 @@ export function parseRomanProgression(progression: string, keySymbol: string, oc
       const [, isSub, aAcc, aRom, aSuffixRaw] = appliedMatch;
       const aDegree = ROMAN_VALUES[aRom.toLowerCase()];
       const isMinor = aRom === aRom.toLowerCase();
-      let aSuffix = aSuffixRaw.trim();
-      
-      if (aSuffix === '') aSuffix = isMinor ? 'm' : 'M';
-      if (aSuffix === '7' && isMinor) aSuffix = 'm7';
-      if (aSuffix === '7' && !isMinor && aDegree === 5) aSuffix = '7';
-      if (aSuffix === '7' && !isMinor && aDegree !== 5) aSuffix = 'maj7';
-      if (aSuffix === 'Δ') aSuffix = 'maj7';
-      if (aSuffix === '-') aSuffix = 'm';
-      if (aSuffix === '-7') aSuffix = 'm7';
-      if (aSuffix === 'ø') aSuffix = 'm7b5';
-      if (aSuffix === 'o' || aSuffix === '°') aSuffix = 'dim';
-      if (aSuffix === '7alt') aSuffix = 'alt';
-      
+      const aSuffix = inferRomanSuffix(aSuffixRaw, isMinor, aDegree);
+
       const intervals = CHORD_FORMULAS[aSuffix] || CHORD_FORMULAS['M'];
       
       let rootStep = tempScaleNotes[aDegree - 1].stepsFromBase;
@@ -166,7 +178,7 @@ export function parseRomanProgression(progression: string, keySymbol: string, oc
         rootStep += 6; // Tritone substitution
       }
       
-      const rootName = get12TETName(rootStep, true).replace(/\d+/, '');
+      const rootName = get12TETBaseName(rootStep, true);
       const chordName = `${rootName}${aSuffixRaw}`;
       
       return new Chord(chordName, TET12, rootStep, intervals);
@@ -181,26 +193,8 @@ export function parseRomanProgression(progression: string, keySymbol: string, oc
     if (!degree) throw new Error(`Unknown Roman numeral: ${roman}`);
     
     const isMinor = roman === roman.toLowerCase();
-    let suffix = suffixRaw.trim();
-    
-    // Infer default quality if no suffix is provided
-    if (suffix === '') {
-      suffix = isMinor ? 'm' : 'M';
-    }
-    
-    // Handle shorthand
-    if (suffix === '7' && isMinor) suffix = 'm7'; // "ii7" usually means m7
-    if (suffix === '7' && !isMinor && degree === 5) suffix = '7'; // "V7" is dominant
-    if (suffix === '7' && !isMinor && degree !== 5) suffix = 'maj7'; // "I7" usually means maj7 in jazz, though strictly it's dominant. Let's use maj7 for I and IV.
-    
-    // Map suffix back to our dictionary
-    if (suffix === 'Δ') suffix = 'maj7';
-    if (suffix === '-') suffix = 'm';
-    if (suffix === '-7') suffix = 'm7';
-    if (suffix === 'ø') suffix = 'm7b5';
-    if (suffix === 'o' || suffix === '°') suffix = 'dim';
-    if (suffix === '7alt') suffix = 'alt';
-    
+    const suffix = inferRomanSuffix(suffixRaw, isMinor, degree);
+
     const intervals = CHORD_FORMULAS[suffix] || CHORD_FORMULAS['M'];
     
     // Calculate root step
@@ -214,7 +208,7 @@ export function parseRomanProgression(progression: string, keySymbol: string, oc
     
     // Create a readable chord name like "Gmaj7"
     const preferFlats = !!isSub || accidental === 'b';
-    const rootName = get12TETName(rootStep, preferFlats).replace(/\d+/, '');
+    const rootName = get12TETBaseName(rootStep, preferFlats);
     const chordName = `${rootName}${suffixRaw}`;
     
     return new Chord(chordName, TET12, rootStep, intervals);
