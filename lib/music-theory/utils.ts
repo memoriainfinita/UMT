@@ -1,3 +1,5 @@
+import { Hertz, MidiNote } from './types';
+
 export const NOTE_NAMES_12TET_SHARP = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
 export const NOTE_NAMES_12TET_FLAT = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab'];
 
@@ -66,9 +68,10 @@ export function getIntervalName(stepsFromRoot: number, is12TET: boolean = true):
   
   let name = names[normalized];
   if (stepsFromRoot >= 12) {
-    // Add octave indicators or extensions (9, 11, 13)
+    if (normalized === 1) name = 'm9';
     if (normalized === 2) name = 'M9';
     if (normalized === 5) name = 'P11';
+    if (normalized === 6) name = 'A11';
     if (normalized === 9) name = 'M13';
   }
   return name;
@@ -113,7 +116,7 @@ export function getSemanticIntervalName(cents: number): string {
  * Converts a frequency in Hz to the nearest MIDI note number (0-127).
  * MIDI note 69 is A4 (default 440Hz).
  */
-export function freqToMidi(freq: number, baseA4: number = 440): number {
+export function freqToMidi(freq: Hertz, baseA4: Hertz = 440): MidiNote {
   return Math.round(69 + 12 * Math.log2(freq / baseA4));
 }
 
@@ -121,7 +124,7 @@ export function freqToMidi(freq: number, baseA4: number = 440): number {
  * Converts a frequency to the closest valid MIDI note and the pitch bend offset in cents.
  * Useful for microtonal playback via standard MIDI.
  */
-export function freqToMidiPitchBend(freq: number, baseA4: number = 440): { note: number; centsOffset: number } {
+export function freqToMidiPitchBend(freq: Hertz, baseA4: Hertz = 440): { note: MidiNote; centsOffset: number } {
   const exactMidi = 69 + 12 * Math.log2(freq / baseA4);
   const note = Math.round(exactMidi);
   const centsOffset = (exactMidi - note) * 100;
@@ -131,6 +134,6 @@ export function freqToMidiPitchBend(freq: number, baseA4: number = 440): { note:
 /**
  * Converts a MIDI note number (0-127) to frequency in Hz.
  */
-export function midiToFreq(midi: number, baseA4: number = 440): number {
+export function midiToFreq(midi: MidiNote, baseA4: Hertz = 440): Hertz {
   return baseA4 * Math.pow(2, (midi - 69) / 12);
 }

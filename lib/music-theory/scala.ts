@@ -51,12 +51,16 @@ export function parseScala(sclText: string, baseFrequency = 440): ScalaTuning {
 
   const name = lines[0];
   const numNotes = parseInt(lines[1], 10);
+  if (isNaN(numNotes) || numNotes <= 0) {
+    throw new Error(`parseScala: expected a positive note count on line 2, got "${lines[1]}".`);
+  }
   const cents: number[] = [];
 
   for (let i = 0; i < numNotes; i++) {
-    const val = lines[2 + i];
-    if (!val) break;
-    
+    const rawLine = lines[2 + i];
+    if (!rawLine) break;
+    const val = rawLine.split(/\s/)[0]; // strip inline comments (e.g. "3/2 perfect fifth")
+
     if (val.includes('.')) {
       // It's a cents value
       cents.push(parseFloat(val));

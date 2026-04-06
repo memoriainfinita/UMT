@@ -165,7 +165,26 @@ Revisión sistemática archivo a archivo. Commits: f3496ca, 251d30c, 2f23bc8, 6d
 - `parser.ts`: normalización mayúsculas raíz, `parseNote` preserva nombre, nuevos shorthands (M7, Δ7, +7, maj), guard en acordes aplicados, errores descriptivos
 - `presets.ts`: TET19, TET53, MinorTriad genérico, fix PtolemaicJI, `MajorTriad` usa `getStepFromStandard`, JSDoc
 
-**Pendiente:** harmony.ts, circle.ts, set-theory.ts, key-detection.ts, neo-riemannian.ts, scala.ts, rhythm.ts, abc-bridge.ts, utils.ts, index.ts, umt.ts
+**Pendiente (sesión 6):** harmony.ts, circle.ts, set-theory.ts, key-detection.ts, neo-riemannian.ts, scala.ts, rhythm.ts, abc-bridge.ts, utils.ts, index.ts, umt.ts
+
+### 2026-04-06 — Revisión capa alta + hardening arquitectural (sesión 7)
+
+Revisión sistemática + análisis arquitectural completo. Archivos tocados: harmony.ts, circle.ts, set-theory.ts, key-detection.ts, scala.ts, abc-bridge.ts, utils.ts, tuning.ts.
+
+**Bugs corregidos:**
+- `harmony.ts` — `getSuggestedScales`: `nextChord.name.includes('m')` → regex `/^[A-G][#b]*m(?!aj)/` (falso positivo con `Cmaj7`)
+- `harmony.ts` — `getSuggestedScales` berklee/isDom7: `% 12` → `% oct` (3 ocurrencias)
+- `harmony.ts` — `getBorrowedChords`: guard `if (tuning.octaveSteps !== 12) return []` (usa `get12TETBaseName` internamente)
+- `scala.ts` — `parseScala`: strip inline comments antes de parsear (`"3/2 fifth".split('/').map(Number)` → `[3, NaN]`)
+- `scala.ts` — `parseScala`: validación de `numNotes` (guard contra NaN/negativo)
+- `circle.ts` — refactor: `normalizeKey()` privado aplicado en los 4 métodos públicos (antes solo `getSignature` normalizaba enarmónicas)
+- `key-detection.ts` — perfiles `majorProfile`/`minorProfile` → `readonly`
+- `utils.ts` — `getIntervalName`: añadidos m9, A11 para compuestos ≥ 12 semitones
+
+**Mejoras arquitecturales:**
+- `set-theory.ts` — `normalForm`, `primeForm`, `intervalVector` aceptan `octave = 12`; `getPitchClasses` usa `tuningSystem.octaveSteps` automáticamente → funciona en cualquier EDO
+- `tuning.ts` — `JustIntonation.getStepFromStandard`: cambiado de aproximación proporcional a **búsqueda por proximidad en cents** (más preciso para JI no-cromático; para 12 clases sigue siendo identidad)
+- `abc-bridge.ts` — `noteToABC` lanza error descriptivo para notas no-12-TET en vez de devolver 'C' silenciosamente; `streamToABC` usa helper `beatsToABCDuration` con cobertura de duraciones estándar + puntillos + fracciones genéricas
 
 ### 2026-04-06 — Diseño y plan de migración demo vanilla (sesión 4)
 
@@ -188,4 +207,4 @@ Decisiones clave:
 - [ ] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas) — librería lista para esto
 - [ ] Test completo de la demo en navegador (probar todas las secciones)
 - [ ] Considerar añadir tests unitarios para los módulos core
-- [ ] Continuar revisión archivo a archivo — quedan: harmony.ts, circle.ts, set-theory.ts, key-detection.ts, neo-riemannian.ts, scala.ts, rhythm.ts, abc-bridge.ts, utils.ts, index.ts, umt.ts
+- [x] Revisión capa alta — harmony.ts, circle.ts, set-theory.ts, key-detection.ts, neo-riemannian.ts, scala.ts, rhythm.ts, abc-bridge.ts, utils.ts, index.ts, umt.ts
