@@ -1,7 +1,7 @@
 import { Note } from './note';
 import { Chord } from './chord';
 import { Scale } from './scale';
-import { MusicStream } from './stream';
+import { MusicStream } from './rhythm';
 
 /**
  * Bridge between Universal Music Theory and ABC Notation.

@@ -1,12 +1,9 @@
 import { CHORD_FORMULAS, SCALE_PATTERNS } from './dictionaries';
-import { TET12 } from './presets';
-import { TuningSystem } from './tuning';
+import { TET12, TuningSystem } from './tuning';
 import { Chord } from './chord';
 import { Scale } from './scale';
 import { Note } from './note';
-import { get12TETName, get12TETBaseName } from './utils';
-
-const NOTE_REGEX = /^([A-G])([#b]*)/;
+import { get12TETName, get12TETBaseName, parseNoteToStep12TET } from './utils';
 
 /**
  * Normalizes chord suffix shorthands to canonical dictionary keys.
@@ -39,29 +36,6 @@ function inferRomanSuffix(raw: string, isMinor: boolean, degree: number): string
     return 'maj7';
   }
   return normalizeSuffix(s);
-}
-
-/**
- * Converts a standard note name (e.g., "C#", "Bb") to steps from A4 in 12-TET.
- */
-export function parseNoteToStep12TET(noteName: string, octave: number = 4): number {
-  const baseNotes: Record<string, number> = { 'C': -9, 'D': -7, 'E': -5, 'F': -4, 'G': -2, 'A': 0, 'B': 2 };
-  const match = noteName.match(NOTE_REGEX);
-  
-  if (!match) throw new Error(`Invalid note name: ${noteName}`);
-  
-  const [, note, accidentals] = match;
-  let step = baseNotes[note];
-  
-  for (const acc of accidentals) {
-    if (acc === '#') step += 1;
-    if (acc === 'b') step -= 1;
-  }
-  
-  // Adjust for octave (A4 is octave 4, step 0)
-  step += (octave - 4) * 12;
-  
-  return step;
 }
 
 /**

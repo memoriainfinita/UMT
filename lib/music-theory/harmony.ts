@@ -1,10 +1,9 @@
 import { Chord } from './chord';
-import { parseScaleSymbol, parseChordSymbol, parseNoteToStep12TET } from './parser';
-import { get12TETName, get12TETBaseName } from './utils';
+import { parseScaleSymbol, parseChordSymbol } from './parser';
+import { get12TETName, get12TETBaseName, parseNoteToStep12TET } from './utils';
 import { CHORD_FORMULAS } from './dictionaries';
 import { Note } from './note';
-import { TuningSystem } from './tuning';
-import { TET12 } from './presets';
+import { TuningSystem, TET12 } from './tuning';
 
 export interface VoiceLeadingIssue {
   type: 'Parallel 5th' | 'Parallel Octave' | 'Voice Crossing' | 'Voice Overlap';
