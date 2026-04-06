@@ -4,7 +4,7 @@
  * Canonical keys are used in chord naming and detection; aliases section maps
  * common alternate notations to the same formula.
  */
-export const CHORD_FORMULAS: Record<string, number[]> = {
+export const CHORD_FORMULAS: Record<string, readonly number[]> = {
 
   // ── Dyads ────────────────────────────────────────────────────────────────
   '5':          [0, 7],                   // Power chord (no 3rd)
@@ -36,13 +36,15 @@ export const CHORD_FORMULAS: Record<string, number[]> = {
   'dim7':       [0, 3, 6, 9],
   'm7b5':       [0, 3, 6, 10],           // Half-diminished
   'mM7':        [0, 3, 7, 11],           // Minor-major 7th
-  'aug7':       [0, 4, 8, 10],           // Augmented dominant 7th
+  'aug7':       [0, 4, 8, 10],           // Augmented dominant 7th (= 7#5)
+  'augM7':      [0, 4, 8, 11],           // Augmented major 7th (aug triad + maj7)
   '7sus4':      [0, 5, 7, 10],
   'dimM7':      [0, 3, 6, 11],           // Diminished triad + major 7th
 
   // ── Dominant altered / non-functional ────────────────────────────────────
   '7b5':        [0, 4, 6, 10],
   '7#5':        [0, 4, 8, 10],           // Same as aug7; common jazz notation
+  '7sus2':      [0, 2, 7, 10],           // Dominant 7th suspended 2nd
   '7b9':        [0, 4, 7, 10, 13],
   '7#9':        [0, 4, 7, 10, 15],       // Hendrix chord
   '7b9#9':      [0, 4, 7, 10, 13, 15],
@@ -64,6 +66,7 @@ export const CHORD_FORMULAS: Record<string, number[]> = {
   '11':         [0, 4, 7, 10, 14, 17],
   'maj11':      [0, 4, 7, 11, 14, 17],
   'm11':        [0, 3, 7, 10, 14, 17],
+  'm11b5':      [0, 3, 6, 10, 14, 17],   // Half-diminished 11th
   'maj7#11':    [0, 4, 7, 11, 18],       // Lydian chord (no 9th)
   'maj9#11':    [0, 4, 7, 11, 14, 18],   // Lydian chord with 9th
 
@@ -72,13 +75,16 @@ export const CHORD_FORMULAS: Record<string, number[]> = {
   'maj13':      [0, 4, 7, 11, 14, 21],
   'm13':        [0, 3, 7, 10, 14, 21],
   '13sus4':     [0, 5, 7, 10, 14, 21],
+  '13b9':       [0, 4, 7, 10, 13, 21],   // Dominant 13th with b9
+  '13#11':      [0, 4, 7, 10, 14, 18, 21], // Lydian dominant 13th (full)
 
   // ── Aliases ──────────────────────────────────────────────────────────────
   'major':            [0, 4, 7],
   'minor':            [0, 3, 7],
   'dominant7':        [0, 4, 7, 10],
   'half-diminished':  [0, 3, 6, 10],
-  'm(maj7)':          [0, 3, 7, 11],     // Alias for mM7
+  'm(maj7)':          [0, 3, 7, 11],     // = mM7
+  'aug(maj7)':        [0, 4, 8, 11],     // = augM7
 };
 
 
@@ -89,7 +95,7 @@ export const CHORD_FORMULAS: Record<string, number[]> = {
  *
  * Modes are grouped under their parent scale for legibility.
  */
-export const SCALE_PATTERNS: Record<string, number[]> = {
+export const SCALE_PATTERNS: Record<string, readonly number[]> = {
 
   // ── Diatonic modes (major system) ─────────────────────────────────────────
   'ionian':           [2, 2, 1, 2, 2, 2, 1],   // Mode 1 — Major
@@ -123,6 +129,7 @@ export const SCALE_PATTERNS: Record<string, number[]> = {
 
   // ── Symmetric scales ─────────────────────────────────────────────────────
   'whole tone':               [2, 2, 2, 2, 2, 2],
+  'augmented':                [3, 1, 3, 1, 3, 1],         // Hexatonic symmetric (Messiaen mode 3 related)
   'chromatic':                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   'whole-half diminished':    [2, 1, 2, 1, 2, 1, 2, 1],  // Octatonic (starts W)
   'half-whole diminished':    [1, 2, 1, 2, 1, 2, 1, 2],  // Octatonic (starts H, dominant)
@@ -147,9 +154,14 @@ export const SCALE_PATTERNS: Record<string, number[]> = {
   'persian':              [1, 3, 1, 1, 2, 3, 1],
   'prometheus':           [2, 2, 2, 3, 1, 2],    // Scriabin (hexatonic)
   'hirajoshi':            [2, 1, 4, 1, 4],        // Japanese koto
+  'kumoi':                [2, 1, 4, 2, 3],        // Japanese koto (minor pentatonic variant)
+  'pelog':                [1, 2, 3, 1, 5],        // Javanese gamelan (Western approximation)
+  'balinese':             [1, 2, 4, 1, 4],        // Balinese gamelan (pelog subset)
   'in':                   [1, 4, 2, 1, 4],        // Japanese (Miyako-bushi)
   'iwato':                [1, 4, 1, 4, 2],        // Japanese (temple bells)
   'yo':                   [2, 3, 2, 2, 3],        // Japanese pentatonic (no semitones)
+  'chinese':              [4, 2, 1, 4, 1],        // Chinese pentatonic (Gong scale)
+  'egyptian':             [2, 3, 2, 3, 2],        // Egyptian / Suspended pentatonic
 
   // ── Aliases ───────────────────────────────────────────────────────────────
   'major':                [2, 2, 1, 2, 2, 2, 1],  // = ionian
@@ -163,4 +175,7 @@ export const SCALE_PATTERNS: Record<string, number[]> = {
   'freygish':             [1, 3, 1, 2, 1, 2, 2],  // = phrygian dominant (klezmer)
   'hindu':                [2, 2, 1, 2, 1, 2, 2],  // = mixolydian b6
   'romanian minor':       [2, 1, 3, 1, 2, 1, 2],  // = dorian #4
+  'byzantine':            [1, 3, 1, 2, 1, 3, 1],  // = double harmonic
+  'gypsy major':          [1, 3, 1, 2, 1, 3, 1],  // = double harmonic
+  'gypsy minor':          [2, 1, 3, 1, 1, 3, 1],  // = hungarian minor
 };

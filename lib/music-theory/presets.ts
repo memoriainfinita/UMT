@@ -1,8 +1,6 @@
-import { EDO, JustIntonation, CentTuning, NonOctaveTuning, TuningSystem } from './tuning';
+import { EDO, JustIntonation, CentTuning, NonOctaveTuning, TuningSystem, TET12 } from './tuning';
 import { Scale } from './scale';
 import { Chord } from './chord';
-
-// TET12 is defined in tuning.ts — re-exported via index.ts.
 
 // Quarter-tone 24-TET
 export const TET24 = new EDO(24);
