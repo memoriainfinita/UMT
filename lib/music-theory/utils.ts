@@ -54,10 +54,76 @@ export function getEnharmonics(noteName: string): string[] {
   return (enharmonicsMap[base] || []).map(enh => enh + rest);
 }
 
-export function usesFlats(rootName: string): boolean {
+/** Major key roots that use flat accidentals (circle of fifths, flat side). */
+const FLAT_MAJOR_ROOTS = new Set(['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb']);
+/** Minor key roots that use flat accidentals (circle of fifths, flat side). */
+const FLAT_MINOR_ROOTS = new Set(['D', 'G', 'C', 'F', 'Bb', 'Eb', 'Ab']);
+
+/**
+ * Semitones from a mode root to its parent Ionian (major) scale root.
+ * Used to compute the parent key and determine flat/sharp preference via the circle of fifths.
+ */
+const MAJOR_MODE_PARENT_OFFSET: Record<string, number> = {
+  'major': 0, 'ionian': 0, 'bebop major': 0, 'blues major': 0, 'harmonic major': 0,
+  'dorian': 2, 'dorian b2': 2, 'bebop dorian': 2,
+  'phrygian': 4,
+  'lydian': 5, 'lydian augmented': 5, 'lydian dominant': 5,
+  'mixolydian': 7, 'mixolydian b6': 7, 'bebop dominant': 7,
+  'aeolian': 9, 'natural minor': 9,
+  'locrian': 11, 'locrian #2': 11, 'altered': 11, 'super locrian': 11,
+};
+
+/**
+ * Scale types in the minor family (natural/harmonic/melodic minor and their modes).
+ * For these, flat/sharp preference is determined by the root as a minor key root.
+ */
+const MINOR_FAMILY = new Set([
+  'minor', 'harmonic minor', 'melodic minor', 'jazz minor',
+  'phrygian dominant', 'ionian #5', 'dorian #4', 'locrian #6', 'lydian #2', 'super locrian bb7',
+]);
+
+/**
+ * Returns true if the given key should use flat accidentals for note naming.
+ *
+ * Uses circle-of-fifths logic extended to common church modes and minor-family scales.
+ * For major-family modes, the parent Ionian key is computed and looked up in the circle.
+ * For minor-family scales, the root is looked up directly as a minor key.
+ * Falls back to checking the root's own accidental for unknown scale types.
+ *
+ * @param rootName - Root note name (e.g. 'D', 'Bb', 'F#'). Octave digits are stripped.
+ * @param scaleType - Scale or mode type (e.g. 'major', 'dorian', 'harmonic minor'). Default: 'major'.
+ */
+export function preferFlatsForKey(rootName: string, scaleType: string = 'major'): boolean {
   const base = rootName.replace(/\d+$/, '');
-  const flatKeys = ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'd', 'g', 'c', 'f', 'bb', 'eb', 'ab'];
-  return flatKeys.includes(base);
+  const type = scaleType.toLowerCase().trim();
+
+  // Major-mode family: compute parent major key pitch class, then look up in flat set.
+  const majorOffset = MAJOR_MODE_PARENT_OFFSET[type];
+  if (majorOffset !== undefined) {
+    const rootPC = ((parseNoteToStep12TET(
+      base.charAt(0).toUpperCase() + base.slice(1), 4
+    ) % 12) + 12) % 12;
+    const parentPC = ((rootPC - majorOffset) % 12 + 12) % 12;
+    return FLAT_MAJOR_ROOTS.has(NOTE_NAMES_12TET_FLAT[parentPC]);
+  }
+
+  // Minor-family scales: look up root directly as a minor key root.
+  if (MINOR_FAMILY.has(type)) {
+    const normalized = base.charAt(0).toUpperCase() + base.slice(1);
+    return FLAT_MINOR_ROOTS.has(normalized);
+  }
+
+  // Fallback: check root's own accidental (covers custom/unknown scale types).
+  return /[A-G]b/.test(base);
+}
+
+/**
+ * @deprecated Use `preferFlatsForKey(rootName, scaleType)` instead.
+ * This alias only considers the root note without scale-type context,
+ * which gives incorrect results for modes and minor-family scales.
+ */
+export function usesFlats(rootName: string): boolean {
+  return preferFlatsForKey(rootName);
 }
 
 export function getIntervalName(stepsFromRoot: number, is12TET: boolean = true): string {

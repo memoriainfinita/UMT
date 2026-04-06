@@ -1,6 +1,6 @@
 import { Chord } from './chord';
 import { parseScaleSymbol, parseChordSymbol } from './parser';
-import { get12TETName, get12TETBaseName, parseNoteToStep12TET } from './utils';
+import { get12TETName, get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 import { CHORD_FORMULAS } from './dictionaries';
 import { Note } from './note';
 import { TuningSystem, TET12 } from './tuning';
@@ -90,11 +90,16 @@ export class Harmony {
         const formulaPcs = Array.from(new Set(formula.map(interval => ((interval % octave) + octave) % octave))).sort((a, b) => a - b);
 
         if (formulaPcs.length === inputIntervals.length && formulaPcs.every((val, index) => val === inputIntervals[index])) {
-          const rootName = get12TETBaseName(root, false);
+          // Determine canonical accidental spelling for this root via circle of fifths.
+          const rootFlatName = NOTE_NAMES_12TET_FLAT[root];
+          const rootPf = preferFlatsForKey(rootFlatName, 'major');
+          const rootName = rootPf ? rootFlatName : NOTE_NAMES_12TET_SHARP[root];
           let chordName = `${rootName}${suffix}`;
 
           if (root !== bassStep) {
-            const bassName = get12TETBaseName(bassStep, false);
+            const bassFlatName = NOTE_NAMES_12TET_FLAT[bassStep];
+            const bassPf = preferFlatsForKey(bassFlatName, 'major');
+            const bassName = bassPf ? bassFlatName : NOTE_NAMES_12TET_SHARP[bassStep];
             chordName += `/${bassName}`;
           }
 
@@ -156,12 +161,13 @@ export class Harmony {
       // --- From parallel Aeolian (natural minor) ---
       const minorScale = parseScaleSymbol(`${rootName} minor`, tuning);
       const minorNotes = minorScale.getNotes(1);
-      const b3 = get12TETBaseName(minorNotes[2].stepsFromBase, true);
-      const b6 = get12TETBaseName(minorNotes[5].stepsFromBase, true);
-      const b7 = get12TETBaseName(minorNotes[6].stepsFromBase, true);
-      const p4 = get12TETBaseName(minorNotes[3].stepsFromBase, true);
-      const p5 = get12TETBaseName(minorNotes[4].stepsFromBase, true);
-      const p2 = get12TETBaseName(minorNotes[1].stepsFromBase, true);
+      // Use each note's own preferFlats (set by parseScaleSymbol based on key signature).
+      const b3  = get12TETBaseName(minorNotes[2].stepsFromBase, minorNotes[2].preferFlats);
+      const b6  = get12TETBaseName(minorNotes[5].stepsFromBase, minorNotes[5].preferFlats);
+      const b7  = get12TETBaseName(minorNotes[6].stepsFromBase, minorNotes[6].preferFlats);
+      const p4  = get12TETBaseName(minorNotes[3].stepsFromBase, minorNotes[3].preferFlats);
+      const p5  = get12TETBaseName(minorNotes[4].stepsFromBase, minorNotes[4].preferFlats);
+      const p2  = get12TETBaseName(minorNotes[1].stepsFromBase, minorNotes[1].preferFlats);
 
       borrowedChords.push(parseChordSymbol(`${rootName}m7`, tuning));  // i m7   (Aeolian)
       borrowedChords.push(parseChordSymbol(`${p2}m7b5`, tuning));      // ii∅7   (Aeolian)
@@ -174,16 +180,17 @@ export class Harmony {
       // --- From parallel Dorian ---
       const dorianScale = parseScaleSymbol(`${rootName} dorian`, tuning);
       const dorianNotes = dorianScale.getNotes(1);
-      const d6 = get12TETBaseName(dorianNotes[5].stepsFromBase); // natural 6th (differs from Aeolian b6)
-      borrowedChords.push(parseChordSymbol(`${d6}m7`, tuning));          // vim7 from Dorian (natural 6th area)
-      borrowedChords.push(parseChordSymbol(`${p4}7`, tuning));           // IV7  (Dorian characteristic)
+      const d6 = get12TETBaseName(dorianNotes[5].stepsFromBase, dorianNotes[5].preferFlats);
+      const p4d = get12TETBaseName(dorianNotes[3].stepsFromBase, dorianNotes[3].preferFlats);
+      borrowedChords.push(parseChordSymbol(`${d6}m7`, tuning));   // vim7 from Dorian (natural 6th)
+      borrowedChords.push(parseChordSymbol(`${p4d}7`, tuning));   // IV7  (Dorian characteristic)
     } else {
       // --- From parallel major ---
       const majorScale = parseScaleSymbol(`${rootName} major`, tuning);
       const majorNotes = majorScale.getNotes(1);
-      const p4 = get12TETBaseName(majorNotes[3].stepsFromBase);
-      const p5 = get12TETBaseName(majorNotes[4].stepsFromBase);
-      const maj3 = get12TETBaseName(majorNotes[2].stepsFromBase); // natural 3rd (Picardy area)
+      const p4   = get12TETBaseName(majorNotes[3].stepsFromBase, majorNotes[3].preferFlats);
+      const p5   = get12TETBaseName(majorNotes[4].stepsFromBase, majorNotes[4].preferFlats);
+      const maj3 = get12TETBaseName(majorNotes[2].stepsFromBase, majorNotes[2].preferFlats);
 
       borrowedChords.push(parseChordSymbol(`${rootName}maj7`, tuning));  // I△  (Picardy third)
       borrowedChords.push(parseChordSymbol(`${maj3}7`, tuning));         // III7 (from parallel major)
@@ -253,9 +260,11 @@ export class Harmony {
    * @param ruleset The pedagogical style to use ('berklee' | 'classical' | 'modal')
    */
   static getSuggestedScales(chord: Chord, nextChord?: Chord, ruleset: 'berklee' | 'classical' | 'modal' = 'berklee'): { scale: string; hint?: string }[] {
-    const root = chord.name.match(/^[A-G][#b]*/)?.[0] || 'C';
     const ts = chord.tuningSystem;
     const oct = ts.octaveSteps;
+    // Derive root name from rootStep — reliable regardless of chord.name format.
+    const rootPf = chord.preferFlats ?? false;
+    const root = get12TETBaseName(chord.rootStep, rootPf);
 
     // Detect chord type from intervals, not from name string
     const pcs = chord.intervalsInSteps.map(i => ((i % oct) + oct) % oct);

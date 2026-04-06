@@ -1,5 +1,5 @@
 import { Chord } from './chord';
-import { get12TETBaseName } from './utils';
+import { get12TETBaseName, preferFlatsForKey, NOTE_NAMES_12TET_FLAT } from './utils';
 
 /**
  * Neo-Riemannian Theory Module
@@ -43,9 +43,11 @@ export class NeoRiemannian {
     const min3 = ts.getStepFromStandard(3);
     const maj3 = ts.getStepFromStandard(4);
     const per5 = ts.getStepFromStandard(7);
-    const rootName = get12TETBaseName(type.rootStep);
+    // P keeps the same root — inherit the source chord's flat/sharp preference.
+    const pf = chord.preferFlats ?? false;
+    const rootName = get12TETBaseName(type.rootStep, pf);
     const name = rootName + (type.isMajor ? 'm' : '');
-    return new Chord(name, ts, type.rootStep, type.isMajor ? [0, min3, per5] : [0, maj3, per5]);
+    return new Chord(name, ts, type.rootStep, type.isMajor ? [0, min3, per5] : [0, maj3, per5], undefined, pf);
   }
 
   /**
@@ -56,17 +58,21 @@ export class NeoRiemannian {
   static L(chord: Chord): Chord | null {
     const type = this.getTriadType(chord);
     if (!type) return null;
-    
+
     const ts = chord.tuningSystem;
     const maj3 = ts.getStepFromStandard(4);
     const min3 = ts.getStepFromStandard(3);
     const per5 = ts.getStepFromStandard(7);
     if (type.isMajor) {
       const newRoot = type.rootStep + maj3; // Up a major third
-      return new Chord(get12TETBaseName(newRoot) + 'm', ts, newRoot, [0, min3, per5]);
+      const pc = ((newRoot % 12) + 12) % 12;
+      const pf = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[pc], 'major');
+      return new Chord(get12TETBaseName(newRoot, pf) + 'm', ts, newRoot, [0, min3, per5], undefined, pf);
     } else {
       const newRoot = type.rootStep - maj3; // Down a major third
-      return new Chord(get12TETBaseName(newRoot), ts, newRoot, [0, maj3, per5]);
+      const pc = ((newRoot % 12) + 12) % 12;
+      const pf = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[pc], 'major');
+      return new Chord(get12TETBaseName(newRoot, pf), ts, newRoot, [0, maj3, per5], undefined, pf);
     }
   }
 
@@ -85,10 +91,14 @@ export class NeoRiemannian {
     const per5 = ts.getStepFromStandard(7);
     if (type.isMajor) {
       const newRoot = type.rootStep - min3; // Down a minor third
-      return new Chord(get12TETBaseName(newRoot) + 'm', ts, newRoot, [0, min3, per5]);
+      const pc = ((newRoot % 12) + 12) % 12;
+      const pf = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[pc], 'minor');
+      return new Chord(get12TETBaseName(newRoot, pf) + 'm', ts, newRoot, [0, min3, per5], undefined, pf);
     } else {
       const newRoot = type.rootStep + min3; // Up a minor third
-      return new Chord(get12TETBaseName(newRoot), ts, newRoot, [0, maj3, per5]);
+      const pc = ((newRoot % 12) + 12) % 12;
+      const pf = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[pc], 'major');
+      return new Chord(get12TETBaseName(newRoot, pf), ts, newRoot, [0, maj3, per5], undefined, pf);
     }
   }
 }

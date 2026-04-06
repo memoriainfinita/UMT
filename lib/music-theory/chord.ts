@@ -1,6 +1,6 @@
 import { TuningSystem, EDO } from './tuning';
 import { Note } from './note';
-import { get12TETBaseName, usesFlats } from './utils';
+import { get12TETBaseName, usesFlats, preferFlatsForKey } from './utils';
 
 /**
  * A chord: a root pitch plus a set of intervals defining the chord quality, within a tuning system.
@@ -18,13 +18,17 @@ export class Chord {
    *   Must include 0 (the root) as the first element.
    * @param bassStep - Optional bass note step for slash chords (e.g. C/E). If provided and
    *   higher than the root, it is automatically moved an octave down.
+   * @param preferFlats - Optional flat/sharp preference for note naming in `getNotes()`.
+   *   When provided, overrides the root-name heuristic. Set by `parseChordSymbol` and
+   *   PLR transforms for context-aware accidental spelling.
    */
   constructor(
     public name: string,
     public tuningSystem: TuningSystem,
     public rootStep: number,
     public readonly intervalsInSteps: readonly number[],
-    public bassStep?: number
+    public bassStep?: number,
+    public readonly preferFlats?: boolean
   ) {}
 
   /**
@@ -33,16 +37,21 @@ export class Chord {
    * For slash chords, the bass note is prepended below the root.
    */
   getNotes(): Note[] {
-    // Determine accidental preference from the root name (flat spelling).
-    const rootFlatName = new Note(this.tuningSystem, this.rootStep).getName({ preferFlats: true });
-    const preferFlats = usesFlats(rootFlatName);
+    // Use stored preferFlats if set (populated by parseChordSymbol / NeoRiemannian).
+    // Fall back to root-name heuristic for directly constructed Chord instances.
+    let pf: boolean;
+    if (this.preferFlats !== undefined) {
+      pf = this.preferFlats;
+    } else {
+      const rootFlatName = new Note(this.tuningSystem, this.rootStep).getName({ preferFlats: true });
+      pf = usesFlats(rootFlatName);
+    }
 
-    const createNote = (step: number) => {
-      const n = new Note(this.tuningSystem, step);
+    const createNote = (step: number): Note => {
       if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
-        return new Note(this.tuningSystem, step, n.getName({ preferFlats }));
+        return new Note(this.tuningSystem, step, undefined, pf);
       }
-      return n;
+      return new Note(this.tuningSystem, step);
     };
 
     const notes = this.intervalsInSteps.map(interval =>
@@ -88,7 +97,18 @@ export class Chord {
    */
   transpose(steps: number): Chord {
     const newRoot = this.rootStep + steps;
-    const newRootName = new Note(this.tuningSystem, newRoot).getName({ preferFlats: usesFlats(new Note(this.tuningSystem, newRoot).getName({ preferFlats: true })) });
+    // Re-derive preferFlats for the new root — key signature changes with transposition.
+    // Use get12TETBaseName for 12-TET (no octave number in the name); fall back to getNoteName.
+    let newRootName: string;
+    let newPf: boolean;
+    if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
+      const flatBaseName = get12TETBaseName(newRoot, true);
+      newPf = preferFlatsForKey(flatBaseName);
+      newRootName = get12TETBaseName(newRoot, newPf);
+    } else {
+      newRootName = new Note(this.tuningSystem, newRoot).getName();
+      newPf = false;
+    }
     const match = this.name.match(/^[A-G][#b]*(.*)/);
     const suffix = match ? match[1] : '';
     return new Chord(
@@ -96,7 +116,8 @@ export class Chord {
       this.tuningSystem,
       newRoot,
       [...this.intervalsInSteps],
-      this.bassStep !== undefined ? this.bassStep + steps : undefined
+      this.bassStep !== undefined ? this.bassStep + steps : undefined,
+      newPf
     );
   }
 
@@ -171,7 +192,7 @@ export class Chord {
         return aFourths - bFourths;
       });
       
-      // Assign octaves to make them strictly ascend
+      // Assign octaves to make them strictly ascend, preserving each note's flat/sharp preference.
       let currentStep = sorted[0].stepsFromBase;
       return sorted.map((n, i) => {
         if (i === 0) return n;
@@ -181,7 +202,7 @@ export class Chord {
           nextStep += this.tuningSystem.octaveSteps;
         }
         currentStep = nextStep;
-        return new Note(this.tuningSystem, nextStep);
+        return n.transpose(nextStep - n.stepsFromBase);
       });
     }
 
@@ -207,20 +228,20 @@ export class Chord {
     if (this.tuningSystem.octaveSteps !== 12) return null;
     // Transpose root by 6 semitones (tritone)
     const tritoneRootStep = this.rootStep + 6;
-    
-    // Create new name. E.g., if G7, new name is Db7.
-    // We prefer flats for tritone subs usually (e.g., Db7 instead of C#7)
-    const newRootName = get12TETBaseName(tritoneRootStep, true);
-    
-    // Extract the suffix from the current name (e.g., "G7b9" -> "7b9")
+    // Determine canonical enharmonic for the tritone root via circle of fifths.
+    // Tritone subs conventionally prefer flats (Db7 over C#7), but we verify against the key.
+    const newRootFlatName = get12TETBaseName(tritoneRootStep, true);
+    const newPf = preferFlatsForKey(newRootFlatName);
+    const newRootName = get12TETBaseName(tritoneRootStep, newPf);
     const match = this.name.match(/^[A-G][#b]*(.*)$/);
     const suffix = match ? match[1] : '';
-    
     return new Chord(
       `${newRootName}${suffix}`,
       this.tuningSystem,
       tritoneRootStep,
-      this.intervalsInSteps
+      this.intervalsInSteps,
+      undefined,
+      newPf
     );
   }
 
