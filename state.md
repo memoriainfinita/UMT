@@ -167,6 +167,34 @@ Revisión sistemática archivo a archivo. Commits: f3496ca, 251d30c, 2f23bc8, 6d
 
 **Pendiente (sesión 6):** harmony.ts, circle.ts, set-theory.ts, key-detection.ts, neo-riemannian.ts, scala.ts, rhythm.ts, abc-bridge.ts, utils.ts, index.ts, umt.ts
 
+### 2026-04-06 — Overhaul sistema bemoles/sostenidos (sesión 8)
+
+Commit: 421dc78. Auditoría completa + corrección de 10 bugs en 8 archivos.
+
+**Cambio arquitectural central:**
+- `Note`: añadido `_preferFlats?: boolean` separado de `_name`. `transpose()` propaga la preferencia → inversiones, voicings, drops ya no pierden el contexto de la tonalidad.
+- `Note.preferFlats` getter público, derivado de `_name` o `_preferFlats`.
+
+**`utils.ts` — `preferFlatsForKey(root, scaleType)` reemplaza `usesFlats()`:**
+- Usa círculo de quintas via tabla de offsets modales (`MAJOR_MODE_PARENT_OFFSET`)
+- D phrygian → padre Bb mayor → bemoles ✓ (antes: sostenidos)
+- D mixolydian → padre G mayor → sostenidos ✓
+- Familia menor (harmonic minor, jazz minor…) por lookup directo
+
+**Scale / Chord / Parser:**
+- Constructor recibe `preferFlats?: boolean`; `parseScaleSymbol` y `parseChordSymbol` lo calculan via `preferFlatsForKey`
+- `getNotes()` usa el valor almacenado en vez del hack de `_name`
+- `transpose()` re-deriva la preferencia para la nueva raíz (sin octava en el nombre)
+
+**Capa alta:**
+- `detectChords()`: nombrado canónico por círculo de quintas (Bb no A#)
+- `getSuggestedScales()`: raíz derivada de `chord.rootStep` no de `chord.name` (string frágil)
+- `getBorrowedChords()`: usa `note.preferFlats` de cada nota, consistente
+- `NeoRiemannian` P/L/R: P hereda preferencia de la fuente; L/R derivan del nuevo root
+- `KeyDetection.detect()`: devuelve "Bb Major" no "A# Major"
+
+**Limitación conocida pendiente:** el b7 de C7 se deletrea A# (no Bb) porque C es tonalidad de sostenidos. Requeriría lógica por tipo de intervalo, no solo por raíz. Anotado en TODO.
+
 ### 2026-04-06 — Revisión capa alta + hardening arquitectural (sesión 7)
 
 Revisión sistemática + análisis arquitectural completo. Archivos tocados: harmony.ts, circle.ts, set-theory.ts, key-detection.ts, scala.ts, abc-bridge.ts, utils.ts, tuning.ts.
@@ -207,4 +235,6 @@ Decisiones clave:
 - [ ] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas) — librería lista para esto
 - [ ] Test completo de la demo en navegador (probar todas las secciones)
 - [ ] Considerar añadir tests unitarios para los módulos core
+- [ ] Revisar spelling del b7 en acordes dominantes en tonalidades de sostenidos (C7 → A# en vez de Bb — limitación de diseño conocida, requiere lógica por intervalo)
 - [x] Revisión capa alta — harmony.ts, circle.ts, set-theory.ts, key-detection.ts, neo-riemannian.ts, scala.ts, rhythm.ts, abc-bridge.ts, utils.ts, index.ts, umt.ts
+- [x] Overhaul sistema bemoles/sostenidos — sesión 8
