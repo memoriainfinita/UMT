@@ -1,5 +1,5 @@
 import { Note } from './note';
-import { get12TETBaseName } from './utils';
+import { get12TETBaseName, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 
 /**
  * Key Detection Module
@@ -28,15 +28,18 @@ export class KeyDetection {
     const results: { key: string, confidence: number }[] = [];
 
     for (let i = 0; i < 12; i++) {
-      const noteName = get12TETBaseName(i);
+      const flatName = NOTE_NAMES_12TET_FLAT[i];
+      // Choose canonical spelling (sharp or flat) based on circle-of-fifths key signature.
+      const majorPf = preferFlatsForKey(flatName, 'major');
+      const minorPf = preferFlatsForKey(flatName, 'minor');
+      const majorName = majorPf ? flatName : NOTE_NAMES_12TET_SHARP[i];
+      const minorName = minorPf ? flatName : NOTE_NAMES_12TET_SHARP[i];
 
-      // Major
       const rMaj = this.pearsonCorrelation(histogram, this.shiftProfile(this.majorProfile, i));
-      results.push({ key: `${noteName} Major`, confidence: rMaj });
+      results.push({ key: `${majorName} Major`, confidence: rMaj });
 
-      // Minor
       const rMin = this.pearsonCorrelation(histogram, this.shiftProfile(this.minorProfile, i));
-      results.push({ key: `${noteName} Minor`, confidence: rMin });
+      results.push({ key: `${minorName} Minor`, confidence: rMin });
     }
 
     // Sort by confidence descending

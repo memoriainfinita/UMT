@@ -14,27 +14,47 @@ export class Note {
    * @param tuningSystem - The tuning system this note belongs to.
    * @param stepsFromBase - Steps from A4 (= 0). Can be negative (below A4) or positive (above).
    * @param _name - Optional explicit name. When provided, overrides the computed name from
-   *   the tuning system. Used by the parser to preserve the original notation (e.g. "Db" vs "C#").
+   *   the tuning system. Used by the parser to preserve the original user notation (e.g. "Db" vs "C#").
+   * @param _preferFlats - Optional flat/sharp preference for computed names. Propagated by
+   *   `transpose()` and set by `Scale.getNotes()` / `Chord.getNotes()` based on key context.
+   *   Ignored when `_name` is provided (the explicit name takes precedence).
    */
   constructor(
     public tuningSystem: TuningSystem,
     public stepsFromBase: number,
-    private _name?: string
+    private _name?: string,
+    private _preferFlats?: boolean
   ) {}
 
-  /** The note name using sharps by default. For flats use `getName({ preferFlats: true })`. */
+  /**
+   * The note name. Uses the flat/sharp preference set at construction.
+   * For an explicit override use `getName({ preferFlats: true/false })`.
+   */
   get name(): string {
     return this.getName();
   }
 
   /**
-   * Returns the note name, optionally preferring flat accidentals over sharps.
+   * The flat/sharp preference for this note's computed name.
+   * Derived from the explicit `_name` (true if it contains a flat accidental)
+   * or from the stored `_preferFlats` flag (false by default).
+   * This value is propagated by `transpose()`.
+   */
+  get preferFlats(): boolean {
+    if (this._name) return /[A-G]b/.test(this._name);
+    return this._preferFlats ?? false;
+  }
+
+  /**
+   * Returns the note name, optionally overriding the stored flat/sharp preference.
    * If an explicit name was set at construction, it is returned as-is (no re-spelling).
+   * Otherwise, uses `_preferFlats` if set, then falls back to `options.preferFlats`, then sharps.
    */
   getName(options?: { preferFlats?: boolean }): string {
     if (this._name) return this._name;
+    const useFlats = this._preferFlats ?? options?.preferFlats ?? false;
     if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
-      return get12TETName(this.stepsFromBase, options?.preferFlats);
+      return get12TETName(this.stepsFromBase, useFlats);
     }
     return this.tuningSystem.getNoteName(this.stepsFromBase);
   }
@@ -66,9 +86,14 @@ export class Note {
     return Math.floor(this.stepsFromBase / this.tuningSystem.octaveSteps);
   }
 
-  /** Return a new note transposed by the given number of steps in the same tuning system. */
+  /**
+   * Returns a new note transposed by the given number of steps in the same tuning system.
+   * Propagates the flat/sharp preference: derived from `_name` if set, otherwise from `_preferFlats`.
+   * The transposed note never carries an explicit `_name` — its name is always computed.
+   */
   transpose(steps: number): Note {
-    return new Note(this.tuningSystem, this.stepsFromBase + steps);
+    const pf = this._preferFlats ?? (this._name ? /[A-G]b/.test(this._name) : undefined);
+    return new Note(this.tuningSystem, this.stepsFromBase + steps, undefined, pf);
   }
 
   /**

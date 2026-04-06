@@ -1,6 +1,6 @@
 import { TuningSystem, EDO } from './tuning';
 import { Note } from './note';
-import { usesFlats } from './utils';
+import { usesFlats, preferFlatsForKey, get12TETBaseName } from './utils';
 
 /**
  * A scale: a root pitch plus an ordered pattern of step intervals within a tuning system.
@@ -16,12 +16,16 @@ export class Scale {
    * @param rootStep - Step offset of the root note from A4 (= 0).
    * @param stepPattern - Intervals between consecutive scale degrees, in tuning steps.
    *   Must be non-empty with all values > 0.
+   * @param preferFlats - Optional flat/sharp preference for note naming in `getNotes()`.
+   *   When provided, overrides the root-name heuristic. Set by `parseScaleSymbol` using
+   *   `preferFlatsForKey(root, scaleType)` for mode-aware accuracy.
    */
   constructor(
     public name: string,
     public tuningSystem: TuningSystem,
     public rootStep: number,
-    public readonly stepPattern: readonly number[]
+    public readonly stepPattern: readonly number[],
+    public readonly preferFlats?: boolean
   ) {
     if (stepPattern.length === 0) {
       throw new RangeError(`Scale "${name}": stepPattern must not be empty.`);
@@ -44,17 +48,21 @@ export class Scale {
     const notes: Note[] = [];
     let currentStep = this.rootStep;
 
-    // Use the flat spelling of the root to determine whether the scale prefers flats.
-    // Using sharp spelling would cause Bb-rooted scales to incorrectly use sharps.
-    const rootFlatName = new Note(this.tuningSystem, this.rootStep).getName({ preferFlats: true });
-    const preferFlats = usesFlats(rootFlatName);
+    // Use stored preferFlats if set (populated by parseScaleSymbol with mode-aware logic).
+    // Fall back to root-name heuristic for directly constructed Scale instances.
+    let pf: boolean;
+    if (this.preferFlats !== undefined) {
+      pf = this.preferFlats;
+    } else {
+      const rootFlatName = new Note(this.tuningSystem, this.rootStep).getName({ preferFlats: true });
+      pf = usesFlats(rootFlatName);
+    }
 
-    const createNote = (step: number) => {
-      const n = new Note(this.tuningSystem, step);
+    const createNote = (step: number): Note => {
       if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
-        return new Note(this.tuningSystem, step, n.getName({ preferFlats }));
+        return new Note(this.tuningSystem, step, undefined, pf);
       }
-      return n;
+      return new Note(this.tuningSystem, step);
     };
 
     notes.push(createNote(currentStep));
@@ -137,7 +145,18 @@ export class Scale {
    */
   transpose(steps: number): Scale {
     const newRoot = this.rootStep + steps;
-    const newRootName = new Note(this.tuningSystem, newRoot).name;
-    return new Scale(`${this.name} → ${newRootName}`, this.tuningSystem, newRoot, [...this.stepPattern]);
+    // Re-derive preferFlats for the new root — key signature changes with transposition.
+    // Use get12TETBaseName for 12-TET (no octave number in the name); fall back to getNoteName.
+    let newRootName: string;
+    let newPf: boolean;
+    if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
+      const flatBaseName = get12TETBaseName(newRoot, true);
+      newPf = preferFlatsForKey(flatBaseName);
+      newRootName = get12TETBaseName(newRoot, newPf);
+    } else {
+      newRootName = new Note(this.tuningSystem, newRoot).getName();
+      newPf = false;
+    }
+    return new Scale(`${this.name} → ${newRootName}`, this.tuningSystem, newRoot, [...this.stepPattern], newPf);
   }
 }

@@ -3,7 +3,7 @@ import { TET12, TuningSystem } from './tuning';
 import { Chord } from './chord';
 import { Scale } from './scale';
 import { Note } from './note';
-import { get12TETName, get12TETBaseName, parseNoteToStep12TET } from './utils';
+import { get12TETName, get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, NOTE_NAMES_12TET_FLAT } from './utils';
 
 /**
  * Normalizes chord suffix shorthands to canonical dictionary keys.
@@ -83,7 +83,8 @@ export function parseChordSymbol(symbol: string, tuning: TuningSystem = TET12, o
     bassStep = tuning.getStepFromStandard(parseNoteToStep12TET(bassNormalized, octave));
   }
 
-  return new Chord(normalizedSymbol, tuning, rootStep, intervals, bassStep);
+  const pf = preferFlatsForKey(rootName);
+  return new Chord(normalizedSymbol, tuning, rootStep, intervals, bassStep, pf);
 }
 
 /**
@@ -108,8 +109,10 @@ export function parseScaleSymbol(symbol: string, tuning: TuningSystem = TET12, o
   if (!pattern12TET) throw new Error(`parseScaleSymbol: unknown scale type "${typeRaw}" in "${symbol}".`);
 
   const pattern = pattern12TET.map(s => tuning.getStepFromStandard(s));
-  const rootStep = tuning.getStepFromStandard(parseNoteToStep12TET(rootName.charAt(0).toUpperCase() + rootName.slice(1), octave));
-  return new Scale(symbol, tuning, rootStep, pattern);
+  const rootNormalized = rootName.charAt(0).toUpperCase() + rootName.slice(1);
+  const rootStep = tuning.getStepFromStandard(parseNoteToStep12TET(rootNormalized, octave));
+  const pf = preferFlatsForKey(rootNormalized, type);
+  return new Scale(symbol, tuning, rootStep, pattern, pf);
 }
 
 /**
@@ -211,10 +214,20 @@ export function parseRomanProgression(progression: string, keySymbol: string, tu
         rootStep += tuning.getStepFromStandard(6); // Tritone substitution
       }
 
-      const rootName = get12TETBaseName(rootStep, true);
+      // Determine accidental spelling: tritone subs and flat-prefix accidentals prefer flats;
+      // sharp-prefix accidentals prefer sharps; otherwise use the degree's key context.
+      let aPf: boolean;
+      if (isSub || aAcc === 'b') {
+        aPf = true;
+      } else if (aAcc === '#') {
+        aPf = false;
+      } else {
+        aPf = tempScaleNotes[aDegree - 1].preferFlats;
+      }
+      const rootName = get12TETBaseName(rootStep, aPf);
       const chordName = `${rootName}${aSuffixRaw}`;
 
-      return new Chord(chordName, tuning, rootStep, intervals);
+      return new Chord(chordName, tuning, rootStep, intervals, undefined, aPf);
     }
     
     // Normal parsing
@@ -240,11 +253,19 @@ export function parseRomanProgression(progression: string, keySymbol: string, tu
       rootStep += tuning.getStepFromStandard(6); // Tritone substitution
     }
 
-    // Create a readable chord name like "Gmaj7"
-    const preferFlats = !!isSub || accidental === 'b';
+    // Determine accidental spelling: tritone subs and flat-prefix accidentals prefer flats;
+    // sharp-prefix accidentals prefer sharps; otherwise use the degree's key context.
+    let preferFlats: boolean;
+    if (isSub || accidental === 'b') {
+      preferFlats = true;
+    } else if (accidental === '#') {
+      preferFlats = false;
+    } else {
+      preferFlats = scaleNotes[degree - 1].preferFlats;
+    }
     const rootName = get12TETBaseName(rootStep, preferFlats);
     const chordName = `${rootName}${suffixRaw}`;
 
-    return new Chord(chordName, tuning, rootStep, intervals);
+    return new Chord(chordName, tuning, rootStep, intervals, undefined, preferFlats);
   });
 }
