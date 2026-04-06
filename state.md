@@ -56,6 +56,16 @@ Revisión desde cero del proyecto generado por Gemini. Correcciones aplicadas:
 - `hooks/use-mobile.ts` — nunca importado
 - `lib/utils.ts` — `cn()` nunca llamado fuera del archivo
 
+### 2026-04-06 — Refactor arquitectural (sesión 5, continuación)
+
+Commit: `c9bb3be`.
+
+- `Pitch` eliminado de `types.ts` (artefacto Gemini, nunca usado)
+- `TET12` movido a `tuning.ts` (era el único motivo por el que parser/harmony dependían de presets)
+- `parseNoteToStep12TET` movido de `parser.ts` a `utils.ts` (utilidad de coordenadas, no parser)
+- `stream.ts` absorbido en `rhythm.ts` y eliminado (83 líneas, un solo concepto)
+- La librería queda en 19 archivos con dependencias más limpias
+
 **Pendiente tras esta sesión:**
 - Ejecutar `npm install` para actualizar `package-lock.json` con las deps eliminadas
 - Probar en profundidad todas las secciones de la demo (voice leading, Neo-Riemannian, Set Theory, Scala parser)
@@ -156,6 +166,6 @@ Decisiones clave:
 ## TODO
 
 - [ ] Crear repo en GitHub y actualizar URL CDN en README
-- [ ] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas)
+- [ ] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas) — librería lista para esto
 - [ ] Test completo de la demo en navegador (probar todas las secciones)
 - [ ] Considerar añadir tests unitarios para los módulos core
