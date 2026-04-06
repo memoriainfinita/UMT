@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { TET12, TET24, TET31, FiveLimitJI, PtolemaicJI, WerckmeisterIII, BohlenPierce, MajorScale12TET, NeutralScale24TET, MeantoneMajor31TET, BayatiScale24TET, NeutralTriad24TET, BohlenPierceLambdaChord, BohlenPierceMollChord, BohlenPierceChromaticScale, MajorTriad, ChromaticScale } from '@/lib/music-theory/presets';
+import { TET24, TET31, FiveLimitJI, PtolemaicJI, WerckmeisterIII, BohlenPierce, MajorScale12TET, NeutralScale24TET, MeantoneMajor31TET, BayatiScale24TET, NeutralTriad24TET, BohlenPierceLambdaChord, BohlenPierceMollChord, BohlenPierceChromaticScale, MajorTriad, ChromaticScale } from '@/lib/music-theory/presets';
+import { TET12 } from '@/lib/music-theory/tuning';
 import { Scale } from '@/lib/music-theory/scale';
 import { parseChordSymbol, parseRomanProgression, parseScaleSymbol, parseNote } from '@/lib/music-theory/parser';
 import { ABCBridge } from '@/lib/music-theory/abc-bridge';
