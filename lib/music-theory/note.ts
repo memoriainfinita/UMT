@@ -1,4 +1,4 @@
-import { TuningSystem } from './tuning';
+import { TuningSystem, EDO } from './tuning';
 import { Hertz } from './types';
 import { Interval } from './interval';
 import { get12TETName } from './utils';
@@ -16,7 +16,7 @@ export class Note {
 
   getName(options?: { preferFlats?: boolean }): string {
     if (this._name) return this._name;
-    if (this.tuningSystem.name === '12-TET') {
+    if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
       return get12TETName(this.stepsFromBase, options?.preferFlats);
     }
     return this.tuningSystem.getNoteName(this.stepsFromBase);

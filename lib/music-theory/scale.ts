@@ -1,4 +1,4 @@
-import { TuningSystem } from './tuning';
+import { TuningSystem, EDO } from './tuning';
 import { Note } from './note';
 import { usesFlats } from './utils';
 
@@ -21,7 +21,7 @@ export class Scale {
     // Helper to create a note with the correct name formatting
     const createNote = (step: number) => {
       const n = new Note(this.tuningSystem, step);
-      if (this.tuningSystem.name === '12-TET') {
+      if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
         return new Note(this.tuningSystem, step, n.getName({ preferFlats }));
       }
       return n;

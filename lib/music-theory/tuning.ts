@@ -120,6 +120,6 @@ export class NonOctaveTuning extends TuningSystem {
   }
 
   get octaveSteps(): number {
-    return this.stepsPerPeriod; // It's actually periodSteps, but satisfies the interface
+    return this.stepsPerPeriod; // Steps per period (not necessarily an octave)
   }
 }

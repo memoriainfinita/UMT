@@ -15,16 +15,18 @@ export class NeoRiemannian {
   static getTriadType(chord: Chord): { rootStep: number, isMajor: boolean } | null {
     const notes = chord.getNotes();
     if (notes.length < 3) return null;
-    
-    const intervals = notes.map(n => ((n.stepsFromBase - chord.rootStep) % 12 + 12) % 12);
-    
-    const hasMajorThird = intervals.includes(4);
-    const hasMinorThird = intervals.includes(3);
-    const hasPerfectFifth = intervals.includes(7);
+
+    const oct = chord.tuningSystem.octaveSteps;
+    const ts = chord.tuningSystem;
+    const intervals = notes.map(n => ((n.stepsFromBase - chord.rootStep) % oct + oct) % oct);
+
+    const hasMajorThird  = intervals.includes(ts.getStepFromStandard(4));
+    const hasMinorThird  = intervals.includes(ts.getStepFromStandard(3));
+    const hasPerfectFifth = intervals.includes(ts.getStepFromStandard(7));
 
     if (hasPerfectFifth && hasMajorThird) return { rootStep: chord.rootStep, isMajor: true };
     if (hasPerfectFifth && hasMinorThird) return { rootStep: chord.rootStep, isMajor: false };
-    
+
     return null; // Not a pure major/minor triad
   }
 
@@ -37,9 +39,13 @@ export class NeoRiemannian {
     const type = this.getTriadType(chord);
     if (!type) return null;
 
+    const ts = chord.tuningSystem;
+    const min3 = ts.getStepFromStandard(3);
+    const maj3 = ts.getStepFromStandard(4);
+    const per5 = ts.getStepFromStandard(7);
     const rootName = get12TETBaseName(type.rootStep);
     const name = rootName + (type.isMajor ? 'm' : '');
-    return new Chord(name, chord.tuningSystem, type.rootStep, type.isMajor ? [0, 3, 7] : [0, 4, 7]);
+    return new Chord(name, ts, type.rootStep, type.isMajor ? [0, min3, per5] : [0, maj3, per5]);
   }
 
   /**
@@ -51,12 +57,16 @@ export class NeoRiemannian {
     const type = this.getTriadType(chord);
     if (!type) return null;
     
+    const ts = chord.tuningSystem;
+    const maj3 = ts.getStepFromStandard(4);
+    const min3 = ts.getStepFromStandard(3);
+    const per5 = ts.getStepFromStandard(7);
     if (type.isMajor) {
-      const newRoot = type.rootStep + 4; // Up a major third
-      return new Chord(get12TETBaseName(newRoot) + 'm', chord.tuningSystem, newRoot, [0, 3, 7]);
+      const newRoot = type.rootStep + maj3; // Up a major third
+      return new Chord(get12TETBaseName(newRoot) + 'm', ts, newRoot, [0, min3, per5]);
     } else {
-      const newRoot = type.rootStep - 4; // Down a major third
-      return new Chord(get12TETBaseName(newRoot), chord.tuningSystem, newRoot, [0, 4, 7]);
+      const newRoot = type.rootStep - maj3; // Down a major third
+      return new Chord(get12TETBaseName(newRoot), ts, newRoot, [0, maj3, per5]);
     }
   }
 
@@ -68,13 +78,17 @@ export class NeoRiemannian {
   static R(chord: Chord): Chord | null {
     const type = this.getTriadType(chord);
     if (!type) return null;
-    
+
+    const ts = chord.tuningSystem;
+    const maj3 = ts.getStepFromStandard(4);
+    const min3 = ts.getStepFromStandard(3);
+    const per5 = ts.getStepFromStandard(7);
     if (type.isMajor) {
-      const newRoot = type.rootStep - 3; // Down a minor third
-      return new Chord(get12TETBaseName(newRoot) + 'm', chord.tuningSystem, newRoot, [0, 3, 7]);
+      const newRoot = type.rootStep - min3; // Down a minor third
+      return new Chord(get12TETBaseName(newRoot) + 'm', ts, newRoot, [0, min3, per5]);
     } else {
-      const newRoot = type.rootStep + 3; // Up a minor third
-      return new Chord(get12TETBaseName(newRoot), chord.tuningSystem, newRoot, [0, 4, 7]);
+      const newRoot = type.rootStep + min3; // Up a minor third
+      return new Chord(get12TETBaseName(newRoot), ts, newRoot, [0, maj3, per5]);
     }
   }
 }

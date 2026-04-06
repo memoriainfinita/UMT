@@ -1,161 +1,185 @@
 # Universal Music Theory (UMT)
 
-Una librería de teoría musical universal escrita en TypeScript, diseñada para ser matemáticamente rigurosa, modular y capaz de manejar desde armonía clásica y jazzística hasta sistemas microtonales y teoría de conjuntos.
+A standalone TypeScript music theory library covering classical and jazz harmony, microtonal tuning systems, and set theory. Compiles to a single zero-dependency JS bundle usable in any browser or Node project.
 
-## Características Principales
+## Features
 
-- **Sistemas de Afinación (Tuning Systems)**: Soporte nativo para 12-TET, 24-TET (cuartos de tono), 31-TET (meantone), Just Intonation (5-limit, Ptolemaic), Werckmeister III, Bohlen-Pierce, y afinaciones personalizadas (EDO).
-- **Parser de Archivos Scala (`.scl`)**: Importa cualquier sistema de afinación microtonal del mundo directamente desde el formato estándar Scala.
-- **Notas e Intervalos**: Cálculos de frecuencia precisos, nombres enarmónicos y distancias interválicas exactas en cents y ratios.
-- **Acordes y Voicings**: Soporte para tríadas, cuatríadas, acordes extendidos (9, 11, 13), alterados, suspendidos, y voicings avanzados (`drop2`, `drop3`, `quartal`, `rootless`).
-- **Escalas y Modos**: Diccionario extenso de escalas (mayores, menores, modos griegos, exóticas como Hirajoshi, Double Harmonic, Enigmatic) y derivación modal.
-- **Armonía Avanzada**: 
-  - Intercambio Modal y Acordes Prestados.
-  - Armonía Negativa.
-  - Sustitución Tritonal.
-  - Análisis de Cadencias y Sugerencia de Escalas.
-- **Detector de Acordes (Chord Guesser)**: Identifica el nombre de un acorde a partir de un conjunto de notas.
-- **Conducción de Voces (Voice Leading)**: 
-  - Transiciones suaves entre acordes (`smoothTransition`).
-  - **Auditor Clásico**: Detecta quintas paralelas, octavas paralelas, cruce de voces y superposición.
-- **Teoría de Conjuntos (Set Theory)**: Análisis matemático de Pitch-Class Sets (Forma Normal, Forma Prima, Vector Interválico).
-- **Ritmo y Métrica (Rhythm)**: Soporte para compases complejos, aditivos (ej. 3+2+2/8), tuplos y generación de polirritmos euclidianos.
-- **Puente Visual (ABCBridge)**: Exporta objetos de la librería a notación ABC para renderizar partituras en el navegador.
-- **Círculo de Quintas**: Navegación por armaduras de clave, relativos y dominantes.
-- **Parsers de Texto**: Interpreta cifrado americano (`Cmaj9/E`), progresiones en números romanos (`ii7 - V7/ii - subV7 - Imaj7`) y nombres de escalas (`D dorian`).
+- **Tuning systems**: 12-TET, 24-TET, 31-TET, Just Intonation (5-limit, Ptolemaic), Werckmeister III, Bohlen-Pierce, custom EDOs
+- **Scala file parser**: load any microtonal tuning from `.scl` files
+- **Notes and intervals**: frequency math, enharmonic names, cent and ratio distances
+- **Chords**: triads, seventh chords, extended (9, 11, 13), altered, suspended — voicings (`drop2`, `drop3`, `quartal`, `rootless`), inversions, slash chords
+- **Scales and modes**: major, minor, Greek modes, harmonic/melodic minor, jazz scales, exotic scales (Hirajoshi, Double Harmonic, Enigmatic...) — modal derivation
+- **Symbol parsers**: chord symbols (`Cmaj9/E`, `D-7b5`), scale symbols (`D dorian`), Roman numeral progressions (`ii7 - V7/ii - subV7 - Imaj7`) — all tuning-aware
+- **Harmony**: voice leading analysis, modal interchange, negative harmony, tritone substitution, cadence analysis, scale suggestions
+- **Chord detection**: identify a chord from a set of notes
+- **Neo-Riemannian theory**: P, L, R transformations on any tuning
+- **Set theory**: normal form, prime form, interval vector
+- **Circle of fifths**: key signatures, relatives, dominants
+- **Rhythm**: complex and additive meters (e.g. 3+2+2/8), tuplets, Euclidean polyrhythms
+- **ABC bridge**: export UMT objects to ABC notation for score rendering
 
-## Instalación
+## Installation
 
-**En el navegador (Script tag)**
-Descarga `umt.js` e inclúyelo en tu HTML. Expone el objeto global `UMT`.
+**Browser — script tag (local)**
 ```html
 <script src="umt.js"></script>
+<script>
+  const chord = UMT.parseChordSymbol('Cmaj7');
+</script>
 ```
 
-**En proyectos Node/Bundlers (ESM / TypeScript)**
-Copia la carpeta `lib/music-theory` a tu proyecto.
-```typescript
-import { Note, parseChordSymbol, TET12, Harmony, SetTheory } from './lib/music-theory';
+**Browser — CDN (jsDelivr)**
+```html
+<!-- Replace YOUR_GITHUB_USER once the repo is public -->
+<script src="https://cdn.jsdelivr.net/gh/YOUR_GITHUB_USER/universal-music-theory-library@main/public/umt.js"></script>
 ```
 
-## Ejemplos de Uso
+**TypeScript / ESM**
+```typescript
+import { Note, parseChordSymbol, TET12, Harmony } from './lib/music-theory';
+```
 
-### 1. Notas y Sistemas de Afinación
+See `public/example.html` for a complete vanilla JS usage example.
+
+## Usage
+
+### Notes and tuning systems
 
 ```typescript
-import { Note, TET12, FiveLimitJI, parseScala } from './lib/music-theory';
+import { Note, TET12, FiveLimitJI, WerckmeisterIII, parseScala } from './lib/music-theory';
 
-// Nota en 12-TET estándar (A4 = 440Hz)
-const a4 = new Note(TET12, 0); 
+const a4 = new Note(TET12, 0);
 console.log(a4.frequency); // 440
 
-// Nota en Just Intonation
-const a4_ji = new Note(FiveLimitJI, 0);
+const a4ji = new Note(FiveLimitJI, 0);
+const c4w = new Note(WerckmeisterIII, -9);
 
-// Cargar un archivo Scala (.scl)
-const pelogScl = `! pelog.scl
-!
-Javanese Pelog scale
-7
-!
-120.0
-250.0
-400.0
-550.0
-700.0
-850.0
-1000.0`;
-const pelogTuning = parseScala(pelogScl);
-const pelogNote = new Note(pelogTuning, 2);
+const scl = `! pelog.scl\nJavanese Pelog\n7\n!\n120.0\n250.0\n400.0\n550.0\n700.0\n850.0\n2/1`;
+const pelog = parseScala(scl);
+const pelogNote = new Note(pelog, 2);
 ```
 
-### 2. Acordes y Voicings
+### Chords and voicings
 
 ```typescript
-import { parseChordSymbol } from './lib/music-theory';
+import { parseChordSymbol, TET31 } from './lib/music-theory';
 
-const chord = parseChordSymbol('Cmaj9/E');
-console.log(chord.name); // "Cmaj9/E"
+const cmaj9 = parseChordSymbol('Cmaj9/E');
+const cmaj9_31 = parseChordSymbol('Cmaj9', TET31); // intervals mapped to 31-TET
 
-// Obtener notas con un voicing específico
-const drop2Notes = chord.getVoicing('drop2');
-const quartalNotes = chord.getVoicing('quartal');
+const drop2 = cmaj9.getVoicing('drop2');
+const firstInv = cmaj9.getInversion(1);
+
+const tritoneSub = parseChordSymbol('G7').getTritoneSubstitution(); // Db7
 ```
 
-### 3. Progresiones y Conducción de Voces
+### Scales and modes
 
 ```typescript
-import { parseRomanProgression, Harmony } from './lib/music-theory';
+import { parseScaleSymbol, TET24 } from './lib/music-theory';
 
-// Parsea una progresión compleja con dominantes secundarios y sustitutos tritonales
+const dDorian = parseScaleSymbol('D dorian');
+const neutral = parseScaleSymbol('C neutral scale', TET24);
+const dDorian2 = parseScaleSymbol('C major').getMode(2);
+```
+
+### Progressions and voice leading
+
+```typescript
+import { parseRomanProgression, Chord, Harmony } from './lib/music-theory';
+
 const chords = parseRomanProgression('ii7 - V7/ii - subV7 - Imaj7', 'C major');
 
-// Analizar la conducción de voces entre dos acordes
-const issues = Harmony.checkVoiceLeading(chords[0].getNotes(), chords[1].getNotes());
-if (issues.length > 0) {
-  console.log("Errores de contrapunto:", issues);
+let currentNotes = chords[0].getNotes();
+for (const chord of chords.slice(1)) {
+  currentNotes = Chord.smoothTransition(currentNotes, chord);
 }
+
+const issues = Harmony.checkVoiceLeading(chords[0].getNotes(), chords[1].getNotes());
 ```
 
-### 4. Armonía Avanzada y Negativa
+### Harmony
 
 ```typescript
 import { Harmony, parseChordSymbol } from './lib/music-theory';
 
 const g7 = parseChordSymbol('G7');
+const cmaj7 = parseChordSymbol('Cmaj7');
 
-// Armonía Negativa de G7 en C Mayor (resulta en Fm6)
-const negative = Harmony.getNegativeHarmony(g7, 'C major');
-
-// Sugerencias de escalas para improvisar sobre una cadencia
-const scales = Harmony.getSuggestedScales(g7, parseChordSymbol('Cmaj7'));
-
-// Detector de acordes
-const detected = Harmony.detectChords([noteC, noteE, noteG, noteBb]);
-console.log(detected); // ["C7"]
+const neg = Harmony.getNegativeHarmony(g7, 'C major');
+const scales = Harmony.getSuggestedScales(g7, cmaj7, 'berklee');
+const borrowed = Harmony.getBorrowedChords('C major');
+const cadence = Harmony.analyzeCadence(g7, cmaj7, 'C major');
+const detected = Harmony.detectChords([noteC, noteE, noteG, noteBb]); // ["C7"]
 ```
 
-### 5. Teoría de Conjuntos (Set Theory)
+### Neo-Riemannian transformations
+
+```typescript
+import { NeoRiemannian, parseChordSymbol } from './lib/music-theory';
+
+const cMajor = parseChordSymbol('C');
+const cMinor = NeoRiemannian.P(cMajor); // Cm
+const eMinor = NeoRiemannian.L(cMajor); // Em
+const aMinor = NeoRiemannian.R(cMajor); // Am
+```
+
+### Set theory
 
 ```typescript
 import { SetTheory } from './lib/music-theory';
 
-const pitchClasses = [0, 4, 7]; // Acorde Mayor (C E G)
-
-const normalForm = SetTheory.normalForm(pitchClasses); // [0, 4, 7]
-const primeForm = SetTheory.primeForm(pitchClasses);   // [0, 3, 7]
-const intervalVector = SetTheory.intervalVector(pitchClasses); // [0, 0, 1, 1, 1, 0]
+const pcs = [0, 4, 7];
+SetTheory.normalForm(pcs);     // [0, 4, 7]
+SetTheory.primeForm(pcs);      // [0, 3, 7]
+SetTheory.intervalVector(pcs); // [0, 0, 1, 1, 1, 0]
 ```
 
-## Arquitectura
+## Architecture
 
-La librería está dividida en módulos independientes y fuertemente tipados:
+All source is in `lib/music-theory/`.
 
-- `tuning.ts`: Interfaces base para sistemas de afinación.
-- `scala.ts`: Parser de archivos `.scl`.
-- `note.ts`: Representación de frecuencias y nombres.
-- `interval.ts`: Matemáticas de intervalos (ratios y cents).
-- `chord.ts` / `scale.ts`: Estructuras musicales.
-- `harmony.ts`: Análisis funcional, conducción de voces y armonía negativa.
-- `set-theory.ts`: Análisis matemático de conjuntos.
-- `rhythm.ts`: Duraciones, compases aditivos y polirritmos euclidianos.
-- `abc-bridge.ts`: Puente para exportar a notación ABC.
-- `parser.ts`: Intérpretes de strings (cifrado, números romanos).
-- `dictionaries.ts`: Fórmulas de acordes y patrones de escalas.
-- `circle.ts`: Círculo de quintas.
+| File | Responsibility |
+|------|---------------|
+| `types.ts` | Base types: `Cents`, `Hertz`, `Ratio` |
+| `interval.ts` | Interval math (cents, ratios) |
+| `tuning.ts` | `TuningSystem` abstract class + `EDO`, `JustIntonation`, `CentTuning`, `NonOctaveTuning` |
+| `note.ts` | `Note` — frequency, name, transposition |
+| `scale.ts` | `Scale` — modes, transposition |
+| `chord.ts` | `Chord` — voicings, inversions, voice leading, tritone sub |
+| `parser.ts` | `parseChordSymbol`, `parseScaleSymbol`, `parseNote`, `parseRomanProgression` |
+| `dictionaries.ts` | `CHORD_FORMULAS` and `SCALE_PATTERNS` lookup tables |
+| `presets.ts` | Ready-to-use tuning systems, scales, chords |
+| `harmony.ts` | `Harmony` — voice leading, chord detection, negative harmony, cadences |
+| `circle.ts` | `CircleOfFifths` |
+| `set-theory.ts` | `SetTheory` — normal/prime form, interval vector |
+| `neo-riemannian.ts` | `NeoRiemannian` — P, L, R transformations |
+| `key-detection.ts` | Krumhansl-Schmuckler key detection algorithm |
+| `scala.ts` | Scala `.scl` file parser |
+| `rhythm.ts` | `Duration`, `TimeSignature`, `Polyrhythm`, Euclidean rhythms |
+| `stream.ts` | `MusicStream` event container |
+| `abc-bridge.ts` | Export UMT objects to ABC notation |
+| `utils.ts` | Note naming, MIDI conversion, interval naming |
+| `index.ts` | Re-exports everything |
+| `umt.ts` | IIFE entry point — attaches `UMT` to `window` |
 
-## Construcción (Build)
+### Coordinate system
 
-Para compilar el archivo minificado `umt.js` desde el código fuente TypeScript:
+All pitch positions are **steps from A4 = 0** within a `TuningSystem`. A4 = 440Hz = step 0. C4 = −9 in 12-TET.
+
+### Parser tuning parameter
+
+`parseChordSymbol`, `parseScaleSymbol`, and `parseRomanProgression` accept an optional `TuningSystem` parameter (default: `TET12`). Interval values from the dictionaries are mapped to the target tuning via `TuningSystem.getStepFromStandard()`.
+
+## Build
 
 ```bash
 npm install
-npm run build:umt
+npm run build:umt   # compiles lib/music-theory/umt.ts → public/umt.js (~29KB minified)
 ```
-El archivo compilado se generará en `public/umt.js`.
 
-## Licencia
+## License
 
-Este proyecto está licenciado bajo la **GNU General Public License v3.0 (GPL-3.0)**. 
+GNU General Public License v3.0 (GPL-3.0).
 
-*Nota del autor: Esta librería se ha construido con una filosofía 100% Open Source, creada para la humanidad y no para el lucro corporativo. La licencia GPL garantiza que cualquier software que utilice esta librería deba permanecer también libre y abierto, protegiendo el conocimiento musical colectivo.* Consulta el archivo `LICENSE` para más detalles.
+This library was built with a 100% open source philosophy — created for people, not for corporate profit. The GPL license ensures that any software using this library must also remain free and open, protecting collective musical knowledge. See `LICENSE` for details.

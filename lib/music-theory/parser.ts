@@ -1,5 +1,6 @@
 import { CHORD_FORMULAS, SCALE_PATTERNS } from './dictionaries';
 import { TET12 } from './presets';
+import { TuningSystem } from './tuning';
 import { Chord } from './chord';
 import { Scale } from './scale';
 import { Note } from './note';
@@ -65,46 +66,50 @@ export function parseNoteToStep12TET(noteName: string, octave: number = 4): numb
 
 /**
  * Parses a standard chord symbol (e.g., "C#maj7", "D-7b5", "C/E") into a Chord object.
+ * @param tuning Target tuning system. Intervals from CHORD_FORMULAS are mapped via getStepFromStandard.
  */
-export function parseChordSymbol(symbol: string, octave: number = 4): Chord {
+export function parseChordSymbol(symbol: string, tuning: TuningSystem = TET12, octave: number = 4): Chord {
   // Check for slash chord
   const [mainSymbol, bassSymbol] = symbol.split('/');
-  
+
   // Extract root note and chord type
   const match = mainSymbol.match(/^([A-G][#b]*)(.*)$/);
   if (!match) throw new Error(`Invalid chord symbol: ${mainSymbol}`);
-  
+
   const [, rootName, typeRaw] = match;
   const type = normalizeSuffix(typeRaw.trim());
 
-  const intervals = CHORD_FORMULAS[type];
-  if (!intervals) throw new Error(`Unknown chord type: ${type}`);
-  
-  const rootStep = parseNoteToStep12TET(rootName, octave);
-  
+  const intervals12TET = CHORD_FORMULAS[type];
+  if (!intervals12TET) throw new Error(`Unknown chord type: ${type}`);
+
+  const intervals = intervals12TET.map(s => tuning.getStepFromStandard(s));
+  const rootStep = tuning.getStepFromStandard(parseNoteToStep12TET(rootName, octave));
+
   let bassStep: number | undefined = undefined;
   if (bassSymbol) {
-    bassStep = parseNoteToStep12TET(bassSymbol, octave);
+    bassStep = tuning.getStepFromStandard(parseNoteToStep12TET(bassSymbol, octave));
   }
-  
-  return new Chord(symbol, TET12, rootStep, intervals, bassStep);
+
+  return new Chord(symbol, tuning, rootStep, intervals, bassStep);
 }
 
 /**
  * Parses a scale symbol (e.g., "C# dorian", "Bb harmonic minor") into a Scale object.
+ * @param tuning Target tuning system. Pattern steps are mapped via getStepFromStandard.
  */
-export function parseScaleSymbol(symbol: string, octave: number = 4): Scale {
+export function parseScaleSymbol(symbol: string, tuning: TuningSystem = TET12, octave: number = 4): Scale {
   const match = symbol.match(/^([A-G][#b]*)\s+(.*)$/i);
   if (!match) throw new Error(`Invalid scale symbol: ${symbol}`);
-  
+
   const [, rootName, typeRaw] = match;
   const type = typeRaw.trim().toLowerCase();
-  
-  const pattern = SCALE_PATTERNS[type];
-  if (!pattern) throw new Error(`Unknown scale type: ${type}`);
-  
-  const rootStep = parseNoteToStep12TET(rootName, octave);
-  return new Scale(symbol, TET12, rootStep, pattern);
+
+  const pattern12TET = SCALE_PATTERNS[type];
+  if (!pattern12TET) throw new Error(`Unknown scale type: ${type}`);
+
+  const pattern = pattern12TET.map(s => tuning.getStepFromStandard(s));
+  const rootStep = tuning.getStepFromStandard(parseNoteToStep12TET(rootName, octave));
+  return new Scale(symbol, tuning, rootStep, pattern);
 }
 
 /**
@@ -128,9 +133,10 @@ const ROMAN_VALUES: Record<string, number> = {
 /**
  * Parses a Roman Numeral progression in a given key.
  * Example: parseRomanProgression("ii7 - V7/ii - subV7 - Imaj7", "C major")
+ * @param tuning Target tuning system. All resulting Chord objects will use this tuning.
  */
-export function parseRomanProgression(progression: string, keySymbol: string, octave: number = 4): Chord[] {
-  const keyScale = parseScaleSymbol(keySymbol, octave);
+export function parseRomanProgression(progression: string, keySymbol: string, tuning: TuningSystem = TET12, octave: number = 4): Chord[] {
+  const keyScale = parseScaleSymbol(keySymbol, tuning, octave);
   const scaleNotes = keyScale.getNotes(2); // Get 2 octaves to be safe
   
   const tokens = progression.split(/[\s-]+/).filter(t => t.length > 0);
@@ -156,32 +162,33 @@ export function parseRomanProgression(progression: string, keySymbol: string, oc
       const targetRootName = get12TETBaseName(targetRootStep);
       // Determine if target is minor based on roman numeral casing
       const isTargetMinor = tRom === tRom.toLowerCase();
-      const tempKeyScale = parseScaleSymbol(`${targetRootName} ${isTargetMinor ? 'minor' : 'major'}`, octave);
+      const tempKeyScale = parseScaleSymbol(`${targetRootName} ${isTargetMinor ? 'minor' : 'major'}`, tuning, octave);
       const tempScaleNotes = tempKeyScale.getNotes(2);
-      
+
       // 3. Parse the applied roman numeral in that temporary key
       const appliedMatch = appliedRoman.match(/^(sub)?([b#]?)(IV|III|II|I|VII|VI|V|iv|iii|ii|i|vii|vi|v)(.*)$/i);
       if (!appliedMatch) throw new Error(`Invalid applied Roman numeral: ${appliedRoman}`);
-      
+
       const [, isSub, aAcc, aRom, aSuffixRaw] = appliedMatch;
       const aDegree = ROMAN_VALUES[aRom.toLowerCase()];
       const isMinor = aRom === aRom.toLowerCase();
       const aSuffix = inferRomanSuffix(aSuffixRaw, isMinor, aDegree);
 
-      const intervals = CHORD_FORMULAS[aSuffix] || CHORD_FORMULAS['M'];
-      
+      const intervals12TET = CHORD_FORMULAS[aSuffix] || CHORD_FORMULAS['M'];
+      const intervals = intervals12TET.map(s => tuning.getStepFromStandard(s));
+
       let rootStep = tempScaleNotes[aDegree - 1].stepsFromBase;
-      if (aAcc === 'b') rootStep -= 1;
-      if (aAcc === '#') rootStep += 1;
-      
+      if (aAcc === 'b') rootStep -= tuning.getStepFromStandard(1);
+      if (aAcc === '#') rootStep += tuning.getStepFromStandard(1);
+
       if (isSub) {
-        rootStep += 6; // Tritone substitution
+        rootStep += tuning.getStepFromStandard(6); // Tritone substitution
       }
-      
+
       const rootName = get12TETBaseName(rootStep, true);
       const chordName = `${rootName}${aSuffixRaw}`;
-      
-      return new Chord(chordName, TET12, rootStep, intervals);
+
+      return new Chord(chordName, tuning, rootStep, intervals);
     }
     
     // Normal parsing
@@ -195,22 +202,23 @@ export function parseRomanProgression(progression: string, keySymbol: string, oc
     const isMinor = roman === roman.toLowerCase();
     const suffix = inferRomanSuffix(suffixRaw, isMinor, degree);
 
-    const intervals = CHORD_FORMULAS[suffix] || CHORD_FORMULAS['M'];
-    
+    const intervals12TET = CHORD_FORMULAS[suffix] || CHORD_FORMULAS['M'];
+    const intervals = intervals12TET.map(s => tuning.getStepFromStandard(s));
+
     // Calculate root step
     let rootStep = scaleNotes[degree - 1].stepsFromBase;
-    if (accidental === 'b') rootStep -= 1;
-    if (accidental === '#') rootStep += 1;
-    
+    if (accidental === 'b') rootStep -= tuning.getStepFromStandard(1);
+    if (accidental === '#') rootStep += tuning.getStepFromStandard(1);
+
     if (isSub) {
-      rootStep += 6; // Tritone substitution
+      rootStep += tuning.getStepFromStandard(6); // Tritone substitution
     }
-    
+
     // Create a readable chord name like "Gmaj7"
     const preferFlats = !!isSub || accidental === 'b';
     const rootName = get12TETBaseName(rootStep, preferFlats);
     const chordName = `${rootName}${suffixRaw}`;
-    
-    return new Chord(chordName, TET12, rootStep, intervals);
+
+    return new Chord(chordName, tuning, rootStep, intervals);
   });
 }
