@@ -61,10 +61,35 @@ Revisión desde cero del proyecto generado por Gemini. Correcciones aplicadas:
 - Probar en profundidad todas las secciones de la demo (voice leading, Neo-Riemannian, Set Theory, Scala parser)
 - Revisar si `WerckmeisterIII` y otras afinaciones históricas suenan bien en la demo
 
+## History
+
+### 2026-04-06 — Auditoría y hardening completo (sesión 2)
+
+Revisión profunda de toda la librería. Commit: `5a83a01`.
+
+**Bugs corregidos:**
+- `harmony.ts` — `'Acorde Desconocido'` → `'Unknown Chord'` en `getNegativeHarmony` (fallback nunca se ejecutaba)
+- `harmony.ts` — mensajes de voice leading traducidos al inglés
+- `abc-bridge.ts` — barlines usaban `>= 4` hardcodeado; ahora usa `stream.timeSignature.totalBeats`
+- `page.tsx` — `.split(' ')` → `.split(/\s+/)` en sección PLR
+- `page.tsx` — label `"0=C"` corregido a `"0=A"` (sistema de coordenadas A=0)
+
+**Limpieza:**
+- `parser.ts` — extraído `normalizeSuffix()` e `inferRomanSuffix()`, eliminada duplicación de shorthands
+- `rhythm.ts` — eliminada clase muerta `RhythmEvent`
+- `utils.ts` — añadido `get12TETBaseName()`, sustituye 16x `.replace(/\d+/, '')` en toda la librería
+
+**Mejoras de API:**
+- `harmony.ts` — `getSuggestedScales` devuelve `{scale: string; hint?: string}[]` con nombres parseables por `parseScaleSymbol`
+- `set-theory.ts` — añadido `getPitchClassesC0()` normalizado a C=0 (convención estándar)
+
+**Robustez teórica:**
+- `harmony.ts` — `analyzeCadence` detecta dominantes por `intervalsInSteps`, no por nombre de acorde
+- `chord.ts` — `getTritoneSubstitution` devuelve `null` fuera de 12-TET
+- `harmony.ts` — `getBorrowedChords` añade préstamo desde Dorian y amplía sección menor con más opciones
+
 ## TODO
 
-- [ ] Ejecutar `npm install` para limpiar package-lock.json
-- [ ] Test completo de la demo en navegador
-- [ ] Verificar que `umt.js` en `public/` está actualizado (`npm run build:umt`)
+- [ ] Test completo de la demo en navegador (probar todas las secciones)
 - [ ] Decidir si `public/umt.js` debe ir en `.gitignore` (es artifact de build)
 - [ ] Considerar añadir tests unitarios para los módulos core
