@@ -72,14 +72,6 @@ export class TimeSignature {
   static Balkan9 = new TimeSignature([2, 2, 2, 3], 8); // 2+2+2+3 / 8
 }
 
-export class RhythmEvent {
-  constructor(
-    public duration: Duration,
-    public isRest: boolean = false,
-    public tiedToNext: boolean = false
-  ) {}
-}
-
 export class Polyrhythm {
   /**
    * Generates a polyrhythm between multiple voices.

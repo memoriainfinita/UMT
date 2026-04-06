@@ -77,7 +77,7 @@ export class ABCBridge {
 
   /**
    * Converts a MusicStream to an ABC notation string.
-   * Currently assumes 4/4 time and maps durations to ABC lengths.
+   * Barlines are placed according to stream.timeSignature.totalBeats.
    */
   static streamToABC(stream: MusicStream): string {
     let abcString = '';
@@ -101,7 +101,7 @@ export class ABCBridge {
       abcString += `${chordStr}${durationStr} `;
       
       currentMeasureBeats += event.duration;
-      if (currentMeasureBeats >= 4) {
+      if (currentMeasureBeats >= stream.timeSignature.totalBeats) {
         abcString += '| ';
         currentMeasureBeats = 0;
       }

@@ -1,5 +1,6 @@
 import { TuningSystem } from './tuning';
 import { Note } from './note';
+import { get12TETBaseName } from './utils';
 
 export class Chord {
   constructor(
@@ -130,15 +131,16 @@ export class Chord {
   /**
    * Returns the tritone substitution of this chord.
    * Typically applied to dominant 7th chords (e.g., G7 -> Db7).
+   * NOTE: Only meaningful in 12-TET (tritone = 6 semitones). Returns null for other tuning systems.
    */
-  getTritoneSubstitution(): Chord {
+  getTritoneSubstitution(): Chord | null {
+    if (this.tuningSystem.octaveSteps !== 12) return null;
     // Transpose root by 6 semitones (tritone)
     const tritoneRootStep = this.rootStep + 6;
-    const tritoneRootNote = new Note(this.tuningSystem, tritoneRootStep);
     
     // Create new name. E.g., if G7, new name is Db7.
     // We prefer flats for tritone subs usually (e.g., Db7 instead of C#7)
-    const newRootName = tritoneRootNote.getName({ preferFlats: true }).replace(/\d+/, '');
+    const newRootName = get12TETBaseName(tritoneRootStep, true);
     
     // Extract the suffix from the current name (e.g., "G7b9" -> "7b9")
     const match = this.name.match(/^[A-G][#b]*(.*)$/);

@@ -1,5 +1,5 @@
 import { Chord } from './chord';
-import { get12TETName } from './utils';
+import { get12TETBaseName } from './utils';
 
 /**
  * Neo-Riemannian Theory Module
@@ -37,7 +37,7 @@ export class NeoRiemannian {
     const type = this.getTriadType(chord);
     if (!type) return null;
 
-    const rootName = get12TETName(type.rootStep).replace(/\d+$/, '');
+    const rootName = get12TETBaseName(type.rootStep);
     const name = rootName + (type.isMajor ? 'm' : '');
     return new Chord(name, chord.tuningSystem, type.rootStep, type.isMajor ? [0, 3, 7] : [0, 4, 7]);
   }
@@ -53,10 +53,10 @@ export class NeoRiemannian {
     
     if (type.isMajor) {
       const newRoot = type.rootStep + 4; // Up a major third
-      return new Chord(get12TETName(newRoot).replace(/\d+$/, '') + 'm', chord.tuningSystem, newRoot, [0, 3, 7]);
+      return new Chord(get12TETBaseName(newRoot) + 'm', chord.tuningSystem, newRoot, [0, 3, 7]);
     } else {
       const newRoot = type.rootStep - 4; // Down a major third
-      return new Chord(get12TETName(newRoot).replace(/\d+$/, ''), chord.tuningSystem, newRoot, [0, 4, 7]);
+      return new Chord(get12TETBaseName(newRoot), chord.tuningSystem, newRoot, [0, 4, 7]);
     }
   }
 
@@ -71,10 +71,10 @@ export class NeoRiemannian {
     
     if (type.isMajor) {
       const newRoot = type.rootStep - 3; // Down a minor third
-      return new Chord(get12TETName(newRoot).replace(/\d+$/, '') + 'm', chord.tuningSystem, newRoot, [0, 3, 7]);
+      return new Chord(get12TETBaseName(newRoot) + 'm', chord.tuningSystem, newRoot, [0, 3, 7]);
     } else {
       const newRoot = type.rootStep + 3; // Up a minor third
-      return new Chord(get12TETName(newRoot).replace(/\d+$/, ''), chord.tuningSystem, newRoot, [0, 4, 7]);
+      return new Chord(get12TETBaseName(newRoot), chord.tuningSystem, newRoot, [0, 4, 7]);
     }
   }
 }

@@ -8,6 +8,13 @@ export function get12TETName(stepsFromA4: number, preferFlats: boolean = false):
   return `${names[normalizedStep]}${octave}`;
 }
 
+/** Returns just the note letter+accidental without octave number (e.g. "C#", "Bb"). */
+export function get12TETBaseName(stepsFromA4: number, preferFlats: boolean = false): string {
+  const normalizedStep = ((stepsFromA4 % 12) + 12) % 12;
+  const names = preferFlats ? NOTE_NAMES_12TET_FLAT : NOTE_NAMES_12TET_SHARP;
+  return names[normalizedStep];
+}
+
 export function getEnharmonics(noteName: string): string[] {
   const enharmonicsMap: Record<string, string[]> = {
     'C#': ['Db', 'Bx'], 'Db': ['C#'],
