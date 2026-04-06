@@ -1,5 +1,5 @@
 import { Note } from './note';
-import { get12TETName } from './utils';
+import { get12TETBaseName } from './utils';
 
 /**
  * Key Detection Module
@@ -28,7 +28,7 @@ export class KeyDetection {
     const results: { key: string, confidence: number }[] = [];
 
     for (let i = 0; i < 12; i++) {
-      const noteName = get12TETName(i).replace(/\d+$/, '');
+      const noteName = get12TETBaseName(i);
 
       // Major
       const rMaj = this.pearsonCorrelation(histogram, this.shiftProfile(this.majorProfile, i));

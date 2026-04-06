@@ -3,10 +3,21 @@ import { Note } from './note';
 export class SetTheory {
   /**
    * Extracts unique pitch classes from an array of notes (assuming 12-TET).
-   * Returns an array of integers 0-11 sorted ascending.
+   * Returns integers 0-11 where 0 = A (the library's coordinate origin).
+   * For standard set-theory notation (0 = C), use getPitchClassesC0.
    */
   static getPitchClasses(notes: Note[]): number[] {
     const pcs = notes.map(n => ((n.stepsFromBase % 12) + 12) % 12);
+    return Array.from(new Set(pcs)).sort((a, b) => a - b);
+  }
+
+  /**
+   * Like getPitchClasses, but normalized to C = 0 (standard set-theory convention).
+   * C=0, C#=1, D=2, ..., B=11.
+   */
+  static getPitchClassesC0(notes: Note[]): number[] {
+    // A=0 in our system, C is 3 semitones above A, so shift by +3 to align C to 0.
+    const pcs = notes.map(n => ((n.stepsFromBase + 3) % 12 + 12) % 12);
     return Array.from(new Set(pcs)).sort((a, b) => a - b);
   }
 

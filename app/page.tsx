@@ -997,12 +997,14 @@ Javanese Pelog scale
                           <div className="pt-2 border-t border-neutral-800/50">
                             <div className="text-xs text-neutral-500 mb-1">Escalas Sugeridas para {c1.name}</div>
                             <ul className="list-disc list-inside text-white font-medium text-sm">
-                              {scales.map((s, i) => <li key={i}>{s}</li>)}
+                              {scales.map((s, i) => (
+                                <li key={i}>{s.scale}{s.hint ? <span className="text-neutral-400 font-normal ml-1">({s.hint})</span> : null}</li>
+                              ))}
                             </ul>
                           </div>
                           <div className="pt-2 border-t border-neutral-800/50">
                             <div className="text-xs text-neutral-500 mb-1">Sustitución Tritonal de {c1.name}</div>
-                            <div className="text-white font-medium">{subV.name}</div>
+                            <div className="text-white font-medium">{subV ? subV.name : 'N/A (solo 12-TET)'}</div>
                           </div>
                         </>
                       );
@@ -1144,7 +1146,7 @@ Javanese Pelog scale
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <div className="text-xs text-neutral-500 mb-1">Pitch Classes (0=C)</div>
+                          <div className="text-xs text-neutral-500 mb-1">Pitch Classes (0=A)</div>
                           <div className="text-white font-mono bg-black/50 px-2 py-1 rounded inline-block">
                             {`{${pcs.join(', ')}}`}
                           </div>
@@ -1199,7 +1201,7 @@ Javanese Pelog scale
             <div className="bg-neutral-950 rounded-lg p-4 border border-neutral-800/50 space-y-4">
               {(() => {
                 try {
-                  const notesStr = detectorInput.split(' ').filter(n => n.trim() !== '');
+                  const notesStr = detectorInput.split(/\s+/).filter(n => n.trim() !== '');
                   if (notesStr.length === 0) return <div className="text-neutral-500 text-sm">Introduce un acorde mayor o menor arriba (ej. C E G).</div>;
                   
                   const notes = notesStr.map(n => parseNote(n));
