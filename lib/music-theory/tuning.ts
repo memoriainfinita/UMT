@@ -136,13 +136,29 @@ export class JustIntonation extends TuningSystem {
   }
 
   /**
-   * Maps a 12-TET step to this JI tuning's nearest step index.
-   * Only correct when this tuning has exactly 12 pitch classes per octave.
-   * For other sizes the mapping is approximate (nearest proportional step).
+   * Maps a 12-TET step to this JI tuning's nearest step index by cents proximity.
+   * For 12-pitch-class JI the mapping is exact (identity).
+   * For other sizes, each 12-TET semitone maps to the JI pitch class closest in cents
+   * (100¢ per semitone approximation). If the JI scale lacks a chromatic pitch class
+   * (e.g. a diatonic 7-note scale), adjacent semitones may collapse to the same step.
    */
   getStepFromStandard(standardStep: number): number {
     if (this.intervals.length === 12) return standardStep;
-    return Math.round((standardStep * this.intervals.length) / 12);
+
+    const octaves = Math.floor(standardStep / 12);
+    const pc12 = ((standardStep % 12) + 12) % 12;
+    const targetCents = pc12 * 100;
+
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < this.intervals.length; i++) {
+      const dist = Math.abs(this.intervals[i].cents - targetCents);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = i;
+      }
+    }
+    return bestIdx + octaves * this.intervals.length;
   }
 }
 

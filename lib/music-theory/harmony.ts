@@ -144,6 +144,7 @@ export class Harmony {
    * For a major key, it typically borrows from parallel minor (Aeolian), Dorian, Mixolydian, etc.
    */
   static getBorrowedChords(keySymbol: string, tuning: TuningSystem = TET12): Chord[] {
+    if (tuning.octaveSteps !== 12) return [];
     const match = keySymbol.match(/^([A-G][#b]*)\s+(.*)$/i);
     if (!match) return [];
     const [, rootName, type] = match;
@@ -297,12 +298,12 @@ export class Harmony {
       const suggestions = [s(`${root} mixolydian`, 'standard V')];
 
       if (nextChord) {
-        const r1 = chord.rootStep % 12;
-        const r2 = nextChord.rootStep % 12;
-        const distance = ((r2 - r1) + 12) % 12;
+        const r1 = chord.rootStep % oct;
+        const r2 = nextChord.rootStep % oct;
+        const distance = ((r2 - r1) + oct) % oct;
 
         if (distance === 5) {
-          const isNextMinor = nextChord.name.includes('m');
+          const isNextMinor = !!nextChord.name.match(/^[A-G][#b]*m(?!aj)/);
           if (isNextMinor) {
             suggestions.push(s(`${root} altered`));
             suggestions.push(s(`${root} half-whole diminished`, 'Mixolydian b9 b13 approximation'));

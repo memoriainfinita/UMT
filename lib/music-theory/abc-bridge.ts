@@ -3,6 +3,26 @@ import { Chord } from './chord';
 import { Scale } from './scale';
 import { MusicStream } from './rhythm';
 
+/** Converts a beat duration to an ABC notation suffix. Assumes header `L:1/4`. */
+function beatsToABCDuration(beats: number): string {
+  if (beats === 1)     return '';
+  if (beats === 2)     return '2';
+  if (beats === 3)     return '3';
+  if (beats === 4)     return '4';
+  if (beats === 0.5)   return '/2';
+  if (beats === 0.25)  return '/4';
+  if (beats === 0.125) return '/8';
+  if (beats === 1.5)   return '3/2';
+  if (beats === 0.75)  return '3/4';
+  if (beats === 0.375) return '3/8';
+  // Generic fallback: express as reduced fraction of quarter notes
+  const num = Math.round(beats * 8);
+  const den = 8;
+  const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
+  const g = gcd(num, den);
+  return g === den ? `${num / g}` : `${num / g}/${den / g}`;
+}
+
 /**
  * Bridge between Universal Music Theory and ABC Notation.
  * Converts UMT objects to ABC strings for visual rendering.
@@ -19,7 +39,7 @@ export class ABCBridge {
     // Use the note's own name to preserve sharp/flat preference; getName() defaults to sharps.
     const name = note.getName();
     const match = name.match(/^([A-G])([#b]*)(\d+)$/);
-    if (!match) return 'C'; // Fallback
+    if (!match) throw new Error(`ABCBridge.noteToABC: note "${name}" cannot be represented in ABC notation. ABCBridge only supports 12-TET notes.`);
 
     const base = match[1];
     const accidental = match[2];
@@ -87,12 +107,7 @@ export class ABCBridge {
       // 1 beat = 1/4 note = "1" in ABC (or just the note)
       // 0.5 beat = 1/8 note = "/2"
       // 2 beats = 1/2 note = "2"
-      let durationStr = '';
-      if (event.duration === 0.5) durationStr = '/2';
-      else if (event.duration === 0.25) durationStr = '/4';
-      else if (event.duration === 2) durationStr = '2';
-      else if (event.duration === 4) durationStr = '4';
-      else if (event.duration !== 1) durationStr = event.duration.toString();
+      const durationStr = beatsToABCDuration(event.duration);
 
       const abcNotes = event.notes.map((n: Note) => this.noteToABC(n));
       const chordStr = abcNotes.length > 1 ? `[${abcNotes.join('')}]` : abcNotes[0];
