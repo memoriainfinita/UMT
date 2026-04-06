@@ -98,7 +98,7 @@ Javanese Pelog scale
 
   const parsedChordData = useMemo(() => {
     try {
-      let chord = parseChordSymbol(chordInput, 4);
+      let chord = parseChordSymbol(chordInput);
       if (chordTranspose !== 0) {
         chord = chord.transpose(chordTranspose);
       }
@@ -119,7 +119,7 @@ Javanese Pelog scale
 
   const parsedProgression = useMemo(() => {
     try {
-      const chords = parseRomanProgression(progressionInput, progressionKey, 4);
+      const chords = parseRomanProgression(progressionInput, progressionKey);
       
       // Apply Voice Leading!
       const voiceLedProgression: Note[][] = [];
@@ -139,7 +139,7 @@ Javanese Pelog scale
 
   const parsedScaleData = useMemo(() => {
     try {
-      const scale = parseScaleSymbol(scaleInput, 4);
+      const scale = parseScaleSymbol(scaleInput);
       if (scaleMode !== 1) {
         const modeScale = scale.getMode(scaleMode);
         return { notes: modeScale.getNotes(1), rootStep: modeScale.rootStep };
@@ -499,7 +499,7 @@ Javanese Pelog scale
                 <div className="bg-white/5 rounded-xl p-4 border border-white/10">
                   <SheetMusic 
                     abcNotation={ABCBridge.wrapInHeaders(
-                      ABCBridge.scaleToABC(parseScaleSymbol(scaleInput, 4).getMode(scaleMode)),
+                      ABCBridge.scaleToABC(parseScaleSymbol(scaleInput).getMode(scaleMode)),
                       `${scaleInput} (Modo ${scaleMode})`,
                       '4/4',
                       scaleInput.split(' ')[0] || 'C'

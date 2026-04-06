@@ -3,6 +3,8 @@ import { parseScaleSymbol, parseChordSymbol, parseNoteToStep12TET } from './pars
 import { get12TETName, get12TETBaseName } from './utils';
 import { CHORD_FORMULAS } from './dictionaries';
 import { Note } from './note';
+import { TuningSystem } from './tuning';
+import { TET12 } from './presets';
 
 export interface VoiceLeadingIssue {
   type: 'Parallel 5th' | 'Parallel Octave' | 'Voice Crossing' | 'Voice Overlap';
@@ -20,15 +22,17 @@ export class Harmony {
     const issues: VoiceLeadingIssue[] = [];
     const len = Math.min(chordA.length, chordB.length);
     
+    const oct = chordA[0]?.tuningSystem.octaveSteps ?? 12;
+    const p5 = chordA[0]?.tuningSystem.getStepFromStandard(7) ?? 7;
     for (let i = 0; i < len; i++) {
       for (let j = i + 1; j < len; j++) {
         const stepsA = chordA[j].stepsFromBase - chordA[i].stepsFromBase;
         const stepsB = chordB[j].stepsFromBase - chordB[i].stepsFromBase;
-        
-        const is5thA = Math.abs(stepsA) % 12 === 7;
-        const is5thB = Math.abs(stepsB) % 12 === 7;
-        const is8veA = Math.abs(stepsA) % 12 === 0 && stepsA !== 0;
-        const is8veB = Math.abs(stepsB) % 12 === 0 && stepsB !== 0;
+
+        const is5thA = Math.abs(stepsA) % oct === p5;
+        const is5thB = Math.abs(stepsB) % oct === p5;
+        const is8veA = Math.abs(stepsA) % oct === 0 && stepsA !== 0;
+        const is8veB = Math.abs(stepsB) % oct === 0 && stepsB !== 0;
 
         const voiceIMoved = chordA[i].stepsFromBase !== chordB[i].stepsFromBase;
         const voiceJMoved = chordA[j].stepsFromBase !== chordB[j].stepsFromBase;
@@ -64,6 +68,9 @@ export class Harmony {
   static detectChords(notes: Note[]): string[] {
     if (notes.length === 0) return [];
     const octave = notes[0].tuningSystem.octaveSteps;
+
+    // Chord detection against CHORD_FORMULAS (12-TET semitone values) only makes sense in 12-TET
+    if (octave !== 12) return ['Unknown Chord'];
 
     // Get unique pitch classes
     const pitchClasses = Array.from(new Set(notes.map(n => ((n.stepsFromBase % octave) + octave) % octave)));
@@ -106,12 +113,14 @@ export class Harmony {
   static getNegativeHarmony(chord: Chord, keyCenter: string): Chord {
     const match = keyCenter.match(/^([A-G][#b]*)/i);
     const keyRootName = match ? match[1] : 'C';
-    const keyRootStep = parseNoteToStep12TET(keyRootName, 4);
+    const ts = chord.tuningSystem;
+    // Convert key root to the chord's tuning coordinate space
+    const keyRootStep = ts.getStepFromStandard(parseNoteToStep12TET(keyRootName, 4));
 
     // In negative harmony, the axis of inversion is the perfect fifth of the key.
-    // For C major, axis is between Eb and E. The sum of inverted pairs is always 7 (relative to root).
-    // Absolute axis sum = (keyRootStep * 2) + 7.
-    const axisSum = (keyRootStep * 2) + 7;
+    // For C major, axis is between Eb and E. The sum of inverted pairs is always P5 (relative to root).
+    // Absolute axis sum = (keyRootStep * 2) + P5.
+    const axisSum = (keyRootStep * 2) + ts.getStepFromStandard(7);
 
     const negativeSteps = chord.intervalsInSteps.map(interval => {
       const absoluteStep = chord.rootStep + interval;
@@ -134,17 +143,17 @@ export class Harmony {
    * Returns a list of borrowed chords from parallel modes (Modal Interchange).
    * For a major key, it typically borrows from parallel minor (Aeolian), Dorian, Mixolydian, etc.
    */
-  static getBorrowedChords(keySymbol: string): Chord[] {
+  static getBorrowedChords(keySymbol: string, tuning: TuningSystem = TET12): Chord[] {
     const match = keySymbol.match(/^([A-G][#b]*)\s+(.*)$/i);
     if (!match) return [];
     const [, rootName, type] = match;
     const isMajor = type.toLowerCase().includes('major') || type.toLowerCase().includes('ionian');
-    
+
     const borrowedChords: Chord[] = [];
-    
+
     if (isMajor) {
       // --- From parallel Aeolian (natural minor) ---
-      const minorScale = parseScaleSymbol(`${rootName} minor`);
+      const minorScale = parseScaleSymbol(`${rootName} minor`, tuning);
       const minorNotes = minorScale.getNotes(1);
       const b3 = get12TETBaseName(minorNotes[2].stepsFromBase, true);
       const b6 = get12TETBaseName(minorNotes[5].stepsFromBase, true);
@@ -153,33 +162,32 @@ export class Harmony {
       const p5 = get12TETBaseName(minorNotes[4].stepsFromBase, true);
       const p2 = get12TETBaseName(minorNotes[1].stepsFromBase, true);
 
-      borrowedChords.push(parseChordSymbol(`${rootName}m7`));  // i m7   (Aeolian)
-      borrowedChords.push(parseChordSymbol(`${p2}m7b5`));      // ii∅7   (Aeolian)
-      borrowedChords.push(parseChordSymbol(`${b3}maj7`));      // bIII△  (Aeolian)
-      borrowedChords.push(parseChordSymbol(`${p4}m7`));        // iv m7  (Aeolian)
-      borrowedChords.push(parseChordSymbol(`${p5}m7`));        // v m7   (Aeolian)
-      borrowedChords.push(parseChordSymbol(`${b6}maj7`));      // bVI△   (Aeolian)
-      borrowedChords.push(parseChordSymbol(`${b7}7`));         // bVII7  (Backdoor dominant — Aeolian/Mixolydian)
+      borrowedChords.push(parseChordSymbol(`${rootName}m7`, tuning));  // i m7   (Aeolian)
+      borrowedChords.push(parseChordSymbol(`${p2}m7b5`, tuning));      // ii∅7   (Aeolian)
+      borrowedChords.push(parseChordSymbol(`${b3}maj7`, tuning));      // bIII△  (Aeolian)
+      borrowedChords.push(parseChordSymbol(`${p4}m7`, tuning));        // iv m7  (Aeolian)
+      borrowedChords.push(parseChordSymbol(`${p5}m7`, tuning));        // v m7   (Aeolian)
+      borrowedChords.push(parseChordSymbol(`${b6}maj7`, tuning));      // bVI△   (Aeolian)
+      borrowedChords.push(parseChordSymbol(`${b7}7`, tuning));         // bVII7  (Backdoor dominant — Aeolian/Mixolydian)
 
       // --- From parallel Dorian ---
-      // Dorian adds the natural 6th: the characteristic II7 (Lydian/Dorian) and IV (natural)
-      const dorianScale = parseScaleSymbol(`${rootName} dorian`);
+      const dorianScale = parseScaleSymbol(`${rootName} dorian`, tuning);
       const dorianNotes = dorianScale.getNotes(1);
       const d6 = get12TETBaseName(dorianNotes[5].stepsFromBase); // natural 6th (differs from Aeolian b6)
-      borrowedChords.push(parseChordSymbol(`${d6}m7`));          // vim7 from Dorian (natural 6th area)
-      borrowedChords.push(parseChordSymbol(`${p4}7`));           // IV7  (Dorian characteristic)
+      borrowedChords.push(parseChordSymbol(`${d6}m7`, tuning));          // vim7 from Dorian (natural 6th area)
+      borrowedChords.push(parseChordSymbol(`${p4}7`, tuning));           // IV7  (Dorian characteristic)
     } else {
       // --- From parallel major ---
-      const majorScale = parseScaleSymbol(`${rootName} major`);
+      const majorScale = parseScaleSymbol(`${rootName} major`, tuning);
       const majorNotes = majorScale.getNotes(1);
       const p4 = get12TETBaseName(majorNotes[3].stepsFromBase);
       const p5 = get12TETBaseName(majorNotes[4].stepsFromBase);
       const maj3 = get12TETBaseName(majorNotes[2].stepsFromBase); // natural 3rd (Picardy area)
 
-      borrowedChords.push(parseChordSymbol(`${rootName}maj7`));  // I△  (Picardy third)
-      borrowedChords.push(parseChordSymbol(`${maj3}7`));         // III7 (from parallel major — secondary dominant feel)
-      borrowedChords.push(parseChordSymbol(`${p4}maj7`));        // IV△
-      borrowedChords.push(parseChordSymbol(`${p5}7`));           // V7
+      borrowedChords.push(parseChordSymbol(`${rootName}maj7`, tuning));  // I△  (Picardy third)
+      borrowedChords.push(parseChordSymbol(`${maj3}7`, tuning));         // III7 (from parallel major)
+      borrowedChords.push(parseChordSymbol(`${p4}maj7`, tuning));        // IV△
+      borrowedChords.push(parseChordSymbol(`${p5}7`, tuning));           // V7
     }
     
     return borrowedChords;
@@ -189,48 +197,51 @@ export class Harmony {
    * Analyzes the cadence between two chords in a given key.
    */
   static analyzeCadence(chord1: Chord, chord2: Chord, keySymbol: string): string {
-    const scale = parseScaleSymbol(keySymbol);
+    const ts = chord1.tuningSystem;
+    const oct = ts.octaveSteps;
+    const scale = parseScaleSymbol(keySymbol, ts);
     const scaleNotes = scale.getNotes(1);
-    const tonicStep = scaleNotes[0].stepsFromBase % 12;
-    
-    const c1Root = chord1.rootStep % 12;
-    const c2Root = chord2.rootStep % 12;
-    
+    const tonicStep = scaleNotes[0].stepsFromBase % oct;
+
+    const c1Root = chord1.rootStep % oct;
+    const c2Root = chord2.rootStep % oct;
+
     // Normalize to positive modulo
-    const t = (tonicStep + 12) % 12;
-    const r1 = (c1Root + 12) % 12;
-    const r2 = (c2Root + 12) % 12;
-    
-    // A chord is dominant if it contains a minor 7th (10 semitones) but not a major 7th (11).
-    // Checked against actual intervals to avoid false positives from chord names (dim7, maj9, etc.).
-    const oct = chord1.tuningSystem.octaveSteps;
+    const t = (tonicStep + oct) % oct;
+    const r1 = (c1Root + oct) % oct;
+    const r2 = (c2Root + oct) % oct;
+
+    // A chord is dominant if it contains a minor 7th but not a major 7th.
+    // Checked against actual intervals to avoid false positives from chord names.
+    const min7 = ts.getStepFromStandard(10);
+    const maj7 = ts.getStepFromStandard(11);
     const c1Pcs = chord1.intervalsInSteps.map(i => ((i % oct) + oct) % oct);
-    const isC1Dominant = c1Pcs.includes(10) && !c1Pcs.includes(11);
+    const isC1Dominant = c1Pcs.includes(min7) && !c1Pcs.includes(maj7);
     const isC2Tonic = r2 === t;
-    const isC1Subdominant = r1 === (t + 5) % 12; // IV
-    const isC1DominantRoot = r1 === (t + 7) % 12; // V
-    
+    const isC1Subdominant = r1 === (t + ts.getStepFromStandard(5)) % oct; // IV
+    const isC1DominantRoot = r1 === (t + ts.getStepFromStandard(7)) % oct; // V
+
     if (isC1DominantRoot && isC2Tonic) {
       return 'Authentic Cadence (V -> I)';
     }
     if (isC1Subdominant && isC2Tonic) {
       return 'Plagal Cadence (IV -> I)';
     }
-    if (isC1DominantRoot && r2 === (t + 9) % 12) { // V -> vi
+    if (isC1DominantRoot && r2 === (t + ts.getStepFromStandard(9)) % oct) { // V -> vi
       return 'Deceptive Cadence (V -> vi)';
     }
-    if (isC2Tonic && r1 === (t + 10) % 12 && isC1Dominant) { // bVII7 -> I
+    if (isC2Tonic && r1 === (t + ts.getStepFromStandard(10)) % oct && isC1Dominant) { // bVII7 -> I
       return 'Backdoor Cadence (bVII7 -> I)';
     }
-    if (r2 === (t + 7) % 12) { // Ends on V
+    if (r2 === (t + ts.getStepFromStandard(7)) % oct) { // Ends on V
       return 'Half Cadence (-> V)';
     }
-    
+
     // Check for tritone substitution resolution (subV7 -> I)
-    if (isC1Dominant && r1 === (t + 1) % 12 && isC2Tonic) {
+    if (isC1Dominant && r1 === (t + ts.getStepFromStandard(1)) % oct && isC2Tonic) {
       return 'Tritone Sub Resolution (subV7 -> I)';
     }
-    
+
     return 'No standard cadence';
   }
 
@@ -241,15 +252,20 @@ export class Harmony {
    * @param ruleset The pedagogical style to use ('berklee' | 'classical' | 'modal')
    */
   static getSuggestedScales(chord: Chord, nextChord?: Chord, ruleset: 'berklee' | 'classical' | 'modal' = 'berklee'): { scale: string; hint?: string }[] {
-    const name = chord.name;
-    const root = name.match(/^[A-G][#b]*/)?.[0] || 'C';
+    const root = chord.name.match(/^[A-G][#b]*/)?.[0] || 'C';
+    const ts = chord.tuningSystem;
+    const oct = ts.octaveSteps;
 
-    const isMaj7 = name.includes('maj7') || name.includes('Δ');
-    const isMin7 = name.includes('m7') && !name.includes('m7b5');
-    const isDom7 = name.includes('7') && !isMaj7 && !isMin7 && !name.includes('dim');
-    const isHalfDim = name.includes('m7b5') || name.includes('ø');
-    const isDim = name.includes('dim') || name.includes('o');
-    const isAug = name.includes('aug') || name.includes('+');
+    // Detect chord type from intervals, not from name string
+    const pcs = chord.intervalsInSteps.map(i => ((i % oct) + oct) % oct);
+    const has = (semitone: number) => pcs.includes(ts.getStepFromStandard(semitone));
+
+    const isMaj7    = has(11) && has(4);
+    const isMin7    = has(10) && has(3) && has(7) && !has(6);
+    const isDom7    = has(10) && has(4) && !has(11);
+    const isHalfDim = has(6)  && has(3) && has(10);
+    const isDim     = has(6)  && has(3) && !has(10);
+    const isAug     = has(8)  && has(4) && !has(10);
 
     const s = (scale: string, hint?: string): { scale: string; hint?: string } => ({ scale, hint });
 
