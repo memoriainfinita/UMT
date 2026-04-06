@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejemplo de API - Universal Music Theory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Importar la librería compilada -->
+    <script src="/umt.js"></script>
+</head>
+<body class="bg-neutral-950 text-neutral-100 p-8 font-sans">
+    <div class="max-w-4xl mx-auto space-y-8">
+        <header>
+            <div class="flex items-center justify-between">
+                <h1 class="text-3xl font-bold text-white">Implementación en Vanilla JS</h1>
+                <a href="/" class="text-indigo-400 hover:text-indigo-300 text-sm font-medium">← Volver a React</a>
+            </div>
+            <p class="text-neutral-400 mt-2">Este archivo HTML puro demuestra cómo usar la API compilada (<code>umt.js</code>) en cualquier proyecto web sin necesidad de React o frameworks.</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <button id="btn-12tet" class="bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-xl font-medium transition shadow-lg shadow-indigo-500/20">
+                1. Escala Mayor (12-TET)
+            </button>
+            <button id="btn-24tet" class="bg-purple-600 hover:bg-purple-500 text-white p-4 rounded-xl font-medium transition shadow-lg shadow-purple-500/20">
+                2. Escala Neutral (24-TET)
+            </button>
+            <button id="btn-chord" class="bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-xl font-medium transition shadow-lg shadow-emerald-500/20">
+                3. Acorde Mayor (Just Intonation)
+            </button>
+            <button id="btn-voice-leading" class="bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-xl font-medium transition shadow-lg shadow-blue-500/20">
+                4. Conducción de Voces (Voice Leading)
+            </button>
+            <button id="btn-set-theory" class="bg-rose-600 hover:bg-rose-500 text-white p-4 rounded-xl font-medium transition shadow-lg shadow-rose-500/20">
+                5. Teoría de Conjuntos (Set Theory)
+            </button>
+            <button id="btn-scala" class="bg-amber-600 hover:bg-amber-500 text-white p-4 rounded-xl font-medium transition shadow-lg shadow-amber-500/20">
+                6. Parser Scala (.scl)
+            </button>
+        </div>
+
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 shadow-inner">
+            <h2 class="text-sm font-mono text-neutral-500 mb-4 border-b border-neutral-800 pb-2">// Consola de salida</h2>
+            <pre id="console-output" class="font-mono text-sm text-emerald-400 whitespace-pre-wrap overflow-x-auto h-96 overflow-y-auto"></pre>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================================
+        // SISTEMA DE AUDIO BÁSICO
+        // =====================================================================
+        
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playFrequencies(frequencies, duration = 1.5) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            frequencies.forEach(freq => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                
+                gain.gain.setValueAtTime(0, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            });
+        }
+
+        // =====================================================================
+        // LÓGICA DE LA INTERFAZ Y USO DE LA LIBRERÍA UMT
+        // =====================================================================
+        
+        const output = document.getElementById('console-output');
+        function log(text) {
+            output.textContent = text + '\n\n' + output.textContent;
+        }
+
+        document.getElementById('btn-12tet').addEventListener('click', () => {
+            // Usamos los presets de la librería compilada en UMT
+            const majorScale = new UMT.Scale('Escala Mayor', UMT.TET12, -9, UMT.SCALE_PATTERNS['major']); 
+            const notes = majorScale.getNotes(1);
+            
+            let logText = `> Generando ${majorScale.name} en ${UMT.TET12.name}:\n`;
+            const freqs = notes.map((n, i) => {
+                logText += `  Nota ${i + 1}: ${n.frequency.toFixed(2)} Hz (${n.tuningSystem.getInterval(n.stepsFromBase).cents.toFixed(0)} cents)\n`;
+                return n.frequency;
+            });
+            
+            log(logText);
+            
+            // Tocar arpegio
+            freqs.forEach((freq, i) => {
+                setTimeout(() => playFrequencies([freq], 0.5), i * 300);
+            });
+        });
+
+        document.getElementById('btn-24tet').addEventListener('click', () => {
+            const neutralScale = UMT.NeutralScale24TET(-18);
+            const notes = neutralScale.getNotes(1);
+            
+            let logText = `> Generando ${neutralScale.name} en ${UMT.TET24.name}:\n`;
+            const freqs = notes.map((n, i) => {
+                logText += `  Nota ${i + 1}: ${n.frequency.toFixed(2)} Hz (${n.tuningSystem.getInterval(n.stepsFromBase).cents.toFixed(0)} cents)\n`;
+                return n.frequency;
+            });
+            
+            log(logText);
+            
+            // Tocar arpegio
+            freqs.forEach((freq, i) => {
+                setTimeout(() => playFrequencies([freq], 0.5), i * 300);
+            });
+        });
+
+        document.getElementById('btn-chord').addEventListener('click', () => {
+            const ptolemaic = UMT.PtolemaicJI;
+            const root = new UMT.Note(ptolemaic, 0);  // 1/1
+            const third = new UMT.Note(ptolemaic, 2); // 5/4
+            const fifth = new UMT.Note(ptolemaic, 4); // 3/2
+            
+            const freqs = [root.frequency, third.frequency, fifth.frequency];
+            
+            log(`> Tocando Acorde Mayor en Just Intonation (Proporciones puras):\n  Raíz (1:1): ${freqs[0].toFixed(2)} Hz\n  Tercera (5:4): ${freqs[1].toFixed(2)} Hz\n  Quinta (3:2): ${freqs[2].toFixed(2)} Hz`);
+            
+            playFrequencies(freqs, 3);
+        });
+
+        document.getElementById('btn-voice-leading').addEventListener('click', () => {
+            // Analizar conducción de voces entre Cmaj7 y Fmaj7
+            const chord1 = UMT.parseChordSymbol("Cmaj7", 4);
+            const chord2 = UMT.parseChordSymbol("Fmaj7", 4);
+            
+            const notes1 = chord1.getNotes();
+            const notes2 = UMT.Chord.smoothTransition(notes1, chord2);
+            
+            const issues = UMT.Harmony.checkVoiceLeading(notes1, notes2);
+            
+            let logText = `> Conducción de Voces: Cmaj7 -> Fmaj7\n`;
+            logText += `  Acorde 1: ${notes1.map(n => UMT.get12TETName(n.stepsFromBase)).join(', ')}\n`;
+            logText += `  Acorde 2: ${notes2.map(n => UMT.get12TETName(n.stepsFromBase)).join(', ')}\n`;
+            
+            if (issues.length === 0) {
+                logText += `  ✓ Conducción perfecta, sin errores clásicos.`;
+            } else {
+                logText += `  ⚠️ Alertas:\n` + issues.map(i => `    - ${i.message}`).join('\n');
+            }
+            
+            log(logText);
+            
+            // Tocar
+            playFrequencies(notes1.map(n => n.frequency), 1.5);
+            setTimeout(() => playFrequencies(notes2.map(n => n.frequency), 2), 1500);
+        });
+
+        document.getElementById('btn-set-theory').addEventListener('click', () => {
+            // Analizar el conjunto de notas de un acorde de séptima disminuida
+            const notes = [
+                UMT.parseNote("C4"),
+                UMT.parseNote("Eb4"),
+                UMT.parseNote("Gb4"),
+                UMT.parseNote("A4")
+            ];
+            
+            const pcs = UMT.SetTheory.getPitchClasses(notes);
+            const normal = UMT.SetTheory.normalForm(pcs);
+            const prime = UMT.SetTheory.primeForm(pcs);
+            const iv = UMT.SetTheory.intervalVector(pcs);
+            
+            let logText = `> Análisis de Teoría de Conjuntos: Cdim7\n`;
+            logText += `  Pitch Classes: {${pcs.join(', ')}}\n`;
+            logText += `  Forma Normal: [${normal.join(', ')}]\n`;
+            logText += `  Forma Prima: (${prime.join('')})\n`;
+            logText += `  Vector Interválico: <${iv.join('')}>\n`;
+            
+            log(logText);
+        });
+
+        document.getElementById('btn-scala').addEventListener('click', () => {
+            const scalaText = `! pelog.scl
+!
+Javanese Pelog
+7
+!
+120.0
+270.0
+540.0
+670.0
+780.0
+950.0
+2/1`;
+            
+            const scalaTuning = UMT.parseScala(scalaText);
+            
+            let logText = `> Parseando archivo Scala (.scl)\n`;
+            logText += `  Nombre: ${scalaTuning.name}\n`;
+            logText += `  Notas por octava: ${scalaTuning.octaveSteps}\n`;
+            logText += `  Cents: ${scalaTuning.cents.map(c => c.toFixed(1)).join(', ')}\n`;
+            
+            log(logText);
+        });
+        
+        // Verificar que la librería se cargó correctamente
+        if (typeof UMT !== 'undefined') {
+            log("> Librería UMT cargada correctamente desde umt.js. Listo para probar.");
+        } else {
+            log("> ERROR: No se pudo cargar umt.js. Asegúrate de ejecutar 'npm run build:umt'.");
+        }
+    </script>
+</body>
+</html>
