@@ -1,0 +1,1672 @@
+# Vanilla HTML Demo Migration — Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Replace the Next.js demo with a single `public/example.html` that demonstrates every UMT module using vanilla JS, Tone.js (audio), and abcjs (sheet music).
+
+**Architecture:** One self-contained HTML file loaded via any static server. Each of 11 sections is an independent JS function with its own inputs, Run button, and output block. No shared state between sections. Archive everything Next.js-specific before building the new demo.
+
+**Tech Stack:** UMT (`./umt.js` — IIFE, exposes `window.UMT`), Tone.js 14.8.49 (CDN), abcjs 6.6.2 (CDN), Tailwind CSS CDN, vanilla JS (no transpilation).
+
+---
+
+## File Map
+
+| Action | Path |
+|--------|------|
+| Archive | `app/` → `archive/next-demo/app/` |
+| Archive | `components/` → `archive/next-demo/components/` |
+| Archive | `lib/audio.ts` → `archive/next-demo/audio.ts` |
+| Archive | `public/example.html` → `archive/example-v0.html` |
+| Archive | `next.config.ts`, `next-env.d.ts`, `postcss.config.mjs` → `archive/next-demo/` |
+| Modify | `package.json` — remove Next/React deps + scripts |
+| Create | `public/example.html` — the demo |
+| Modify | `CLAUDE.md` — update demo section |
+| Modify | `state.md` — add history entry |
+
+---
+
+## Task 1: Archive Next.js demo
+
+**Files:**
+- Archive: `app/`, `components/`, `lib/audio.ts`, `next.config.ts`, `next-env.d.ts`, `postcss.config.mjs`, `public/example.html`
+- Modify: `package.json`
+
+Working directory for all commands: `universal-music-theory-library/`
+
+- [ ] **Step 1: Create archive directory and move files**
+
+```bash
+mkdir -p archive/next-demo
+mv app archive/next-demo/app
+mv components archive/next-demo/components
+mv lib/audio.ts archive/next-demo/audio.ts
+mv public/example.html archive/example-v0.html
+mv next.config.ts archive/next-demo/next.config.ts
+mv next-env.d.ts archive/next-demo/next-env.d.ts
+mv postcss.config.mjs archive/next-demo/postcss.config.mjs
+```
+
+- [ ] **Step 2: Replace package.json**
+
+Replace the entire content of `package.json` with:
+
+```json
+{
+  "name": "universal-music-theory-library",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build:umt": "npx -y esbuild lib/music-theory/umt.ts --bundle --minify --sourcemap --format=iife --global-name=UMT --outfile=public/umt.js",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "eslint": "9.39.1",
+    "typescript": "5.9.3"
+  }
+}
+```
+
+- [ ] **Step 3: Verify lib/music-theory still intact**
+
+```bash
+ls lib/music-theory/ | head -20
+```
+
+Expected: all `.ts` files still present (tuning.ts, chord.ts, harmony.ts, etc.)
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add -A
+git commit -m "chore: archive Next.js demo, clean package.json"
+```
+
+---
+
+## Task 2: HTML scaffold
+
+**Files:**
+- Create: `public/example.html`
+
+- [ ] **Step 1: Create the scaffold**
+
+Create `public/example.html` with this complete content:
+
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universal Music Theory Library — Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/abcjs@6.6.2/dist/abcjs-basic-min.js"></script>
+  <script src="./umt.js"></script>
+  <style>
+    .out { @apply font-mono text-sm text-emerald-400 bg-neutral-950 p-4 rounded-lg border border-neutral-800 min-h-16 whitespace-pre overflow-x-auto; }
+    .inp { @apply bg-neutral-800 border border-neutral-700 text-white rounded px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-500; }
+    .sel { @apply bg-neutral-800 border border-neutral-700 text-white rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500; }
+    .btn { @apply bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white px-4 py-2 rounded font-medium text-sm transition-colors cursor-pointer; }
+    .btn-sm { @apply bg-neutral-700 hover:bg-neutral-600 text-white px-3 py-1.5 rounded text-sm transition-colors cursor-pointer; }
+    .sec { @apply bg-neutral-900 border border-neutral-800 rounded-2xl p-6 mb-8; }
+    .sec-title { @apply text-xl font-semibold text-white mb-1; }
+    .sec-sub { @apply text-neutral-500 text-sm mb-4 font-mono; }
+    label { @apply text-neutral-400 text-sm block mb-1; }
+    .abcjs-container svg { max-width: 100%; }
+  </style>
+</head>
+<body class="bg-neutral-950 text-neutral-100 font-sans">
+
+  <!-- NAV -->
+  <nav class="sticky top-0 z-50 bg-neutral-900/90 backdrop-blur border-b border-neutral-800 px-6 py-3">
+    <div class="max-w-5xl mx-auto flex items-center gap-4 overflow-x-auto">
+      <span class="text-white font-semibold shrink-0">UMT</span>
+      <div class="flex gap-3 text-sm text-neutral-400 flex-nowrap">
+        <a href="#tuning" class="hover:text-white transition-colors shrink-0">Tuning</a>
+        <a href="#scales" class="hover:text-white transition-colors shrink-0">Scales</a>
+        <a href="#chords" class="hover:text-white transition-colors shrink-0">Chords</a>
+        <a href="#progressions" class="hover:text-white transition-colors shrink-0">Progressions</a>
+        <a href="#harmony" class="hover:text-white transition-colors shrink-0">Harmony</a>
+        <a href="#settheory" class="hover:text-white transition-colors shrink-0">Set Theory</a>
+        <a href="#microtonal" class="hover:text-white transition-colors shrink-0">Microtonal</a>
+        <a href="#rhythm" class="hover:text-white transition-colors shrink-0">Rhythm</a>
+        <a href="#abc" class="hover:text-white transition-colors shrink-0">ABC</a>
+        <a href="#utils" class="hover:text-white transition-colors shrink-0">Utils</a>
+        <a href="#reference" class="hover:text-white transition-colors shrink-0">API</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-5xl mx-auto px-6 py-10 space-y-0">
+
+    <header class="mb-10">
+      <h1 class="text-3xl font-bold text-white mb-2">Universal Music Theory Library</h1>
+      <p class="text-neutral-400">A TypeScript library for music theory computation — 12-TET, microtonal tunings, harmony analysis, set theory, and more. Zero runtime dependencies.</p>
+      <p class="text-neutral-600 text-sm mt-2">This demo uses <a href="#" class="text-neutral-400 hover:text-white">Tone.js</a> for audio and <a href="#" class="text-neutral-400 hover:text-white">abcjs</a> to illustrate how UMT integrates with other libraries.</p>
+    </header>
+
+    <!-- SECTIONS: filled in by subsequent tasks -->
+    <section id="tuning" class="sec"><!-- Task 3 --></section>
+    <section id="scales" class="sec"><!-- Task 4 --></section>
+    <section id="chords" class="sec"><!-- Task 5 --></section>
+    <section id="progressions" class="sec"><!-- Task 6 --></section>
+    <section id="harmony" class="sec"><!-- Task 7 --></section>
+    <section id="settheory" class="sec"><!-- Task 8 --></section>
+    <section id="microtonal" class="sec"><!-- Task 9 --></section>
+    <section id="rhythm" class="sec"><!-- Task 10 --></section>
+    <section id="abc" class="sec"><!-- Task 11 --></section>
+    <section id="utils" class="sec"><!-- Task 12 --></section>
+    <section id="reference" class="sec"><!-- Task 13 --></section>
+
+  </main>
+
+  <script>
+  // ── Shared helpers ────────────────────────────────────────────────────────
+
+  function out(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function outErr(id, e) {
+    out(id, 'Error: ' + (e.message || e));
+  }
+
+  function renderABC(divId, abcStr) {
+    const el = document.getElementById(divId);
+    if (!el) return;
+    ABCJS.renderAbc(divId, abcStr, {
+      responsive: 'resize',
+      add_classes: true,
+      paddingtop: 0,
+      paddingbottom: 0
+    });
+  }
+
+  async function playFreqs(freqs, mode = 'chord') {
+    if (!freqs || freqs.length === 0) return;
+    await Tone.start();
+    if (mode === 'arpeggio') {
+      const synth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { release: 0.5 } }).toDestination();
+      const dur = 0.3;
+      const now = Tone.now();
+      freqs.forEach((f, i) => synth.triggerAttackRelease(f, dur, now + i * dur));
+      setTimeout(() => synth.dispose(), (freqs.length + 2) * dur * 1000);
+    } else {
+      const poly = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { release: 1.5 } }).toDestination();
+      poly.triggerAttackRelease(freqs, '2n');
+      setTimeout(() => poly.dispose(), 4000);
+    }
+  }
+
+  // ── Section functions ─────────────────────────────────────────────────────
+  // (filled in by subsequent tasks)
+  </script>
+</body>
+</html>
+```
+
+- [ ] **Step 2: Verify UMT loads**
+
+```bash
+cd universal-music-theory-library
+npx http-server public -p 8080 -c-1
+```
+
+Open `http://localhost:8080/example.html` in the browser. Open the console. Expected: no errors, `window.UMT` defined.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add public/example.html
+git commit -m "feat: add vanilla HTML demo scaffold"
+```
+
+---
+
+## Task 3: Section 1 — Tuning Systems
+
+Modules: `tuning`, `interval`, `note`, `presets`
+
+**Files:**
+- Modify: `public/example.html`
+
+- [ ] **Step 1: Replace `<section id="tuning">` content**
+
+```html
+<section id="tuning" class="sec">
+  <h2 class="sec-title">1. Tuning Systems</h2>
+  <p class="sec-sub">tuning · interval · note · presets</p>
+  <p class="text-neutral-400 text-sm mb-4">Select a tuning system and a root note. UMT generates the scale steps and computes the frequency of each note using the tuning's interval ratios.</p>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+    <div>
+      <label>Tuning</label>
+      <select id="t1-tuning" class="sel w-full">
+        <option value="TET12">12-TET (Standard)</option>
+        <option value="TET24">24-TET (Quarter tones)</option>
+        <option value="TET31">31-TET (Meantone)</option>
+        <option value="FiveLimitJI">Just Intonation (5-Limit)</option>
+        <option value="PtolemaicJI">Just Intonation (Ptolemaic)</option>
+        <option value="WerckmeisterIII">Werckmeister III</option>
+        <option value="BohlenPierce">Bohlen-Pierce</option>
+        <option value="custom">Custom EDO</option>
+      </select>
+    </div>
+    <div>
+      <label>Custom EDO (steps/octave)</label>
+      <input id="t1-edo" type="number" value="19" min="5" max="72" class="inp">
+    </div>
+    <div>
+      <label>Root (steps from A4)</label>
+      <input id="t1-root" type="number" value="-9" class="inp">
+      <span class="text-neutral-600 text-xs">−9 = C4, 0 = A4</span>
+    </div>
+  </div>
+  <div class="flex gap-3 mb-4">
+    <button class="btn" onclick="runTuning()">Run</button>
+    <button class="btn-sm" onclick="runTuningAudio()">Play arpeggio</button>
+  </div>
+  <pre id="out-tuning" class="out"></pre>
+</section>
+```
+
+- [ ] **Step 2: Add JS function inside `<script>` (before closing `</script>`)**
+
+```js
+function getTuning1() {
+  const key = document.getElementById('t1-tuning').value;
+  const edoN = parseInt(document.getElementById('t1-edo').value, 10);
+  const tunings = {
+    TET12: UMT.TET12, TET24: UMT.TET24, TET31: UMT.TET31,
+    FiveLimitJI: UMT.FiveLimitJI, PtolemaicJI: UMT.PtolemaicJI,
+    WerckmeisterIII: UMT.WerckmeisterIII, BohlenPierce: UMT.BohlenPierce
+  };
+  return key === 'custom' ? new UMT.EDO(edoN) : tunings[key];
+}
+
+function runTuning() {
+  try {
+    const tuning = getTuning1();
+    const root = parseInt(document.getElementById('t1-root').value, 10);
+    const actualRoot = tuning.getStepFromStandard(root);
+    const scale = UMT.ChromaticScale(tuning, actualRoot);
+    const notes = scale.getNotes(1);
+
+    let text = `Tuning: ${tuning.name}\n`;
+    text += `Octave steps: ${tuning.octaveSteps}\n\n`;
+    text += 'Step  Cents      Hz\n';
+    text += '───────────────────────────\n';
+    notes.forEach((n, i) => {
+      const interval = tuning.getInterval(n.stepsFromBase - actualRoot);
+      text += `${String(i).padStart(2)}    ${interval.cents.toFixed(1).padStart(8)} ¢   ${n.frequency.toFixed(3).padStart(9)} Hz\n`;
+    });
+    out('out-tuning', text);
+  } catch(e) { outErr('out-tuning', e); }
+}
+
+function runTuningAudio() {
+  try {
+    const tuning = getTuning1();
+    const root = parseInt(document.getElementById('t1-root').value, 10);
+    const actualRoot = tuning.getStepFromStandard(root);
+    const scale = UMT.ChromaticScale(tuning, actualRoot);
+    const freqs = scale.getNotes(1).map(n => n.frequency);
+    playFreqs(freqs, 'arpeggio');
+    out('out-tuning', `Playing arpeggio (${freqs.length} notes)…`);
+  } catch(e) { outErr('out-tuning', e); }
+}
+```
+
+- [ ] **Step 3: Verify**
+
+Reload `http://localhost:8080/example.html`. Select "24-TET (Quarter tones)", click **Run** — expect 24 rows with cents 0..1150 in 50¢ steps. Click **Play arpeggio** — hear 24-note scale.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add public/example.html
+git commit -m "feat(demo): section 1 — Tuning Systems"
+```
+
+---
+
+## Task 4: Section 2 — Scales & Modes
+
+Modules: `scale`, `parser` (parseScaleSymbol), `utils`
+
+**Files:**
+- Modify: `public/example.html`
+
+- [ ] **Step 1: Replace `<section id="scales">` content**
+
+```html
+<section id="scales" class="sec">
+  <h2 class="sec-title">2. Scales & Modes</h2>
+  <p class="sec-sub">scale · parser · utils</p>
+  <p class="text-neutral-400 text-sm mb-4">Parse any scale symbol and select a mode. The staff is rendered via abcjs from the ABC notation generated by UMT's ABCBridge.</p>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+    <div class="sm:col-span-2">
+      <label>Scale symbol</label>
+      <input id="t2-scale" type="text" value="D dorian" class="inp" placeholder="e.g. D dorian, Bb lydian, A harmonic minor">
+    </div>
+    <div>
+      <label>Mode (1 = root mode)</label>
+      <input id="t2-mode" type="number" value="1" min="1" max="12" class="inp">
+    </div>
+  </div>
+  <div class="flex gap-3 mb-4">
+    <button class="btn" onclick="runScales()">Run</button>
+    <button class="btn-sm" onclick="runScalesAudio()">Play arpeggio</button>
+  </div>
+  <div id="staff-scales" class="bg-white rounded-lg p-2 mb-3 min-h-8"></div>
+  <pre id="out-scales" class="out"></pre>
+</section>
+```
+
+- [ ] **Step 2: Add JS function**
+
+```js
+function runScales() {
+  try {
+    const sym = document.getElementById('t2-scale').value.trim();
+    const modeN = parseInt(document.getElementById('t2-mode').value, 10);
+    let scale = UMT.parseScaleSymbol(sym);
+    if (modeN > 1) scale = scale.getMode(modeN);
+
+    const notes = scale.getNotes(1);
+    let text = `Scale: ${scale.name}\n`;
+    text += `Root step: ${scale.rootStep} (${UMT.get12TETName(scale.rootStep)})\n`;
+    text += `Steps: ${scale.stepsPattern.join(' - ')}\n\n`;
+    text += 'Note       Steps  Cents\n';
+    text += '─────────────────────────────\n';
+    notes.forEach(n => {
+      const relStep = n.stepsFromBase - scale.rootStep;
+      const cents = UMT.TET12.getInterval(relStep).cents;
+      text += `${UMT.get12TETName(n.stepsFromBase).padEnd(10)} ${String(relStep).padStart(4)}   ${cents.toFixed(0).padStart(5)} ¢\n`;
+    });
+
+    out('out-scales', text);
+
+    const abc = UMT.ABCBridge.wrapInHeaders(
+      UMT.ABCBridge.scaleToABC(scale),
+      scale.name, '4/4', UMT.get12TETBaseName(scale.rootStep)
+    );
+    renderABC('staff-scales', abc);
+  } catch(e) { outErr('out-scales', e); }
+}
+
+function runScalesAudio() {
+  try {
+    const sym = document.getElementById('t2-scale').value.trim();
+    const modeN = parseInt(document.getElementById('t2-mode').value, 10);
+    let scale = UMT.parseScaleSymbol(sym);
+    if (modeN > 1) scale = scale.getMode(modeN);
+    const freqs = scale.getNotes(1).map(n => n.frequency);
+    playFreqs(freqs, 'arpeggio');
+  } catch(e) { outErr('out-scales', e); }
+}
+```
+
+- [ ] **Step 3: Verify**
+
+Input "D dorian", mode 1 → expect D E F G A B C D in output, staff renders. Mode 2 → expect E phrygian. "Bb lydian" works without error.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add public/example.html
+git commit -m "feat(demo): section 2 — Scales & Modes"
+```
+
+---
+
+## Task 5: Section 3 — Chords & Voicings
+
+Modules: `chord`, `parser` (parseChordSymbol), `dictionaries`
+
+**Files:**
+- Modify: `public/example.html`
+
+- [ ] **Step 1: Replace `<section id="chords">` content**
+
+```html
+<section id="chords" class="sec">
+  <h2 class="sec-title">3. Chords & Voicings</h2>
+  <p class="sec-sub">chord · parser · dictionaries</p>
+  <p class="text-neutral-400 text-sm mb-4">Parse chord symbols including slash chords and extensions. Apply voicings and inversions. The ABCBridge generates the ABC notation for the staff.</p>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+    <div class="sm:col-span-2">
+      <label>Chord symbol</label>
+      <input id="t3-chord" type="text" value="Cmaj9/E" class="inp" placeholder="e.g. Cmaj9/E, F#m7b5, Db7alt">
+    </div>
+    <div>
+      <label>Voicing</label>
+      <select id="t3-voicing" class="sel w-full">
+        <option value="close">close</option>
+        <option value="drop2">drop2</option>
+        <option value="drop3">drop3</option>
+        <option value="rootless">rootless</option>
+        <option value="open">open</option>
+        <option value="quartal">quartal</option>
+      </select>
+    </div>
+    <div>
+      <label>Inversion (0 = root)</label>
+      <input id="t3-inv" type="number" value="0" min="0" max="4" class="inp">
+    </div>
+    <div>
+      <label>Transpose (semitones)</label>
+      <input id="t3-trans" type="number" value="0" class="inp">
+    </div>
+  </div>
+  <div class="flex gap-3 mb-4">
+    <button class="btn" onclick="runChords()">Run</button>
+    <button class="btn-sm" onclick="runChordsAudio()">Play chord</button>
+  </div>
+  <div id="staff-chords" class="bg-white rounded-lg p-2 mb-3 min-h-8"></div>
+  <pre id="out-chords" class="out"></pre>
+</section>
+```
+
+- [ ] **Step 2: Add JS function**
+
+```js
+function runChords() {
+  try {
+    const sym = document.getElementById('t3-chord').value.trim();
+    const voicing = document.getElementById('t3-voicing').value;
+    const inv = parseInt(document.getElementById('t3-inv').value, 10);
+    const trans = parseInt(document.getElementById('t3-trans').value, 10);
+
+    let chord = UMT.parseChordSymbol(sym);
+    if (trans !== 0) chord = chord.transpose(trans);
+
+    let notes;
+    if (voicing === 'close') {
+      notes = inv === 0 ? chord.getNotes() : chord.getInversion(inv);
+    } else {
+      notes = chord.getVoicing(voicing);
+    }
+
+    let text = `Chord: ${chord.name}\n`;
+    text += `Root: ${UMT.get12TETName(chord.rootStep)}\n`;
+    text += `Intervals: [${chord.intervalsInSteps.join(', ')}]\n\n`;
+    text += 'Voice  Note    Steps   Hz\n';
+    text += '──────────────────────────────────\n';
+    notes.forEach((n, i) => {
+      text += `  ${i+1}    ${UMT.get12TETName(n.stepsFromBase).padEnd(6)}  ${String(n.stepsFromBase).padStart(4)}   ${n.frequency.toFixed(2).padStart(8)} Hz\n`;
+    });
+
+    out('out-chords', text);
+
+    const abcBody = UMT.ABCBridge.chordToABC(notes);
+    const abc = UMT.ABCBridge.wrapInHeaders(abcBody + ' |]', chord.name, '4/4', UMT.get12TETBaseName(chord.rootStep));
+    renderABC('staff-chords', abc);
+  } catch(e) { outErr('out-chords', e); }
+}
+
+function runChordsAudio() {
+  try {
+    const sym = document.getElementById('t3-chord').value.trim();
+    const voicing = document.getElementById('t3-voicing').value;
+    const inv = parseInt(document.getElementById('t3-inv').value, 10);
+    const trans = parseInt(document.getElementById('t3-trans').value, 10);
+    let chord = UMT.parseChordSymbol(sym);
+    if (trans !== 0) chord = chord.transpose(trans);
+    const notes = voicing === 'close' ? (inv === 0 ? chord.getNotes() : chord.getInversion(inv)) : chord.getVoicing(voicing);
+    playFreqs(notes.map(n => n.frequency), 'chord');
+  } catch(e) { outErr('out-chords', e); }
+}
+```
+
+- [ ] **Step 3: Verify**
+
+Input "Cmaj9/E", voicing "close", inversion 0 → expect 5 notes with E in bass. Voicing "drop2" → notes reordered. Staff renders. "Play chord" sounds polyphonically.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add public/example.html
+git commit -m "feat(demo): section 3 — Chords & Voicings"
+```
+
+---
+
+## Task 6: Section 4 — Progressions & Voice Leading
+
+Modules: `parser` (parseRomanProgression), `harmony` (smoothTransition, checkVoiceLeading)
+
+**Files:**
+- Modify: `public/example.html`
+
+- [ ] **Step 1: Replace `<section id="progressions">` content**
+
+```html
+<section id="progressions" class="sec">
+  <h2 class="sec-title">4. Progressions & Voice Leading</h2>
+  <p class="sec-sub">parser · harmony · chord</p>
+  <p class="text-neutral-400 text-sm mb-4">Parse Roman numeral progressions. <code class="text-neutral-300">Chord.smoothTransition</code> optimizes voice leading between chords. <code class="text-neutral-300">Harmony.checkVoiceLeading</code> flags strict counterpoint issues.</p>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+    <div class="sm:col-span-2">
+      <label>Progression (Roman numerals, separate with " - ")</label>
+      <input id="t4-prog" type="text" value="ii7 - V7alt - Imaj7" class="inp" placeholder="e.g. ii7 - V7alt - Imaj7">
+    </div>
+    <div>
+      <label>Key</label>
+      <input id="t4-key" type="text" value="C major" class="inp" placeholder="e.g. C major, Bb minor">
+    </div>
+  </div>
+  <div class="flex gap-3 mb-4">
+    <button class="btn" onclick="runProgressions()">Run</button>
+    <button class="btn-sm" onclick="runProgressionsAudio()">Play progression</button>
+  </div>
+  <pre id="out-progressions" class="out" style="min-height:10rem"></pre>
+</section>
+```
+
+- [ ] **Step 2: Add JS function**
+
+```js
+function runProgressions() {
+  try {
+    const progStr = document.getElementById('t4-prog').value.trim();
+    const keyStr = document.getElementById('t4-key').value.trim();
+    const chords = UMT.parseRomanProgression(progStr, keyStr);
+
+    // Apply smooth voice leading
+    const voiced = [];
+    let prev = [];
+    for (const chord of chords) {
+      const next = UMT.Chord.smoothTransition(prev, chord);
+      voiced.push(next);
+      prev = next;
+    }
+
+    let text = `Key: ${keyStr}\nProgression: ${progStr}\n\n`;
+    chords.forEach((chord, i) => {
+      const vNotes = voiced[i];
+      const noteNames = vNotes.map(n => UMT.get12TETName(n.stepsFromBase)).join(', ');
+      text += `Chord ${i+1}: ${chord.name}\n  Voiced: ${noteNames}\n`;
+      if (i < chords.length - 1) {
+        const issues = UMT.Harmony.checkVoiceLeading(vNotes, voiced[i+1]);
+        if (issues.length > 0) {
+          text += `  Voice leading warnings → ${i+2}:\n`;
+          issues.forEach(iss => { text += `    ⚠ ${iss.message}\n`; });
+        } else {
+          text += `  Voice leading → ${i+2}: clean\n`;
+        }
+      }
+      text += '\n';
+    });
+
+    out('out-progressions', text);
+  } catch(e) { outErr('out-progressions', e); }
+}
+
+async function runProgressionsAudio() {
+  try {
+    const progStr = document.getElementById('t4-prog').value.trim();
+    const keyStr = document.getElementById('t4-key').value.trim();
+    const chords = UMT.parseRomanProgression(progStr, keyStr);
+
+    await Tone.start();
+    const poly = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.05, release: 0.8 }
+    }).toDestination();
+
+    const chordDur = 1.5;
+    let prev = [];
+    chords.forEach((chord, i) => {
+      const notes = UMT.Chord.smoothTransition(prev, chord);
+      prev = notes;
+      const freqs = notes.map(n => n.frequency);
+      const time = Tone.now() + i * chordDur;
+      poly.triggerAttackRelease(freqs, chordDur - 0.1, time);
+    });
+
+    setTimeout(() => poly.dispose(), (chords.length + 1) * chordDur * 1000);
+    out('out-progressions', `Playing ${chords.length} chords…`);
+  } catch(e) { outErr('out-progressions', e); }
+}
+```
+
+- [ ] **Step 3: Verify**
+
+Input "ii7 - V7alt - Imaj7" in "C major" → expect Dm7, G7alt, Cmaj7 resolved with voice leading. Click **Play progression** → 3 chords play in sequence.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add public/example.html
+git commit -m "feat(demo): section 4 — Progressions & Voice Leading"
+```
+
+---
+
+## Task 7: Section 5 — Harmony & Key Analysis
+
+Modules: `harmony` (analyzeCadence, detectChords, getSuggestedScales, getBorrowedChords, getNegativeHarmony), `key-detection`, `circle`
+
+**Files:**
+- Modify: `public/example.html`
+
+- [ ] **Step 1: Replace `<section id="harmony">` content**
+
+```html
+<section id="harmony" class="sec">
+  <h2 class="sec-title">5. Harmony & Key Analysis</h2>
+  <p class="sec-sub">harmony · key-detection · circle</p>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
+    <!-- Chord detection + analysis -->
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Chord & Key Detection</p>
+      <label>Notes (space-separated, e.g. C4 E4 G4 Bb4)</label>
+      <input id="t5-notes" type="text" value="C4 E4 G4 Bb4" class="inp mb-2">
+      <button class="btn w-full" onclick="runHarmonyDetect()">Detect</button>
+    </div>
+    <!-- Cadence analysis -->
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Cadence & Suggested Scales</p>
+      <label>Chord 1</label>
+      <input id="t5-c1" type="text" value="G7" class="inp mb-1">
+      <label>Chord 2</label>
+      <input id="t5-c2" type="text" value="Cmaj7" class="inp mb-1">
+      <label>Key</label>
+      <input id="t5-key" type="text" value="C major" class="inp mb-2">
+      <div class="flex gap-2">
+        <button class="btn flex-1" onclick="runHarmonyCadence()">Analyze cadence</button>
+        <button class="btn-sm" onclick="runHarmonyNeg()">Negative harmony</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Circle of Fifths -->
+  <div class="mb-4">
+    <p class="text-neutral-300 font-medium text-sm mb-2">Circle of Fifths</p>
+    <div class="flex gap-3 items-end mb-2">
+      <div class="flex-1">
+        <label>Key to highlight</label>
+        <input id="t5-circle-key" type="text" value="C" class="inp">
+      </div>
+      <button class="btn" onclick="renderCircle()">Render</button>
+    </div>
+    <div id="circle-svg" class="flex justify-center"></div>
+  </div>
+
+  <pre id="out-harmony" class="out" style="min-height:10rem"></pre>
+</section>
+```
+
+- [ ] **Step 2: Add JS functions**
+
+```js
+function runHarmonyDetect() {
+  try {
+    const noteStrs = document.getElementById('t5-notes').value.trim().split(/\s+/);
+    const notes = noteStrs.map(s => UMT.parseNote(s));
+
+    const detected = UMT.Harmony.detectChords(notes);
+    const keys = UMT.KeyDetection.detect(notes).slice(0, 5);
+    const chord = UMT.parseChordSymbol(detected[0] !== 'Unknown Chord' ? detected[0] : 'C');
+    const scales = detected[0] !== 'Unknown Chord'
+      ? UMT.Harmony.getSuggestedScales(chord).slice(0, 5)
+      : [];
+
+    let text = `Notes: ${noteStrs.join(' ')}\n\n`;
+    text += `Detected chords:\n  ${detected.join(', ')}\n\n`;
+    text += `Key detection (top 5):\n`;
+    keys.forEach(k => { text += `  ${k.key.padEnd(16)} r = ${k.confidence.toFixed(3)}\n`; });
+    if (scales.length > 0) {
+      text += `\nSuggested scales for ${detected[0]}:\n`;
+      scales.forEach(s => { text += `  ${s.scale}${s.hint ? ' — ' + s.hint : ''}\n`; });
+    }
+    out('out-harmony', text);
+  } catch(e) { outErr('out-harmony', e); }
+}
+
+function runHarmonyCadence() {
+  try {
+    const c1str = document.getElementById('t5-c1').value.trim();
+    const c2str = document.getElementById('t5-c2').value.trim();
+    const keyStr = document.getElementById('t5-key').value.trim();
+    const chord1 = UMT.parseChordSymbol(c1str);
+    const chord2 = UMT.parseChordSymbol(c2str);
+
+    const cadence = UMT.Harmony.analyzeCadence(chord1, chord2, keyStr);
+    const borrowed = UMT.Harmony.getBorrowedChords(keyStr).slice(0, 8);
+    const scales1 = UMT.Harmony.getSuggestedScales(chord1, chord2).slice(0, 4);
+
+    let text = `${c1str} → ${c2str} in ${keyStr}\n`;
+    text += `Cadence: ${cadence}\n\n`;
+    text += `Scales for ${c1str} → ${c2str}:\n`;
+    scales1.forEach(s => { text += `  ${s.scale}${s.hint ? ' — ' + s.hint : ''}\n`; });
+    text += `\nBorrowed chords in ${keyStr}:\n  `;
+    text += borrowed.map(c => c.name).join(', ');
+    out('out-harmony', text);
+  } catch(e) { outErr('out-harmony', e); }
+}
+
+function runHarmonyNeg() {
+  try {
+    const c1str = document.getElementById('t5-c1').value.trim();
+    const keyStr = document.getElementById('t5-key').value.trim();
+    const chord = UMT.parseChordSymbol(c1str);
+    const keyMatch = keyStr.match(/^([A-G][#b]*)/i);
+    const keyCenter = keyMatch ? keyMatch[1] : 'C';
+    const neg = UMT.Harmony.getNegativeHarmony(chord, keyCenter);
+    const negNotes = neg.getNotes().map(n => UMT.get12TETName(n.stepsFromBase));
+    let text = `Negative harmony of ${c1str} in ${keyStr}:\n`;
+    text += `Result: ${neg.name}\n`;
+    text += `Notes: ${negNotes.join(', ')}`;
+    out('out-harmony', text);
+  } catch(e) { outErr('out-harmony', e); }
+}
+
+function renderCircle() {
+  const targetKey = document.getElementById('t5-circle-key').value.trim();
+  const majorKeys = UMT.CircleOfFifths.majorKeys;
+  const minorKeys = UMT.CircleOfFifths.minorKeys;
+
+  const cx = 200, cy = 200, rOuter = 160, rInner = 110, rText = 178, rTextInner = 128;
+  const sliceAngle = (2 * Math.PI) / 12;
+
+  let svg = `<svg viewBox="0 0 400 400" width="320" height="320" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<circle cx="${cx}" cy="${cy}" r="${rOuter + 15}" fill="#171717"/>`;
+
+  majorKeys.forEach((key, i) => {
+    const angle = i * sliceAngle - Math.PI / 2;
+    const midAngle = angle + sliceAngle / 2;
+
+    const x1 = cx + rInner * Math.cos(angle), y1 = cy + rInner * Math.sin(angle);
+    const x2 = cx + rOuter * Math.cos(angle), y2 = cy + rOuter * Math.sin(angle);
+    const x3 = cx + rOuter * Math.cos(angle + sliceAngle), y3 = cy + rOuter * Math.sin(angle + sliceAngle);
+    const x4 = cx + rInner * Math.cos(angle + sliceAngle), y4 = cy + rInner * Math.sin(angle + sliceAngle);
+
+    const sig = UMT.CircleOfFifths.getSignature(key);
+    const accCount = sig.sharps > 0 ? sig.sharps : -sig.flats;
+    const highlight = key === targetKey;
+    const fill = highlight ? '#4f46e5' : (Math.abs(accCount) <= 2 ? '#262626' : '#1c1c1c');
+
+    svg += `<path d="M${x1},${y1} L${x2},${y2} A${rOuter},${rOuter} 0 0,1 ${x3},${y3} L${x4},${y4} A${rInner},${rInner} 0 0,0 ${x1},${y1}" fill="${fill}" stroke="#404040" stroke-width="1"/>`;
+
+    const tx = cx + rText * Math.cos(midAngle), ty = cy + rText * Math.sin(midAngle);
+    svg += `<text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" fill="${highlight ? '#fff' : '#e5e5e5'}" font-size="13" font-family="sans-serif" font-weight="${highlight ? 'bold' : 'normal'}">${key}</text>`;
+
+    // Inner ring: relative minor
+    const minor = minorKeys[i];
+    const mhighlight = minor === targetKey.toLowerCase();
+    const mx = cx + rTextInner * Math.cos(midAngle), my = cy + rTextInner * Math.sin(midAngle);
+    svg += `<text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="central" fill="${mhighlight ? '#818cf8' : '#737373'}" font-size="11" font-family="sans-serif">${minor}</text>`;
+  });
+
+  svg += `<circle cx="${cx}" cy="${cy}" r="${rInner - 5}" fill="#111"/>`;
+  svg += `<text x="${cx}" y="${cy - 8}" text-anchor="middle" fill="#737373" font-size="11" font-family="sans-serif">relative</text>`;
+  svg += `<text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="#a3a3a3" font-size="12" font-family="sans-serif">minor</text>`;
+  svg += '</svg>';
+
+  document.getElementById('circle-svg').innerHTML = svg;
+}
+```
+
+- [ ] **Step 3: Verify**
+
+Click **Detect** with "C4 E4 G4 Bb4" → expect C7 detected, C Major as likely key, mixolydian scale suggested. Click **Analyze cadence** (G7 → Cmaj7 in C major) → "Authentic Cadence (V -> I)". Click **Render** with "G" → G highlighted on circle. **Negative harmony** on C chord → Am result.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add public/example.html
+git commit -m "feat(demo): section 5 — Harmony & Key Analysis"
+```
+
+---
+
+## Task 8: Section 6 — Set Theory & Neo-Riemannian
+
+Modules: `set-theory`, `neo-riemannian`
+
+**Files:**
+- Modify: `public/example.html`
+
+- [ ] **Step 1: Replace `<section id="settheory">` content**
+
+```html
+<section id="settheory" class="sec">
+  <h2 class="sec-title">6. Set Theory & Neo-Riemannian</h2>
+  <p class="sec-sub">set-theory · neo-riemannian</p>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Set Theory Analysis</p>
+      <label>Notes (space-separated)</label>
+      <input id="t6-notes" type="text" value="C4 Eb4 Gb4 A4" class="inp mb-2">
+      <button class="btn w-full" onclick="runSetTheory()">Analyze</button>
+    </div>
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Neo-Riemannian PLR</p>
+      <label>Chord symbol (major or minor triad)</label>
+      <input id="t6-plr-chord" type="text" value="C" class="inp mb-2">
+      <div class="flex gap-2">
+        <button class="btn flex-1" onclick="runPLR('P')">P</button>
+        <button class="btn flex-1" onclick="runPLR('L')">L</button>
+        <button class="btn flex-1" onclick="runPLR('R')">R</button>
+      </div>
+    </div>
+  </div>
+  <pre id="out-settheory" class="out" style="min-height:8rem"></pre>
+</section>
+```
+
+- [ ] **Step 2: Add JS functions**
+
+```js
+function runSetTheory() {
+  try {
+    const noteStrs = document.getElementById('t6-notes').value.trim().split(/\s+/);
+    const notes = noteStrs.map(s => UMT.parseNote(s));
+
+    const pcs = UMT.SetTheory.getPitchClasses(notes);       // A=0
+    const pcsC = UMT.SetTheory.getPitchClassesC0(notes);    // C=0
+    const normal = UMT.SetTheory.normalForm(pcsC);
+    const prime = UMT.SetTheory.primeForm(pcsC);
+    const iv = UMT.SetTheory.intervalVector(pcsC);
+
+    let text = `Notes: ${noteStrs.join(' ')}\n\n`;
+    text += `Pitch classes (A=0): {${pcs.join(', ')}}\n`;
+    text += `Pitch classes (C=0): {${pcsC.join(', ')}}\n`;
+    text += `Normal form: [${normal.join(', ')}]\n`;
+    text += `Prime form:  (${prime.join('')})\n`;
+    text += `Interval vector: <${iv.join('')}>`;
+    out('out-settheory', text);
+  } catch(e) { outErr('out-settheory', e); }
+}
+
+async function runPLR(transform) {
+  try {
+    const sym = document.getElementById('t6-plr-chord').value.trim();
+    const chord = UMT.parseChordSymbol(sym);
+    const result = UMT.NeoRiemannian[transform](chord);
+    if (!result) {
+      out('out-settheory', `${sym} is not a major or minor triad — PLR requires pure triads.`);
+      return;
+    }
+    const origNotes = chord.getNotes().map(n => UMT.get12TETName(n.stepsFromBase));
+    const resNotes  = result.getNotes().map(n => UMT.get12TETName(n.stepsFromBase));
+    let text = `PLR transform: ${transform}\n`;
+    text += `Original: ${sym} [${origNotes.join(', ')}]\n`;
+    text += `Result:   ${result.name} [${resNotes.join(', ')}]`;
+    out('out-settheory', text);
+    await Tone.start();
+    const poly = new Tone.PolySynth(Tone.Synth).toDestination();
+    poly.triggerAttackRelease(chord.getNotes().map(n => n.frequency), '4n');
+    setTimeout(() => {
+      poly.triggerAttackRelease(result.getNotes().map(n => n.frequency), '4n');
+    }, 1000);
+    setTimeout(() => poly.dispose(), 3000);
+  } catch(e) { outErr('out-settheory', e); }
+}
+```
+
+- [ ] **Step 3: Verify**
+
+"C4 Eb4 Gb4 A4" (Cdim7) → prime form (0369), interval vector <004002>. PLR on "C" → P gives Cm, L gives Em, R gives Am. Audio plays original then transformed chord.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add public/example.html
+git commit -m "feat(demo): section 6 — Set Theory & Neo-Riemannian"
+```
+
+---
+
+## Task 9: Section 7 — Microtonal & Scala
+
+Modules: `scala`, presets (BohlenPierce, TET24)
+
+**Files:**
+- Modify: `public/example.html`
+
+- [ ] **Step 1: Replace `<section id="microtonal">` content**
+
+```html
+<section id="microtonal" class="sec">
+  <h2 class="sec-title">7. Microtonal & Scala</h2>
+  <p class="sec-sub">scala · tuning · presets (BohlenPierce, TET24)</p>
+  <p class="text-neutral-400 text-sm mb-4">Parse <code class="text-neutral-300">.scl</code> files from the Scala archive. The last entry must be the octave (ratio <code class="text-neutral-300">2/1</code> or <code class="text-neutral-300">1200.0</code>). UMT supports non-octave tunings like Bohlen-Pierce.</p>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label>Scala file content</label>
+      <textarea id="t7-scl" rows="10" class="inp font-mono text-xs">! pelog.scl
+!
+Javanese Pelog
+7
+!
+120.0
+270.0
+540.0
+670.0
+780.0
+950.0
+2/1</textarea>
+    </div>
+    <div class="space-y-3">
+      <p class="text-neutral-300 font-medium text-sm">Quick presets</p>
+      <button class="btn-sm w-full text-left" onclick="loadScalaPreset('bp')">Bohlen-Pierce (13 steps, tritave 3:1)</button>
+      <button class="btn-sm w-full text-left" onclick="loadScalaPreset('24tet')">24-TET Maqam (Bayati)</button>
+      <button class="btn-sm w-full text-left" onclick="loadScalaPreset('werck')">Werckmeister III (Well Temperament)</button>
+    </div>
+  </div>
+  <div class="flex gap-3 mb-4">
+    <button class="btn" onclick="runScala()">Parse</button>
+    <button class="btn-sm" onclick="runScalaAudio()">Play scale</button>
+  </div>
+  <pre id="out-microtonal" class="out"></pre>
+</section>
+```
+
+- [ ] **Step 2: Add JS functions**
+
+```js
+function loadScalaPreset(name) {
+  const presets = {
+    bp: `! bohlen-pierce.scl
+!
+Bohlen-Pierce Scale (equal-tempered)
+13
+!
+146.3
+292.6
+438.9
+585.2
+731.5
+877.8
+1024.1
+1170.4
+1316.7
+1463.0
+1609.3
+1755.6
+1901.9`,
+    '24tet': `! bayati_24tet.scl
+!
+Bayati approximation in 24-TET
+7
+!
+150.0
+300.0
+500.0
+700.0
+850.0
+1000.0
+1200.0`,
+    werck: `! werckmeister3.scl
+!
+Werckmeister III Well Temperament
+12
+!
+90.225
+192.18
+294.135
+390.225
+498.045
+588.27
+696.09
+792.18
+888.27
+996.09
+1092.18
+1200.0`
+  };
+  if (presets[name]) document.getElementById('t7-scl').value = presets[name];
+}
+
+function runScala() {
+  try {
+    const text = document.getElementById('t7-scl').value.trim();
+    const tuning = UMT.parseScala(text);
+    const root = tuning.getStepFromStandard(-9); // C4
+    const scale = UMT.ChromaticScale(tuning, root);
+    const notes = scale.getNotes(1);
+
+    let outText = `Tuning: ${tuning.name}\n`;
+    outText += `Octave steps: ${tuning.octaveSteps}\n\n`;
+    outText += 'Step  Cents       Hz\n';
+    outText += '──────────────────────────────\n';
+    notes.forEach((n, i) => {
+      const interval = tuning.getInterval(n.stepsFromBase - root);
+      outText += `${String(i).padStart(2)}    ${interval.cents.toFixed(1).padStart(8)} ¢   ${n.frequency.toFixed(3).padStart(9)} Hz\n`;
+    });
+    out('out-microtonal', outText);
+  } catch(e) { outErr('out-microtonal', e); }
+}
+
+function runScalaAudio() {
+  try {
+    const text = document.getElementById('t7-scl').value.trim();
+    const tuning = UMT.parseScala(text);
+    const root = tuning.getStepFromStandard(-9);
+    const scale = UMT.ChromaticScale(tuning, root);
+    const freqs = scale.getNotes(1).map(n => n.frequency);
+    playFreqs(freqs, 'arpeggio');
+  } catch(e) { outErr('out-microtonal', e); }
+}
+```
+
+- [ ] **Step 3: Verify**
+
+Parse Pelog → 7 steps, non-equal cent values. Load Bohlen-Pierce preset → 13 steps, last entry ~1901.9 cents (tritave). Play scale → hear the microtonal tuning. Werckmeister → 12 steps, slightly unequal cents.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add public/example.html
+git commit -m "feat(demo): section 7 — Microtonal & Scala"
+```
+
+---
+
+## Task 10: Section 8 — Rhythm & Meter
+
+Modules: `rhythm`, `stream`
+
+**Files:**
+- Modify: `public/example.html`
+
+- [ ] **Step 1: Replace `<section id="rhythm">` content**
+
+```html
+<section id="rhythm" class="sec">
+  <h2 class="sec-title">8. Rhythm & Meter</h2>
+  <p class="sec-sub">rhythm · stream</p>
+  <p class="text-neutral-400 text-sm mb-4"><code class="text-neutral-300">Polyrhythm.euclidean(k, n)</code> distributes k pulses evenly across n steps (Bjorklund algorithm). <code class="text-neutral-300">MusicStream</code> is a temporal event container consumed by audio engines.</p>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Euclidean Rhythm</p>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label>Pulses (k)</label><input id="t8-pulses" type="number" value="3" min="1" max="32" class="inp"></div>
+        <div><label>Steps (n)</label><input id="t8-steps" type="number" value="8" min="2" max="32" class="inp"></div>
+      </div>
+      <button class="btn w-full mt-3" onclick="runRhythm()">Generate</button>
+      <button class="btn-sm w-full mt-2" onclick="runRhythmAudio()">Play rhythm</button>
+    </div>
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Time Signature & MusicStream</p>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label>Numerator</label><input id="t8-num" type="number" value="7" min="1" max="16" class="inp"></div>
+        <div><label>Denominator</label><input id="t8-den" type="number" value="8" min="2" max="16" class="inp"></div>
+      </div>
+      <button class="btn w-full mt-3" onclick="runStream()">Build stream</button>
+    </div>
+  </div>
+  <pre id="out-rhythm" class="out" style="min-height:8rem"></pre>
+</section>
+```
+
+- [ ] **Step 2: Add JS functions**
+
+```js
+function runRhythm() {
+  try {
+    const k = parseInt(document.getElementById('t8-pulses').value, 10);
+    const n = parseInt(document.getElementById('t8-steps').value, 10);
+    const pattern = UMT.Polyrhythm.euclidean(k, n);
+    const visual = pattern.map(p => p ? '█' : '·').join(' ');
+    const binary = pattern.map(p => p ? '1' : '0').join('');
+    let text = `E(${k}, ${n}) — ${k} pulses in ${n} steps\n\n`;
+    text += `${visual}\n\n`;
+    text += `Binary: ${binary}\n`;
+    text += `Density: ${(k/n*100).toFixed(0)}%\n`;
+
+    // Common name lookup
+    const names = { '10010010': 'Tresillo', '10110100': 'Clave (son)', '10110110': 'Clave (rumba)', '10101010': 'Habanera' };
+    if (names[binary]) text += `Known as: ${names[binary]}`;
+    out('out-rhythm', text);
+  } catch(e) { outErr('out-rhythm', e); }
+}
+
+async function runRhythmAudio() {
+  try {
+    const k = parseInt(document.getElementById('t8-pulses').value, 10);
+    const n = parseInt(document.getElementById('t8-steps').value, 10);
+    const pattern = UMT.Polyrhythm.euclidean(k, n);
+
+    await Tone.start();
+    const stepDur = 0.12;
+    const membrane = new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 5 }).toDestination();
+    const hihat = new Tone.MetalSynth({ frequency: 400, envelope: { attack: 0.001, decay: 0.04, release: 0.01 }, harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }).toDestination();
+    hihat.volume.value = -12;
+
+    const now = Tone.now();
+    for (let rep = 0; rep < 2; rep++) {
+      pattern.forEach((pulse, i) => {
+        const t = now + (rep * n + i) * stepDur;
+        if (pulse) {
+          membrane.triggerAttackRelease('C1', '32n', t);
+        } else {
+          hihat.triggerAttackRelease('16n', t);
+        }
+      });
+    }
+    setTimeout(() => { membrane.dispose(); hihat.dispose(); }, (2 * n + 2) * stepDur * 1000);
+    out('out-rhythm', `Playing E(${k},${n}) × 2…`);
+  } catch(e) { outErr('out-rhythm', e); }
+}
+
+function runStream() {
+  try {
+    const num = parseInt(document.getElementById('t8-num').value, 10);
+    const den = parseInt(document.getElementById('t8-den').value, 10);
+    const timeSig = new UMT.TimeSignature([num], den);
+    const stream = new UMT.MusicStream(timeSig, 120);
+
+    // Build one measure of C major scale notes
+    const scale = UMT.MajorScale12TET(-9);
+    const notes = scale.getNotes(1);
+    notes.slice(0, timeSig.totalBeats).forEach(n => {
+      stream.addEvent([n], UMT.Duration.Quarter);
+    });
+
+    const json = stream.toJSON();
+    let text = `TimeSignature: ${timeSig.toString()}\n`;
+    text += `Measure duration: ${timeSig.measureDuration.toFixed(3)} whole notes\n`;
+    text += `Stream BPM: ${stream.bpm}\n`;
+    text += `Events added: ${stream.events.length}\n\n`;
+    text += `MusicStream.toJSON() (first 2 events):\n`;
+    text += JSON.stringify({ metadata: json.metadata, events: json.events.slice(0, 2) }, null, 2);
+    out('out-rhythm', text);
+  } catch(e) { outErr('out-rhythm', e); }
+}
+```
+
+- [ ] **Step 3: Verify**
+
+E(3,8) → "█ · · █ · · █ ·" (Tresillo). Play → percussion sounds on the 3 pulses, softer metallic on rests. Build stream with 7/8 → shows 7 events. E(5,13) → 5 pulses distributed in 13 steps.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add public/example.html
+git commit -m "feat(demo): section 8 — Rhythm & Meter"
+```
+
+---
+
+## Task 11: Section 9 — ABC Notation Export
+
+Modules: `abc-bridge`, `stream`
+
+**Files:**
+- Modify: `public/example.html`
+
+- [ ] **Step 1: Replace `<section id="abc">` content**
+
+```html
+<section id="abc" class="sec">
+  <h2 class="sec-title">9. ABC Notation Export</h2>
+  <p class="sec-sub">abc-bridge · stream</p>
+  <p class="text-neutral-400 text-sm mb-4"><code class="text-neutral-300">ABCBridge</code> converts UMT objects (scales, chords, progressions, streams) to ABC notation strings. The full pipeline: UMT objects → ABC string → abcjs renders the staff.</p>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label>Scale or progression to export</label>
+      <input id="t9-input" type="text" value="C major" class="inp mb-2">
+      <label>Export type</label>
+      <select id="t9-type" class="sel w-full">
+        <option value="scale">Scale (scaleToABC)</option>
+        <option value="chord">Chord (chordToABC)</option>
+        <option value="progression">Progression (progressionToABC)</option>
+        <option value="stream">MusicStream (streamToABC)</option>
+      </select>
+    </div>
+    <div>
+      <label>Key (for ABC header)</label>
+      <input id="t9-key" type="text" value="C" class="inp mb-2">
+      <label>Meter</label>
+      <input id="t9-meter" type="text" value="4/4" class="inp">
+    </div>
+  </div>
+  <button class="btn mb-4" onclick="runABC()">Export & Render</button>
+  <div id="staff-abc" class="bg-white rounded-lg p-3 mb-3 min-h-12"></div>
+  <pre id="out-abc" class="out"></pre>
+</section>
+```
+
+- [ ] **Step 2: Add JS function**
+
+```js
+function runABC() {
+  try {
+    const input = document.getElementById('t9-input').value.trim();
+    const type = document.getElementById('t9-type').value;
+    const key = document.getElementById('t9-key').value.trim();
+    const meter = document.getElementById('t9-meter').value.trim();
+
+    let abcBody = '';
+    let title = input;
+
+    if (type === 'scale') {
+      const scale = UMT.parseScaleSymbol(input);
+      abcBody = UMT.ABCBridge.scaleToABC(scale);
+      title = scale.name;
+    } else if (type === 'chord') {
+      const chord = UMT.parseChordSymbol(input);
+      abcBody = UMT.ABCBridge.chordToABC(chord) + ' |]';
+      title = chord.name;
+    } else if (type === 'progression') {
+      const chords = UMT.parseRomanProgression(input, `${key} major`);
+      const voiced = [];
+      let prev = [];
+      for (const chord of chords) {
+        const next = UMT.Chord.smoothTransition(prev, chord);
+        voiced.push(next);
+        prev = next;
+      }
+      abcBody = UMT.ABCBridge.progressionToABC(voiced);
+      title = input;
+    } else if (type === 'stream') {
+      const scale = UMT.parseScaleSymbol(input);
+      const timeSig = new UMT.TimeSignature([4], 4);
+      const stream = new UMT.MusicStream(timeSig, 120);
+      scale.getNotes(1).forEach(n => stream.addEvent([n], UMT.Duration.Quarter));
+      abcBody = UMT.ABCBridge.streamToABC(stream);
+      title = `Stream: ${input}`;
+    }
+
+    const fullABC = UMT.ABCBridge.wrapInHeaders(abcBody, title, meter, key);
+    out('out-abc', fullABC);
+    renderABC('staff-abc', fullABC);
+  } catch(e) { outErr('out-abc', e); }
+}
+```
+
+- [ ] **Step 3: Verify**
+
+"C major" as scale → ABC string with C D E F G A B c, staff renders. "Cmaj7" as chord → [cegb] rendered. "ii7 - V7 - Imaj7" as progression → 3 chord groups on staff.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add public/example.html
+git commit -m "feat(demo): section 9 — ABC Notation Export"
+```
+
+---
+
+## Task 12: Section 10 — Utilities
+
+Modules: `utils`
+
+**Files:**
+- Modify: `public/example.html`
+
+- [ ] **Step 1: Replace `<section id="utils">` content**
+
+```html
+<section id="utils" class="sec">
+  <h2 class="sec-title">10. Utilities</h2>
+  <p class="sec-sub">utils</p>
+  <p class="text-neutral-400 text-sm mb-4">Helper functions for MIDI/frequency conversion, enharmonic equivalents, interval naming, and pitch class naming.</p>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <!-- MIDI ↔ Freq -->
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">MIDI ↔ Frequency</p>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <div><label>MIDI note (0–127)</label><input id="t10-midi" type="number" value="69" min="0" max="127" class="inp"></div>
+        <div><label>Frequency (Hz)</label><input id="t10-freq" type="number" value="440" step="0.01" class="inp"></div>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn-sm flex-1" onclick="runMIDItoFreq()">MIDI → Hz</button>
+        <button class="btn-sm flex-1" onclick="runFreqtoMIDI()">Hz → MIDI</button>
+      </div>
+    </div>
+
+    <!-- Enharmonics -->
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Enharmonics & Interval Names</p>
+      <label>Note name (e.g. C#, Db, F##)</label>
+      <input id="t10-note" type="text" value="C#" class="inp mb-2">
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <div><label>Note A (steps from A4)</label><input id="t10-intA" type="number" value="0" class="inp"></div>
+        <div><label>Note B (steps from A4)</label><input id="t10-intB" type="number" value="7" class="inp"></div>
+      </div>
+      <button class="btn w-full" onclick="runUtils()">Run all</button>
+    </div>
+  </div>
+  <pre id="out-utils" class="out mt-4"></pre>
+</section>
+```
+
+- [ ] **Step 2: Add JS functions**
+
+```js
+function runMIDItoFreq() {
+  try {
+    const midi = parseInt(document.getElementById('t10-midi').value, 10);
+    const freq = UMT.midiToFreq(midi);
+    out('out-utils', `MIDI ${midi} → ${freq.toFixed(4)} Hz\n12TET name: ${UMT.get12TETName(midi - 69)}`);
+  } catch(e) { outErr('out-utils', e); }
+}
+
+function runFreqtoMIDI() {
+  try {
+    const freq = parseFloat(document.getElementById('t10-freq').value);
+    const midi = UMT.freqToMidi(freq);
+    const pb = UMT.freqToMidiPitchBend(freq);
+    out('out-utils', `${freq} Hz → MIDI ${midi}\nPitch bend offset: ${pb.centsOffset.toFixed(2)} cents`);
+  } catch(e) { outErr('out-utils', e); }
+}
+
+function runUtils() {
+  try {
+    const noteName = document.getElementById('t10-note').value.trim();
+    const stepsA = parseInt(document.getElementById('t10-intA').value, 10);
+    const stepsB = parseInt(document.getElementById('t10-intB').value, 10);
+
+    const enharmonics = UMT.getEnharmonics(noteName);
+    const relSteps = stepsB - stepsA;
+    const intervalName = UMT.getIntervalName(relSteps);
+    const intervalCents = UMT.TET12.getInterval(relSteps).cents;
+    const semanticName = UMT.getSemanticIntervalName(intervalCents);
+
+    let text = `Enharmonics of ${noteName}: ${enharmonics.length > 0 ? enharmonics.join(', ') : 'none'}\n\n`;
+    text += `Note A: ${UMT.get12TETName(stepsA)} (step ${stepsA})\n`;
+    text += `Note B: ${UMT.get12TETName(stepsB)} (step ${stepsB})\n`;
+    text += `Interval: ${relSteps} steps\n`;
+    text += `Name (12-TET): ${intervalName}\n`;
+    text += `Semantic: ${semanticName}\n`;
+    text += `Cents: ${intervalCents.toFixed(2)} ¢\n`;
+    text += `\nget12TETName(${stepsA}): ${UMT.get12TETName(stepsA)}\n`;
+    text += `get12TETBaseName(${stepsA}): ${UMT.get12TETBaseName(stepsA)}`;
+    out('out-utils', text);
+  } catch(e) { outErr('out-utils', e); }
+}
+```
+
+- [ ] **Step 3: Verify**
+
+MIDI 69 → 440.0000 Hz. MIDI 60 → 261.6256 Hz (C4). 440 Hz → MIDI 69, pitch bend 0.00. Enharmonics of "C#" → ["Db"]. Interval 0→7 → P5, 700.00 ¢.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add public/example.html
+git commit -m "feat(demo): section 10 — Utilities"
+```
+
+---
+
+## Task 13: Section 11 — API Reference
+
+No interactivity. Static HTML table per class.
+
+**Files:**
+- Modify: `public/example.html`
+
+- [ ] **Step 1: Replace `<section id="reference">` content**
+
+```html
+<section id="reference" class="sec">
+  <h2 class="sec-title">11. API Reference</h2>
+  <p class="sec-sub">All exported classes and key methods</p>
+  <p class="text-neutral-400 text-sm mb-6">All symbols are available via <code class="text-neutral-300">window.UMT</code> when using the IIFE bundle, or as named ESM imports. Steps = steps from A4 = 0 in the tuning's coordinate system.</p>
+
+  <!-- Tuning Classes -->
+  <div class="mb-8">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Tuning Systems</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Class / Preset</th><th class="py-1 pr-4 font-normal">Signature</th><th class="py-1 font-normal">Description</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4 text-indigo-400">EDO</td><td class="py-2 pr-4">new EDO(stepsPerOctave)</td><td class="py-2 text-neutral-400 font-sans">Equal division of the octave. 12-TET = new EDO(12).</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">JustIntonation</td><td class="py-2 pr-4">new JustIntonation(name, ratios)</td><td class="py-2 text-neutral-400 font-sans">Ratios as [numerator, denominator] pairs.</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">CentTuning</td><td class="py-2 pr-4">new CentTuning(name, cents[])</td><td class="py-2 text-neutral-400 font-sans">Arbitrary cents per step. Used for historical temperaments.</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">NonOctaveTuning</td><td class="py-2 pr-4">new NonOctaveTuning(name, steps, periodRatio)</td><td class="py-2 text-neutral-400 font-sans">Non-octave period (e.g. Bohlen-Pierce: 13 steps, ratio 3).</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">TET12</td><td class="py-2 pr-4">EDO(12)</td><td class="py-2 text-neutral-400 font-sans">Standard 12-tone equal temperament preset.</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">TET24</td><td class="py-2 pr-4">EDO(24)</td><td class="py-2 text-neutral-400 font-sans">Quarter-tone tuning.</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">TET31</td><td class="py-2 pr-4">EDO(31)</td><td class="py-2 text-neutral-400 font-sans">31-TET meantone approximation.</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">PtolemaicJI</td><td class="py-2 pr-4">JustIntonation</td><td class="py-2 text-neutral-400 font-sans">Ptolemaic intense diatonic scale ratios.</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">FiveLimitJI</td><td class="py-2 pr-4">JustIntonation</td><td class="py-2 text-neutral-400 font-sans">5-limit chromatic just intonation.</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">WerckmeisterIII</td><td class="py-2 pr-4">CentTuning</td><td class="py-2 text-neutral-400 font-sans">Historical well temperament (Bach era).</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">BohlenPierce</td><td class="py-2 pr-4">NonOctaveTuning</td><td class="py-2 text-neutral-400 font-sans">13 steps to the tritave (3:1).</td></tr>
+        <tr><td class="py-2 pr-4">tuning.getInterval(steps)</td><td class="py-2 pr-4">→ Interval</td><td class="py-2 text-neutral-400 font-sans">Returns { cents, ratio } for a given step count.</td></tr>
+        <tr><td class="py-2 pr-4">tuning.getStepFromStandard(s)</td><td class="py-2 pr-4">→ number</td><td class="py-2 text-neutral-400 font-sans">Maps a 12-TET step to the closest step in this tuning.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Note / Scale / Chord -->
+  <div class="mb-8">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Core Classes</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Method</th><th class="py-1 pr-4 font-normal">Returns</th><th class="py-1 font-normal">Description</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4 text-indigo-400">new Note(tuning, stepsFromA4)</td><td class="py-2 pr-4">Note</td><td class="py-2 text-neutral-400 font-sans">A pitch in a tuning. <code>.frequency</code> returns Hz.</td></tr>
+        <tr><td class="py-2 pr-4">note.transpose(steps)</td><td class="py-2 pr-4">Note</td><td class="py-2 text-neutral-400 font-sans">Returns a new Note shifted by n steps.</td></tr>
+        <tr><td class="py-2 pr-4">note.getName()</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Returns best-effort 12-TET name (e.g. "C4").</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">new Scale(name, tuning, root, pattern[])</td><td class="py-2 pr-4">Scale</td><td class="py-2 text-neutral-400 font-sans">Pattern = step intervals (e.g. [2,2,1,2,2,2,1] for major).</td></tr>
+        <tr><td class="py-2 pr-4">scale.getNotes(octaves)</td><td class="py-2 pr-4">Note[]</td><td class="py-2 text-neutral-400 font-sans">Returns notes for n octaves.</td></tr>
+        <tr><td class="py-2 pr-4">scale.getMode(n)</td><td class="py-2 pr-4">Scale</td><td class="py-2 text-neutral-400 font-sans">Returns the nth mode (1 = root mode).</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">new Chord(name, tuning, root, intervals[])</td><td class="py-2 pr-4">Chord</td><td class="py-2 text-neutral-400 font-sans">intervals[] = steps from root (e.g. [0, 4, 7]).</td></tr>
+        <tr><td class="py-2 pr-4">chord.getNotes()</td><td class="py-2 pr-4">Note[]</td><td class="py-2 text-neutral-400 font-sans">Returns notes in root position.</td></tr>
+        <tr><td class="py-2 pr-4">chord.getInversion(n)</td><td class="py-2 pr-4">Note[]</td><td class="py-2 text-neutral-400 font-sans">Returns notes in nth inversion.</td></tr>
+        <tr><td class="py-2 pr-4">chord.getVoicing(type)</td><td class="py-2 pr-4">Note[]</td><td class="py-2 text-neutral-400 font-sans">type: 'close'|'drop2'|'drop3'|'rootless'|'open'|'quartal'</td></tr>
+        <tr><td class="py-2 pr-4">chord.transpose(steps)</td><td class="py-2 pr-4">Chord</td><td class="py-2 text-neutral-400 font-sans">Returns transposed chord.</td></tr>
+        <tr><td class="py-2 pr-4">chord.getTritoneSubstitution()</td><td class="py-2 pr-4">Chord | null</td><td class="py-2 text-neutral-400 font-sans">12-TET only. Returns subV7 equivalent.</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">Chord.smoothTransition(prev[], chord)</td><td class="py-2 pr-4">Note[]</td><td class="py-2 text-neutral-400 font-sans">Optimal voice leading from previous notes to chord.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Parsers -->
+  <div class="mb-8">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Parsers</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Function</th><th class="py-1 pr-4 font-normal">Returns</th><th class="py-1 font-normal">Example input</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4">parseNote(str)</td><td class="py-2 pr-4">Note</td><td class="py-2 text-neutral-400">"C4", "Bb3", "F#5"</td></tr>
+        <tr><td class="py-2 pr-4">parseChordSymbol(str, tuning?)</td><td class="py-2 pr-4">Chord</td><td class="py-2 text-neutral-400">"Cmaj9/E", "F#m7b5", "Db7alt", "V7alt"</td></tr>
+        <tr><td class="py-2 pr-4">parseScaleSymbol(str, tuning?)</td><td class="py-2 pr-4">Scale</td><td class="py-2 text-neutral-400">"D dorian", "Bb harmonic minor"</td></tr>
+        <tr><td class="py-2 pr-4">parseRomanProgression(str, key, tuning?)</td><td class="py-2 pr-4">Chord[]</td><td class="py-2 text-neutral-400">"ii7 - V7alt - Imaj7", "C major"</td></tr>
+        <tr><td class="py-2 pr-4">parseScala(text)</td><td class="py-2 pr-4">TuningSystem</td><td class="py-2 text-neutral-400">.scl file content as string</td></tr>
+        <tr><td class="py-2 pr-4">parseNoteToStep12TET(name, octave?)</td><td class="py-2 pr-4">number</td><td class="py-2 text-neutral-400">"C#", 4 → -8</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Harmony -->
+  <div class="mb-8">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Harmony (static)</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Method</th><th class="py-1 pr-4 font-normal">Returns</th><th class="py-1 font-normal">Description</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4">Harmony.detectChords(notes[])</td><td class="py-2 pr-4">string[]</td><td class="py-2 text-neutral-400 font-sans">12-TET only. All matching chord names from CHORD_FORMULAS.</td></tr>
+        <tr><td class="py-2 pr-4">Harmony.checkVoiceLeading(a[], b[], ruleset?)</td><td class="py-2 pr-4">VoiceLeadingIssue[]</td><td class="py-2 text-neutral-400 font-sans">ruleset: 'strict' (Bach) | 'contemporary'.</td></tr>
+        <tr><td class="py-2 pr-4">Harmony.analyzeCadence(c1, c2, key)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Identifies cadence type between two chords in key.</td></tr>
+        <tr><td class="py-2 pr-4">Harmony.getSuggestedScales(chord, next?, ruleset?)</td><td class="py-2 pr-4">{scale, hint?}[]</td><td class="py-2 text-neutral-400 font-sans">ruleset: 'berklee'|'classical'|'modal'.</td></tr>
+        <tr><td class="py-2 pr-4">Harmony.getBorrowedChords(key, tuning?)</td><td class="py-2 pr-4">Chord[]</td><td class="py-2 text-neutral-400 font-sans">Modal interchange chords for the key.</td></tr>
+        <tr><td class="py-2 pr-4">Harmony.getNegativeHarmony(chord, keyCenter)</td><td class="py-2 pr-4">Chord</td><td class="py-2 text-neutral-400 font-sans">12-TET only. Axis inversion around key's P5 midpoint.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SetTheory / NeoRiemannian / KeyDetection / CircleOfFifths -->
+  <div class="mb-8">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Analysis Classes (static)</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Method</th><th class="py-1 pr-4 font-normal">Returns</th><th class="py-1 font-normal">Description</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4">SetTheory.getPitchClasses(notes[])</td><td class="py-2 pr-4">number[]</td><td class="py-2 text-neutral-400 font-sans">Unique PCs, A=0 convention.</td></tr>
+        <tr><td class="py-2 pr-4">SetTheory.getPitchClassesC0(notes[])</td><td class="py-2 pr-4">number[]</td><td class="py-2 text-neutral-400 font-sans">Unique PCs, C=0 (standard set-theory convention).</td></tr>
+        <tr><td class="py-2 pr-4">SetTheory.normalForm(pcs[])</td><td class="py-2 pr-4">number[]</td><td class="py-2 text-neutral-400 font-sans">Most compact rotation of the pitch class set.</td></tr>
+        <tr><td class="py-2 pr-4">SetTheory.primeForm(pcs[])</td><td class="py-2 pr-4">number[]</td><td class="py-2 text-neutral-400 font-sans">Transpositionally and inversionally equivalent form.</td></tr>
+        <tr><td class="py-2 pr-4">SetTheory.intervalVector(pcs[])</td><td class="py-2 pr-4">number[6]</td><td class="py-2 text-neutral-400 font-sans">Count of interval classes 1–6.</td></tr>
+        <tr><td class="py-2 pr-4">NeoRiemannian.P(chord) / .L / .R</td><td class="py-2 pr-4">Chord | null</td><td class="py-2 text-neutral-400 font-sans">PLR transformations. Requires major or minor triad.</td></tr>
+        <tr><td class="py-2 pr-4">KeyDetection.detect(notes[])</td><td class="py-2 pr-4">{key, confidence}[]</td><td class="py-2 text-neutral-400 font-sans">Krumhansl-Schmuckler algorithm. confidence = Pearson r.</td></tr>
+        <tr><td class="py-2 pr-4">CircleOfFifths.majorKeys</td><td class="py-2 pr-4">string[12]</td><td class="py-2 text-neutral-400 font-sans">['C','G','D','A','E','B','F#','Db','Ab','Eb','Bb','F']</td></tr>
+        <tr><td class="py-2 pr-4">CircleOfFifths.getSignature(key)</td><td class="py-2 pr-4">{sharps, flats}</td><td class="py-2 text-neutral-400 font-sans">Number of accidentals in the key signature.</td></tr>
+        <tr><td class="py-2 pr-4">CircleOfFifths.getRelative(key)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Relative major/minor key.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Rhythm / Stream / ABCBridge -->
+  <div class="mb-8">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Rhythm, Stream & Export</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Class / Method</th><th class="py-1 pr-4 font-normal">Returns</th><th class="py-1 font-normal">Description</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4 text-indigo-400">new Duration(value, dots?)</td><td class="py-2 pr-4">Duration</td><td class="py-2 text-neutral-400 font-sans">value = fraction of whole note (0.25 = quarter). Static presets: Duration.Quarter, .Half, etc.</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">new TimeSignature(numerators[], denominator)</td><td class="py-2 pr-4">TimeSignature</td><td class="py-2 text-neutral-400 font-sans">numerators[] supports additive meters: [3,2,2] = 7/8. Static: TimeSignature.Common, .Waltz, .Balkan7.</td></tr>
+        <tr><td class="py-2 pr-4">Polyrhythm.euclidean(k, n)</td><td class="py-2 pr-4">boolean[]</td><td class="py-2 text-neutral-400 font-sans">Bjorklund algorithm: k pulses in n steps.</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">new MusicStream(timeSig, bpm)</td><td class="py-2 pr-4">MusicStream</td><td class="py-2 text-neutral-400 font-sans">Temporal event container. Standard contract for audio engines.</td></tr>
+        <tr><td class="py-2 pr-4">stream.addEvent(notes[], dur, vel?)</td><td class="py-2 pr-4">void</td><td class="py-2 text-neutral-400 font-sans">Appends event and advances internal time cursor.</td></tr>
+        <tr><td class="py-2 pr-4">stream.toJSON()</td><td class="py-2 pr-4">object</td><td class="py-2 text-neutral-400 font-sans">Standard serialization: {metadata, events[]}.</td></tr>
+        <tr><td class="py-2 pr-4">ABCBridge.noteToABC(note)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Single note to ABC pitch string.</td></tr>
+        <tr><td class="py-2 pr-4">ABCBridge.chordToABC(chord|notes[])</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Returns [notes] ABC chord group.</td></tr>
+        <tr><td class="py-2 pr-4">ABCBridge.scaleToABC(scale, octaves?)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">All notes of the scale as ABC sequence.</td></tr>
+        <tr><td class="py-2 pr-4">ABCBridge.progressionToABC(Note[][])</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Chord groups separated by barlines.</td></tr>
+        <tr><td class="py-2 pr-4">ABCBridge.streamToABC(stream)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">MusicStream events to ABC notation.</td></tr>
+        <tr><td class="py-2 pr-4">ABCBridge.wrapInHeaders(body, title, meter, key)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Adds X:1 T: M: L:1/4 K: headers.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Utils -->
+  <div class="mb-4">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Utilities</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Function</th><th class="py-1 pr-4 font-normal">Returns</th><th class="py-1 font-normal">Description</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4">get12TETName(stepsFromA4, preferFlats?)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">e.g. get12TETName(-9) → "C4"</td></tr>
+        <tr><td class="py-2 pr-4">get12TETBaseName(steps, preferFlats?)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Without octave: get12TETBaseName(-9) → "C"</td></tr>
+        <tr><td class="py-2 pr-4">getEnharmonics(noteName)</td><td class="py-2 pr-4">string[]</td><td class="py-2 text-neutral-400 font-sans">getEnharmonics("C#") → ["Db"]</td></tr>
+        <tr><td class="py-2 pr-4">getIntervalName(steps, is12TET?)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">getIntervalName(7) → "P5"</td></tr>
+        <tr><td class="py-2 pr-4">getSemanticIntervalName(cents)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">getSemanticIntervalName(700) → "Perfect 5th (P5)"</td></tr>
+        <tr><td class="py-2 pr-4">freqToMidi(freq, baseA4?)</td><td class="py-2 pr-4">number</td><td class="py-2 text-neutral-400 font-sans">Nearest MIDI note. freqToMidi(440) → 69</td></tr>
+        <tr><td class="py-2 pr-4">freqToMidiPitchBend(freq, baseA4?)</td><td class="py-2 pr-4">{note, centsOffset}</td><td class="py-2 text-neutral-400 font-sans">For microtonal MIDI playback.</td></tr>
+        <tr><td class="py-2 pr-4">midiToFreq(midi, baseA4?)</td><td class="py-2 pr-4">number</td><td class="py-2 text-neutral-400 font-sans">midiToFreq(69) → 440</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+```
+
+- [ ] **Step 2: Verify**
+
+Scroll to API Reference. Check all 8 tables render correctly. No console errors. Spot-check: method names match what sections 1–10 actually call.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add public/example.html
+git commit -m "feat(demo): section 11 — API Reference"
+```
+
+---
+
+## Task 14: Update docs and final commit
+
+**Files:**
+- Modify: `CLAUDE.md`
+- Modify: `state.md`
+
+- [ ] **Step 1: Update CLAUDE.md**
+
+In the `## Stack` section, replace:
+```
+- **Demo (temporary)**: Next.js 15 / React 19, kept only until the vanilla HTML demo is complete
+```
+with:
+```
+- **Demo**: Vanilla HTML (`public/example.html`) — no build step. CDN: Tone.js (audio), abcjs (sheet music), Tailwind. No Next.js/React.
+```
+
+In `## Commands`, replace the `npm run dev` and `npm run build` lines with:
+```bash
+npx http-server public -p 8080   # Serve the demo locally
+```
+
+In `## Project structure`, remove the `app/` and `components/` entries and update:
+```
+archive/             # Archived Next.js demo (app/, components/, audio.ts)
+```
+
+- [ ] **Step 2: Add entry to state.md History**
+
+Add a new `## History` entry after the last existing one:
+
+```markdown
+## History
+
+### 2026-04-06 — Migración demo vanilla HTML (sesión 4)
+
+Demo migrada de Next.js a un único `public/example.html`. Archivados: `app/`, `components/`, `lib/audio.ts`, configs Next.js → `archive/next-demo/`. `public/example.html` anterior → `archive/example-v0.html`. `package.json` limpiado: eliminadas deps Next/React/lucide.
+
+Secciones implementadas (11 + API Reference):
+1. Tuning Systems — selector + arpeggio Tone.js
+2. Scales & Modes — parseScaleSymbol + abcjs staff
+3. Chords & Voicings — voicings, inversiones, abcjs, Tone.js
+4. Progressions & Voice Leading — parseRomanProgression + smoothTransition
+5. Harmony & Key Analysis — detectChords, analyzeCadence, getSuggestedScales, getNegativeHarmony, Circle SVG
+6. Set Theory & Neo-Riemannian — normalForm, primeForm, intervalVector, PLR
+7. Microtonal & Scala — parseScala + presets Pelog/BP/Werck
+8. Rhythm & Meter — Polyrhythm.euclidean, MusicStream, Tone.MembraneSynth
+9. ABC Notation Export — ABCBridge + abcjs render
+10. Utilities — MIDI↔freq, enarmónicos, nombres de intervalo
+11. API Reference — tablas estáticas de todas las clases y métodos
+
+**Patrones confirmados:**
+- [audio-lib] Tone.js vía CDN para audio en demos vanilla. Confirmed 2026-04.
+- [sheet-music] abcjs vía CDN + ABCBridge para partituras en demos vanilla. Confirmed 2026-04.
+```
+
+- [ ] **Step 3: Update TODO in state.md**
+
+Mark the migration TODO as complete:
+```markdown
+- [x] Migrar demo de Next.js a HTML vanilla (`public/example.html`) y eliminar `app/`, `components/`, deps React/Next.js
+```
+
+- [ ] **Step 4: Final commit**
+
+```bash
+git add CLAUDE.md state.md
+git commit -m "docs: update CLAUDE.md and state.md for vanilla demo migration"
+```
+
+---
+
+## Self-Review
+
+**Spec coverage check:**
+- Tuning Systems ✓ (Task 3)
+- Scales & Modes ✓ (Task 4)
+- Chords & Voicings ✓ (Task 5)
+- Progressions & Voice Leading ✓ (Task 6)
+- Harmony & Key Analysis ✓ (Task 7)
+- Set Theory & Neo-Riemannian ✓ (Task 8)
+- Microtonal & Scala ✓ (Task 9)
+- Rhythm & Meter ✓ (Task 10)
+- ABC Export ✓ (Task 11)
+- Utilities ✓ (Task 12)
+- API Reference ✓ (Task 13)
+- Archive Next.js files ✓ (Task 1)
+- Clean package.json ✓ (Task 1)
+- Tone.js audio in sections 1–4, 6, 7, 8 ✓
+- abcjs staff in sections 2, 3, 9 ✓
+- Update CLAUDE.md + state.md ✓ (Task 14)
+
+**Type consistency:**
+- `UMT.ChromaticScale(tuning, root)` used in Tasks 3, 9 — matches presets.ts export
+- `UMT.ABCBridge.wrapInHeaders(body, title, meter, key)` used in Tasks 4, 5, 11 — matches abc-bridge.ts signature
+- `UMT.Chord.smoothTransition(prev, chord)` used in Tasks 6, 11 — static method on Chord class
+- `UMT.NeoRiemannian.P/L/R(chord)` used in Task 8 — matches neo-riemannian.ts
+- `UMT.Duration.Quarter` used in Tasks 10, 11 — static preset on Duration class
+
+**No placeholders found.** All steps include complete HTML and JS code.

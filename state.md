@@ -88,8 +88,45 @@ Revisión profunda de toda la librería. Commit: `5a83a01`.
 - `chord.ts` — `getTritoneSubstitution` devuelve `null` fuera de 12-TET
 - `harmony.ts` — `getBorrowedChords` añade préstamo desde Dorian y amplía sección menor con más opciones
 
+## History
+
+### 2026-04-06 — Hardening universal + docs (sesión 3)
+
+Commit: `aa838b2`.
+
+**Scope redefinido:** librería standalone JS/TS. Next.js demo es temporal, a reemplazar con HTML vanilla. Deploy: build local + commit `public/umt.js` + push. Sin CI/GitHub Actions. CDN via jsDelivr cuando se cree el repo.
+
+**Fixes de universalidad:**
+- `parser.ts` — `parseChordSymbol`, `parseScaleSymbol`, `parseRomanProgression` aceptan `tuning: TuningSystem = TET12`; intervalos mapeados via `getStepFromStandard()`
+- `harmony.ts` — `% 12` → `octaveSteps` en `checkVoiceLeading`; `getSuggestedScales` usa `intervalsInSteps` en vez de regex sobre el nombre; `detectChords` guard para no-12-TET; `getNegativeHarmony` y `getBorrowedChords` con parámetro `tuning`
+- `neo-riemannian.ts` — P/L/R usan `getStepFromStandard()` para todos los intervalos
+- `note.ts`, `scale.ts` — detección de 12-TET via `instanceof EDO` en vez de comparación de string
+- `tuning.ts` — comentario clarificado en `NonOctaveTuning.octaveSteps`
+
+**Docs:**
+- README reescrito en inglés, sin slop, scope real
+- CLAUDE.md actualizado con scope, plan de deploy, Next.js marcado como temporal
+
+## History
+
+### 2026-04-06 — Diseño y plan de migración demo vanilla (sesión 4)
+
+Brainstorming completo + spec + plan de implementación para migrar la demo de Next.js a HTML vanilla.
+
+- Spec: `docs/superpowers/specs/2026-04-06-vanilla-demo-migration-design.md`
+- Plan: `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md`
+
+Decisiones clave:
+- Demo nueva (no port), adaptada al estado real de la librería
+- Un solo `public/example.html`, 11 secciones + API Reference
+- Audio via Tone.js CDN, partituras via abcjs CDN, estilos via Tailwind CDN
+- Archivado: `app/`, `components/`, `lib/audio.ts` → `archive/next-demo/`
+- `package.json` limpiado de deps Next/React
+- Implementación pendiente para sesión 5
+
 ## TODO
 
+- [ ] Crear repo en GitHub y actualizar URL CDN en README
+- [ ] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas)
 - [ ] Test completo de la demo en navegador (probar todas las secciones)
-- [ ] Decidir si `public/umt.js` debe ir en `.gitignore` (es artifact de build)
 - [ ] Considerar añadir tests unitarios para los módulos core
