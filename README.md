@@ -167,6 +167,18 @@ All source is in `lib/music-theory/`.
 
 All pitch positions are **steps from A4 = 0** within a `TuningSystem`. A4 = 440Hz = step 0. C4 = −9 in 12-TET.
 
+### Accidental spelling
+
+The library uses circle-of-fifths logic to choose flats vs. sharps throughout — not a hardcoded list.
+
+- `parseChordSymbol('Bb7')` → notes spelled `Bb`, `D`, `F`, `Ab` (including in inversions and voicings)
+- `parseScaleSymbol('D phrygian')` → `Eb`, `Bb` etc. (parent key = Bb major → flat side)
+- `parseScaleSymbol('D mixolydian')` → `F#`, `C` etc. (parent key = G major → sharp side)
+- `KeyDetection.detect()` returns `"Bb Major"`, not `"A# Major"`
+- `NeoRiemannian.P/L/R` preserve or re-derive the correct enharmonic for the result chord
+
+The preference is stored per-`Note` as a `preferFlats` flag and propagated through all transformations (`transpose`, `getInversion`, `getVoicing`, `smoothTransition`). The flag is set by the parser based on the key signature of the root + scale/mode type.
+
 ### Parser tuning parameter
 
 `parseChordSymbol`, `parseScaleSymbol`, and `parseRomanProgression` accept an optional `TuningSystem` parameter (default: `TET12`). Interval values from the dictionaries are mapped to the target tuning via `TuningSystem.getStepFromStandard()`.
