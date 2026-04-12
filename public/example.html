@@ -107,7 +107,42 @@
   <div id="staff-scales" class="bg-white rounded-lg p-2 mb-3 min-h-8"></div>
   <pre id="out-scales" class="out"></pre>
 </section>
-    <section id="chords" class="sec"><!-- Task 5 --></section>
+    <section id="chords" class="sec">
+  <h2 class="sec-title">3. Chords & Voicings</h2>
+  <p class="sec-sub">chord · parser · dictionaries</p>
+  <p class="text-neutral-400 text-sm mb-4">Parse chord symbols including slash chords and extensions. Apply voicings and inversions. The ABCBridge generates the ABC notation for the staff.</p>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+    <div class="sm:col-span-2">
+      <label>Chord symbol</label>
+      <input id="t3-chord" type="text" value="Cmaj9/E" class="inp" placeholder="e.g. Cmaj9/E, F#m7b5, Db7alt">
+    </div>
+    <div>
+      <label>Voicing</label>
+      <select id="t3-voicing" class="sel w-full">
+        <option value="close">close</option>
+        <option value="drop2">drop2</option>
+        <option value="drop3">drop3</option>
+        <option value="rootless">rootless</option>
+        <option value="open">open</option>
+        <option value="quartal">quartal</option>
+      </select>
+    </div>
+    <div>
+      <label>Inversion (0 = root)</label>
+      <input id="t3-inv" type="number" value="0" min="0" max="4" class="inp">
+    </div>
+    <div>
+      <label>Transpose (semitones)</label>
+      <input id="t3-trans" type="number" value="0" class="inp">
+    </div>
+  </div>
+  <div class="flex gap-3 mb-4">
+    <button class="btn" onclick="runChords()">Run</button>
+    <button class="btn-sm" onclick="runChordsAudio()">Play chord</button>
+  </div>
+  <div id="staff-chords" class="bg-white rounded-lg p-2 mb-3 min-h-8"></div>
+  <pre id="out-chords" class="out"></pre>
+</section>
     <section id="progressions" class="sec"><!-- Task 6 --></section>
     <section id="harmony" class="sec"><!-- Task 7 --></section>
     <section id="settheory" class="sec"><!-- Task 8 --></section>
@@ -245,6 +280,55 @@
       const freqs = scale.getNotes(1).map(n => n.frequency);
       playFreqs(freqs, 'arpeggio');
     } catch(e) { outErr('out-scales', e); }
+  }
+
+  // ── Section 3: Chords & Voicings ──────────────────────────────────────────
+
+  function runChords() {
+    try {
+      const sym = document.getElementById('t3-chord').value.trim();
+      const voicing = document.getElementById('t3-voicing').value;
+      const inv = parseInt(document.getElementById('t3-inv').value, 10);
+      const trans = parseInt(document.getElementById('t3-trans').value, 10);
+
+      let chord = UMT.parseChordSymbol(sym);
+      if (trans !== 0) chord = chord.transpose(trans);
+
+      let notes;
+      if (voicing === 'close') {
+        notes = inv === 0 ? chord.getNotes() : chord.getInversion(inv);
+      } else {
+        notes = chord.getVoicing(voicing);
+      }
+
+      let text = `Chord: ${chord.name}\n`;
+      text += `Root: ${UMT.get12TETName(chord.rootStep)}\n`;
+      text += `Intervals: [${chord.intervalsInSteps.join(', ')}]\n\n`;
+      text += 'Voice  Note    Steps   Hz\n';
+      text += '──────────────────────────────────\n';
+      notes.forEach((n, i) => {
+        text += `  ${i+1}    ${UMT.get12TETName(n.stepsFromBase).padEnd(6)}  ${String(n.stepsFromBase).padStart(4)}   ${n.frequency.toFixed(2).padStart(8)} Hz\n`;
+      });
+
+      out('out-chords', text);
+
+      const abcBody = UMT.ABCBridge.chordToABC(notes);
+      const abc = UMT.ABCBridge.wrapInHeaders(abcBody + ' |]', chord.name, '4/4', UMT.get12TETBaseName(chord.rootStep));
+      renderABC('staff-chords', abc);
+    } catch(e) { outErr('out-chords', e); }
+  }
+
+  function runChordsAudio() {
+    try {
+      const sym = document.getElementById('t3-chord').value.trim();
+      const voicing = document.getElementById('t3-voicing').value;
+      const inv = parseInt(document.getElementById('t3-inv').value, 10);
+      const trans = parseInt(document.getElementById('t3-trans').value, 10);
+      let chord = UMT.parseChordSymbol(sym);
+      if (trans !== 0) chord = chord.transpose(trans);
+      const notes = voicing === 'close' ? (inv === 0 ? chord.getNotes() : chord.getInversion(inv)) : chord.getVoicing(voicing);
+      playFreqs(notes.map(n => n.frequency), 'chord');
+    } catch(e) { outErr('out-chords', e); }
   }
   </script>
 </body>
