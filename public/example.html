@@ -230,7 +230,39 @@
   </div>
   <pre id="out-settheory" class="out" style="min-height:8rem"></pre>
 </section>
-    <section id="microtonal" class="sec"><!-- Task 9 --></section>
+    <section id="microtonal" class="sec">
+  <h2 class="sec-title">7. Microtonal & Scala</h2>
+  <p class="sec-sub">scala · tuning · presets (BohlenPierce, TET24)</p>
+  <p class="text-neutral-400 text-sm mb-4">Parse <code class="text-neutral-300">.scl</code> files from the Scala archive. The last entry must be the octave (ratio <code class="text-neutral-300">2/1</code> or <code class="text-neutral-300">1200.0</code>). UMT supports non-octave tunings like Bohlen-Pierce.</p>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label>Scala file content</label>
+      <textarea id="t7-scl" rows="10" class="inp font-mono text-xs">! pelog.scl
+!
+Javanese Pelog
+7
+!
+120.0
+270.0
+540.0
+670.0
+780.0
+950.0
+2/1</textarea>
+    </div>
+    <div class="space-y-3">
+      <p class="text-neutral-300 font-medium text-sm">Quick presets</p>
+      <button class="btn-sm w-full text-left" onclick="loadScalaPreset('bp')">Bohlen-Pierce (13 steps, tritave 3:1)</button>
+      <button class="btn-sm w-full text-left" onclick="loadScalaPreset('24tet')">24-TET Maqam (Bayati)</button>
+      <button class="btn-sm w-full text-left" onclick="loadScalaPreset('werck')">Werckmeister III (Well Temperament)</button>
+    </div>
+  </div>
+  <div class="flex gap-3 mb-4">
+    <button class="btn" onclick="runScala()">Parse</button>
+    <button class="btn-sm" onclick="runScalaAudio()">Play scale</button>
+  </div>
+  <pre id="out-microtonal" class="out"></pre>
+</section>
     <section id="rhythm" class="sec"><!-- Task 10 --></section>
     <section id="abc" class="sec"><!-- Task 11 --></section>
     <section id="utils" class="sec"><!-- Task 12 --></section>
@@ -635,6 +667,92 @@
       }, 1000);
       setTimeout(() => poly.dispose(), 3000);
     } catch(e) { outErr('out-settheory', e); }
+  }
+
+  // ── Section 7: Microtonal & Scala ─────────────────────────────────────────
+
+  function loadScalaPreset(name) {
+    const presets = {
+      bp: `! bohlen-pierce.scl
+!
+Bohlen-Pierce Scale (equal-tempered)
+13
+!
+146.3
+292.6
+438.9
+585.2
+731.5
+877.8
+1024.1
+1170.4
+1316.7
+1463.0
+1609.3
+1755.6
+1901.9`,
+      '24tet': `! bayati_24tet.scl
+!
+Bayati approximation in 24-TET
+7
+!
+150.0
+300.0
+500.0
+700.0
+850.0
+1000.0
+1200.0`,
+      werck: `! werckmeister3.scl
+!
+Werckmeister III Well Temperament
+12
+!
+90.225
+192.18
+294.135
+390.225
+498.045
+588.27
+696.09
+792.18
+888.27
+996.09
+1092.18
+1200.0`
+    };
+    if (presets[name]) document.getElementById('t7-scl').value = presets[name];
+  }
+
+  function runScala() {
+    try {
+      const text = document.getElementById('t7-scl').value.trim();
+      const tuning = UMT.parseScala(text);
+      const root = tuning.getStepFromStandard(-9); // C4
+      const scale = UMT.ChromaticScale(tuning, root);
+      const notes = scale.getNotes(1);
+
+      let outText = `Tuning: ${tuning.name}\n`;
+      outText += `Octave steps: ${tuning.octaveSteps}\n\n`;
+      outText += 'Step  Cents       Hz\n';
+      outText += '──────────────────────────────\n';
+      notes.forEach((n, i) => {
+        const interval = tuning.getInterval(n.stepsFromBase - root);
+        outText += `${String(i).padStart(2)}    ${interval.cents.toFixed(1).padStart(8)} ¢   ${n.frequency.toFixed(3).padStart(9)} Hz\n`;
+      });
+      out('out-microtonal', outText);
+    } catch(e) { outErr('out-microtonal', e); }
+  }
+
+  function runScalaAudio() {
+    try {
+      const text = document.getElementById('t7-scl').value.trim();
+      const tuning = UMT.parseScala(text);
+      const root = tuning.getStepFromStandard(-9);
+      const scale = UMT.ChromaticScale(tuning, root);
+      const freqs = scale.getNotes(1).map(n => n.frequency);
+      playFreqs(freqs, 'arpeggio');
+    } catch(e) { outErr('out-microtonal', e); }
   }
   </script>
 </body>
