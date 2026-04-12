@@ -263,7 +263,32 @@ Javanese Pelog
   </div>
   <pre id="out-microtonal" class="out"></pre>
 </section>
-    <section id="rhythm" class="sec"><!-- Task 10 --></section>
+<section id="rhythm" class="sec">
+  <h2 class="sec-title">8. Rhythm & Meter</h2>
+  <p class="sec-sub">rhythm · stream</p>
+  <p class="text-neutral-400 text-sm mb-4"><code class="text-neutral-300">Polyrhythm.euclidean(k, n)</code> distributes k pulses evenly across n steps (Bjorklund algorithm). <code class="text-neutral-300">MusicStream</code> is a temporal event container consumed by audio engines.</p>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Euclidean Rhythm</p>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label>Pulses (k)</label><input id="t8-pulses" type="number" value="3" min="1" max="32" class="inp"></div>
+        <div><label>Steps (n)</label><input id="t8-steps" type="number" value="8" min="2" max="32" class="inp"></div>
+      </div>
+      <button class="btn w-full mt-3" onclick="runRhythm()">Generate</button>
+      <button class="btn-sm w-full mt-2" onclick="runRhythmAudio()">Play rhythm</button>
+    </div>
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Time Signature & MusicStream</p>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label>Numerator</label><input id="t8-num" type="number" value="7" min="1" max="16" class="inp"></div>
+        <div><label>Denominator</label><input id="t8-den" type="number" value="8" min="2" max="16" class="inp"></div>
+      </div>
+      <button class="btn w-full mt-3" onclick="runStream()">Build stream</button>
+    </div>
+  </div>
+  <pre id="out-rhythm" class="out" style="min-height:8rem"></pre>
+</section>
     <section id="abc" class="sec"><!-- Task 11 --></section>
     <section id="utils" class="sec"><!-- Task 12 --></section>
     <section id="reference" class="sec"><!-- Task 13 --></section>
@@ -753,6 +778,80 @@ Werckmeister III Well Temperament
       const freqs = scale.getNotes(1).map(n => n.frequency);
       playFreqs(freqs, 'arpeggio');
     } catch(e) { outErr('out-microtonal', e); }
+  }
+
+  // ── Section 8: Rhythm & Meter ─────────────────────────────────────────────
+
+  function runRhythm() {
+    try {
+      const k = parseInt(document.getElementById('t8-pulses').value, 10);
+      const n = parseInt(document.getElementById('t8-steps').value, 10);
+      const pattern = UMT.Polyrhythm.euclidean(k, n);
+      const visual = pattern.map(p => p ? '█' : '·').join(' ');
+      const binary = pattern.map(p => p ? '1' : '0').join('');
+      let text = `E(${k}, ${n}) — ${k} pulses in ${n} steps\n\n`;
+      text += `${visual}\n\n`;
+      text += `Binary: ${binary}\n`;
+      text += `Density: ${(k/n*100).toFixed(0)}%\n`;
+
+      // Common name lookup
+      const names = { '10010010': 'Tresillo', '10110100': 'Clave (son)', '10110110': 'Clave (rumba)', '10101010': 'Habanera' };
+      if (names[binary]) text += `Known as: ${names[binary]}`;
+      out('out-rhythm', text);
+    } catch(e) { outErr('out-rhythm', e); }
+  }
+
+  async function runRhythmAudio() {
+    try {
+      const k = parseInt(document.getElementById('t8-pulses').value, 10);
+      const n = parseInt(document.getElementById('t8-steps').value, 10);
+      const pattern = UMT.Polyrhythm.euclidean(k, n);
+
+      await Tone.start();
+      const stepDur = 0.12;
+      const membrane = new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 5 }).toDestination();
+      const hihat = new Tone.MetalSynth({ frequency: 400, envelope: { attack: 0.001, decay: 0.04, release: 0.01 }, harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }).toDestination();
+      hihat.volume.value = -12;
+
+      const now = Tone.now();
+      for (let rep = 0; rep < 2; rep++) {
+        pattern.forEach((pulse, i) => {
+          const t = now + (rep * n + i) * stepDur;
+          if (pulse) {
+            membrane.triggerAttackRelease('C1', '32n', t);
+          } else {
+            hihat.triggerAttackRelease('16n', t);
+          }
+        });
+      }
+      setTimeout(() => { membrane.dispose(); hihat.dispose(); }, (2 * n + 2) * stepDur * 1000);
+      out('out-rhythm', `Playing E(${k},${n}) × 2…`);
+    } catch(e) { outErr('out-rhythm', e); }
+  }
+
+  function runStream() {
+    try {
+      const num = parseInt(document.getElementById('t8-num').value, 10);
+      const den = parseInt(document.getElementById('t8-den').value, 10);
+      const timeSig = new UMT.TimeSignature([num], den);
+      const stream = new UMT.MusicStream(timeSig, 120);
+
+      // Build one measure of C major scale notes
+      const scale = UMT.MajorScale12TET(-9);
+      const notes = scale.getNotes(1);
+      notes.slice(0, timeSig.totalBeats).forEach(n => {
+        stream.addEvent([n], UMT.Duration.Quarter);
+      });
+
+      const json = stream.toJSON();
+      let text = `TimeSignature: ${timeSig.toString()}\n`;
+      text += `Measure duration: ${timeSig.measureDuration.toFixed(3)} whole notes\n`;
+      text += `Stream BPM: ${stream.bpm}\n`;
+      text += `Events added: ${stream.events.length}\n\n`;
+      text += `MusicStream.toJSON() (first 2 events):\n`;
+      text += JSON.stringify({ metadata: json.metadata, events: json.events.slice(0, 2) }, null, 2);
+      out('out-rhythm', text);
+    } catch(e) { outErr('out-rhythm', e); }
   }
   </script>
 </body>
