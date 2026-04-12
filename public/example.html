@@ -206,7 +206,30 @@
 
   <pre id="out-harmony" class="out" style="min-height:10rem"></pre>
 </section>
-    <section id="settheory" class="sec"><!-- Task 8 --></section>
+    <section id="settheory" class="sec">
+  <h2 class="sec-title">6. Set Theory & Neo-Riemannian</h2>
+  <p class="sec-sub">set-theory · neo-riemannian</p>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Set Theory Analysis</p>
+      <label>Notes (space-separated)</label>
+      <input id="t6-notes" type="text" value="C4 Eb4 Gb4 A4" class="inp mb-2">
+      <button class="btn w-full" onclick="runSetTheory()">Analyze</button>
+    </div>
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Neo-Riemannian PLR</p>
+      <label>Chord symbol (major or minor triad)</label>
+      <input id="t6-plr-chord" type="text" value="C" class="inp mb-2">
+      <div class="flex gap-2">
+        <button class="btn flex-1" onclick="runPLR('P')">P</button>
+        <button class="btn flex-1" onclick="runPLR('L')">L</button>
+        <button class="btn flex-1" onclick="runPLR('R')">R</button>
+      </div>
+    </div>
+  </div>
+  <pre id="out-settheory" class="out" style="min-height:8rem"></pre>
+</section>
     <section id="microtonal" class="sec"><!-- Task 9 --></section>
     <section id="rhythm" class="sec"><!-- Task 10 --></section>
     <section id="abc" class="sec"><!-- Task 11 --></section>
@@ -564,6 +587,54 @@
     svg += '</svg>';
 
     document.getElementById('circle-svg').innerHTML = svg;
+  }
+
+  // ── Section 6: Set Theory & Neo-Riemannian ────────────────────────────────
+
+  function runSetTheory() {
+    try {
+      const noteStrs = document.getElementById('t6-notes').value.trim().split(/\s+/);
+      const notes = noteStrs.map(s => UMT.parseNote(s));
+
+      const pcs = UMT.SetTheory.getPitchClasses(notes);       // A=0
+      const pcsC = UMT.SetTheory.getPitchClassesC0(notes);    // C=0
+      const normal = UMT.SetTheory.normalForm(pcsC);
+      const prime = UMT.SetTheory.primeForm(pcsC);
+      const iv = UMT.SetTheory.intervalVector(pcsC);
+
+      let text = `Notes: ${noteStrs.join(' ')}\n\n`;
+      text += `Pitch classes (A=0): {${pcs.join(', ')}}\n`;
+      text += `Pitch classes (C=0): {${pcsC.join(', ')}}\n`;
+      text += `Normal form: [${normal.join(', ')}]\n`;
+      text += `Prime form:  (${prime.join('')})\n`;
+      text += `Interval vector: <${iv.join('')}>`;
+      out('out-settheory', text);
+    } catch(e) { outErr('out-settheory', e); }
+  }
+
+  async function runPLR(transform) {
+    try {
+      const sym = document.getElementById('t6-plr-chord').value.trim();
+      const chord = UMT.parseChordSymbol(sym);
+      const result = UMT.NeoRiemannian[transform](chord);
+      if (!result) {
+        out('out-settheory', `${sym} is not a major or minor triad — PLR requires pure triads.`);
+        return;
+      }
+      const origNotes = chord.getNotes().map(n => UMT.get12TETName(n.stepsFromBase));
+      const resNotes  = result.getNotes().map(n => UMT.get12TETName(n.stepsFromBase));
+      let text = `PLR transform: ${transform}\n`;
+      text += `Original: ${sym} [${origNotes.join(', ')}]\n`;
+      text += `Result:   ${result.name} [${resNotes.join(', ')}]`;
+      out('out-settheory', text);
+      await Tone.start();
+      const poly = new Tone.PolySynth(Tone.Synth).toDestination();
+      poly.triggerAttackRelease(chord.getNotes().map(n => n.frequency), '4n');
+      setTimeout(() => {
+        poly.triggerAttackRelease(result.getNotes().map(n => n.frequency), '4n');
+      }, 1000);
+      setTimeout(() => poly.dispose(), 3000);
+    } catch(e) { outErr('out-settheory', e); }
   }
   </script>
 </body>
