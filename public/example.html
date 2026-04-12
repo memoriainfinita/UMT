@@ -316,7 +316,39 @@ Javanese Pelog
   <div id="staff-abc" class="bg-white rounded-lg p-3 mb-3 min-h-12"></div>
   <pre id="out-abc" class="out"></pre>
 </section>
-    <section id="utils" class="sec"><!-- Task 12 --></section>
+<section id="utils" class="sec">
+  <h2 class="sec-title">10. Utilities</h2>
+  <p class="sec-sub">utils</p>
+  <p class="text-neutral-400 text-sm mb-4">Helper functions for MIDI/frequency conversion, enharmonic equivalents, interval naming, and pitch class naming.</p>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <!-- MIDI ↔ Freq -->
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">MIDI ↔ Frequency</p>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <div><label>MIDI note (0–127)</label><input id="t10-midi" type="number" value="69" min="0" max="127" class="inp"></div>
+        <div><label>Frequency (Hz)</label><input id="t10-freq" type="number" value="440" step="0.01" class="inp"></div>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn-sm flex-1" onclick="runMIDItoFreq()">MIDI → Hz</button>
+        <button class="btn-sm flex-1" onclick="runFreqtoMIDI()">Hz → MIDI</button>
+      </div>
+    </div>
+
+    <!-- Enharmonics -->
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Enharmonics & Interval Names</p>
+      <label>Note name (e.g. C#, Db, F##)</label>
+      <input id="t10-note" type="text" value="C#" class="inp mb-2">
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <div><label>Note A (steps from A4)</label><input id="t10-intA" type="number" value="0" class="inp"></div>
+        <div><label>Note B (steps from A4)</label><input id="t10-intB" type="number" value="7" class="inp"></div>
+      </div>
+      <button class="btn w-full" onclick="runUtils()">Run all</button>
+    </div>
+  </div>
+  <pre id="out-utils" class="out mt-4"></pre>
+</section>
     <section id="reference" class="sec"><!-- Task 13 --></section>
 
   </main>
@@ -924,6 +956,50 @@ Werckmeister III Well Temperament
       out('out-abc', fullABC);
       renderABC('staff-abc', fullABC);
     } catch(e) { outErr('out-abc', e); }
+  }
+
+  // ── Section 10: Utilities ─────────────────────────────────────────────────
+
+  function runMIDItoFreq() {
+    try {
+      const midi = parseInt(document.getElementById('t10-midi').value, 10);
+      const freq = UMT.midiToFreq(midi);
+      out('out-utils', `MIDI ${midi} → ${freq.toFixed(4)} Hz\n12TET name: ${UMT.get12TETName(midi - 69)}`);
+    } catch(e) { outErr('out-utils', e); }
+  }
+
+  function runFreqtoMIDI() {
+    try {
+      const freq = parseFloat(document.getElementById('t10-freq').value);
+      const midi = UMT.freqToMidi(freq);
+      const pb = UMT.freqToMidiPitchBend(freq);
+      out('out-utils', `${freq} Hz → MIDI ${midi}\nPitch bend offset: ${pb.centsOffset.toFixed(2)} cents`);
+    } catch(e) { outErr('out-utils', e); }
+  }
+
+  function runUtils() {
+    try {
+      const noteName = document.getElementById('t10-note').value.trim();
+      const stepsA = parseInt(document.getElementById('t10-intA').value, 10);
+      const stepsB = parseInt(document.getElementById('t10-intB').value, 10);
+
+      const enharmonics = UMT.getEnharmonics(noteName);
+      const relSteps = stepsB - stepsA;
+      const intervalName = UMT.getIntervalName(relSteps);
+      const intervalCents = UMT.TET12.getInterval(relSteps).cents;
+      const semanticName = UMT.getSemanticIntervalName(intervalCents);
+
+      let text = `Enharmonics of ${noteName}: ${enharmonics.length > 0 ? enharmonics.join(', ') : 'none'}\n\n`;
+      text += `Note A: ${UMT.get12TETName(stepsA)} (step ${stepsA})\n`;
+      text += `Note B: ${UMT.get12TETName(stepsB)} (step ${stepsB})\n`;
+      text += `Interval: ${relSteps} steps\n`;
+      text += `Name (12-TET): ${intervalName}\n`;
+      text += `Semantic: ${semanticName}\n`;
+      text += `Cents: ${intervalCents.toFixed(2)} ¢\n`;
+      text += `\nget12TETName(${stepsA}): ${UMT.get12TETName(stepsA)}\n`;
+      text += `get12TETBaseName(${stepsA}): ${UMT.get12TETBaseName(stepsA)}`;
+      out('out-utils', text);
+    } catch(e) { outErr('out-utils', e); }
   }
   </script>
 </body>
