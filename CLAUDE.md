@@ -6,21 +6,19 @@ A standalone TypeScript music theory library (`UMT`) supporting 12-TET, microton
 
 The library compiles to a standalone IIFE (`public/umt.js`, ~29KB) with zero runtime dependencies — usable via script tag, CDN, or ESM import in any project.
 
-The Next.js demo in `app/` is temporary scaffolding from the initial Gemini-generated version. It will be replaced with a vanilla HTML demo (`public/example.html`). Do not treat the Next.js app as part of the library scope.
+The demo is a single vanilla HTML file (`public/example.html`). The original Next.js scaffolding has been archived to `archive/next-demo/`.
 
 ## Stack
 
 - **Library**: TypeScript, compiled with esbuild → `public/umt.js`
-- **Demo (temporary)**: Next.js 15 / React 19, kept only until the vanilla HTML demo is complete
-- **Audio**: Web Audio API (`lib/audio.ts`)
+- **Demo**: Vanilla HTML (`public/example.html`) — no build step. CDN: Tone.js (audio), abcjs (sheet music), Tailwind. No Next.js/React.
 - **Deploy**: build locally (`npm run build:umt`), commit `public/umt.js`, push. No CI pipeline. GitHub Pages will serve the static demo from `docs/` or `public/` once the repo is created.
 
 ## Commands
 
 ```bash
 npm run build:umt    # Compile lib/music-theory/umt.ts → public/umt.js (the only required step)
-npm run dev          # Start Next.js dev server (temporary, for the demo only)
-npm run build        # Build library + Next.js app (temporary)
+npx http-server public -p 8080   # Serve the demo locally
 npm run lint         # ESLint
 ```
 
@@ -50,14 +48,12 @@ lib/music-theory/    # Core library — all TypeScript
   index.ts           # Re-exports everything
   umt.ts             # IIFE entry point — attaches UMT to window
 
-lib/audio.ts         # Web Audio API synth (Synth class)
 public/
   umt.js             # Compiled bundle — tracked in git (enables CDN via jsDelivr)
   umt.js.map         # Source map
   example.html       # Vanilla JS demo — the target demo format
 
-app/                 # Next.js demo (temporary — to be replaced)
-components/          # React components (temporary)
+archive/             # Archived Next.js demo (app/, components/, lib/audio.ts, Next.js configs)
 ```
 
 ## Coordinate system
