@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universal Music Theory Library — Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/abcjs@6.6.2/dist/abcjs-basic-min.js"></script>
+  <script src="./umt.js"></script>
+  <style>
+    .out { @apply font-mono text-sm text-emerald-400 bg-neutral-950 p-4 rounded-lg border border-neutral-800 min-h-16 whitespace-pre overflow-x-auto; }
+    .inp { @apply bg-neutral-800 border border-neutral-700 text-white rounded px-3 py-2 text-sm w-full focus:outline-none focus:border-indigo-500; }
+    .sel { @apply bg-neutral-800 border border-neutral-700 text-white rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500; }
+    .btn { @apply bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white px-4 py-2 rounded font-medium text-sm transition-colors cursor-pointer; }
+    .btn-sm { @apply bg-neutral-700 hover:bg-neutral-600 text-white px-3 py-1.5 rounded text-sm transition-colors cursor-pointer; }
+    .sec { @apply bg-neutral-900 border border-neutral-800 rounded-2xl p-6 mb-8; }
+    .sec-title { @apply text-xl font-semibold text-white mb-1; }
+    .sec-sub { @apply text-neutral-500 text-sm mb-4 font-mono; }
+    label { @apply text-neutral-400 text-sm block mb-1; }
+    .abcjs-container svg { max-width: 100%; }
+  </style>
+</head>
+<body class="bg-neutral-950 text-neutral-100 font-sans">
+
+  <!-- NAV -->
+  <nav class="sticky top-0 z-50 bg-neutral-900/90 backdrop-blur border-b border-neutral-800 px-6 py-3">
+    <div class="max-w-5xl mx-auto flex items-center gap-4 overflow-x-auto">
+      <span class="text-white font-semibold shrink-0">UMT</span>
+      <div class="flex gap-3 text-sm text-neutral-400 flex-nowrap">
+        <a href="#tuning" class="hover:text-white transition-colors shrink-0">Tuning</a>
+        <a href="#scales" class="hover:text-white transition-colors shrink-0">Scales</a>
+        <a href="#chords" class="hover:text-white transition-colors shrink-0">Chords</a>
+        <a href="#progressions" class="hover:text-white transition-colors shrink-0">Progressions</a>
+        <a href="#harmony" class="hover:text-white transition-colors shrink-0">Harmony</a>
+        <a href="#settheory" class="hover:text-white transition-colors shrink-0">Set Theory</a>
+        <a href="#microtonal" class="hover:text-white transition-colors shrink-0">Microtonal</a>
+        <a href="#rhythm" class="hover:text-white transition-colors shrink-0">Rhythm</a>
+        <a href="#abc" class="hover:text-white transition-colors shrink-0">ABC</a>
+        <a href="#utils" class="hover:text-white transition-colors shrink-0">Utils</a>
+        <a href="#reference" class="hover:text-white transition-colors shrink-0">API</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-5xl mx-auto px-6 py-10 space-y-0">
+
+    <header class="mb-10">
+      <h1 class="text-3xl font-bold text-white mb-2">Universal Music Theory Library</h1>
+      <p class="text-neutral-400">A TypeScript library for music theory computation — 12-TET, microtonal tunings, harmony analysis, set theory, and more. Zero runtime dependencies.</p>
+      <p class="text-neutral-600 text-sm mt-2">This demo uses <a href="#" class="text-neutral-400 hover:text-white">Tone.js</a> for audio and <a href="#" class="text-neutral-400 hover:text-white">abcjs</a> to illustrate how UMT integrates with other libraries.</p>
+    </header>
+
+    <!-- SECTIONS: filled in by subsequent tasks -->
+    <section id="tuning" class="sec"><!-- Task 3 --></section>
+    <section id="scales" class="sec"><!-- Task 4 --></section>
+    <section id="chords" class="sec"><!-- Task 5 --></section>
+    <section id="progressions" class="sec"><!-- Task 6 --></section>
+    <section id="harmony" class="sec"><!-- Task 7 --></section>
+    <section id="settheory" class="sec"><!-- Task 8 --></section>
+    <section id="microtonal" class="sec"><!-- Task 9 --></section>
+    <section id="rhythm" class="sec"><!-- Task 10 --></section>
+    <section id="abc" class="sec"><!-- Task 11 --></section>
+    <section id="utils" class="sec"><!-- Task 12 --></section>
+    <section id="reference" class="sec"><!-- Task 13 --></section>
+
+  </main>
+
+  <script>
+  // ── Shared helpers ────────────────────────────────────────────────────────
+
+  function out(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function outErr(id, e) {
+    out(id, 'Error: ' + (e.message || e));
+  }
+
+  function renderABC(divId, abcStr) {
+    const el = document.getElementById(divId);
+    if (!el) return;
+    ABCJS.renderAbc(divId, abcStr, {
+      responsive: 'resize',
+      add_classes: true,
+      paddingtop: 0,
+      paddingbottom: 0
+    });
+  }
+
+  async function playFreqs(freqs, mode = 'chord') {
+    if (!freqs || freqs.length === 0) return;
+    await Tone.start();
+    if (mode === 'arpeggio') {
+      const synth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { release: 0.5 } }).toDestination();
+      const dur = 0.3;
+      const now = Tone.now();
+      freqs.forEach((f, i) => synth.triggerAttackRelease(f, dur, now + i * dur));
+      setTimeout(() => synth.dispose(), (freqs.length + 2) * dur * 1000);
+    } else {
+      const poly = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { release: 1.5 } }).toDestination();
+      poly.triggerAttackRelease(freqs, '2n');
+      setTimeout(() => poly.dispose(), 4000);
+    }
+  }
+
+  // ── Section functions ─────────────────────────────────────────────────────
+  // (filled in by subsequent tasks)
+  </script>
+</body>
+</html>
