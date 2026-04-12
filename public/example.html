@@ -349,7 +349,149 @@ Javanese Pelog
   </div>
   <pre id="out-utils" class="out mt-4"></pre>
 </section>
-    <section id="reference" class="sec"><!-- Task 13 --></section>
+<section id="reference" class="sec">
+  <h2 class="sec-title">11. API Reference</h2>
+  <p class="sec-sub">All exported classes and key methods</p>
+  <p class="text-neutral-400 text-sm mb-6">All symbols are available via <code class="text-neutral-300">window.UMT</code> when using the IIFE bundle, or as named ESM imports. Steps = steps from A4 = 0 in the tuning's coordinate system.</p>
+
+  <!-- Tuning Classes -->
+  <div class="mb-8">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Tuning Systems</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Class / Preset</th><th class="py-1 pr-4 font-normal">Signature</th><th class="py-1 font-normal">Description</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4 text-indigo-400">EDO</td><td class="py-2 pr-4">new EDO(stepsPerOctave)</td><td class="py-2 text-neutral-400 font-sans">Equal division of the octave. 12-TET = new EDO(12).</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">JustIntonation</td><td class="py-2 pr-4">new JustIntonation(name, ratios)</td><td class="py-2 text-neutral-400 font-sans">Ratios as [numerator, denominator] pairs.</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">CentTuning</td><td class="py-2 pr-4">new CentTuning(name, cents[])</td><td class="py-2 text-neutral-400 font-sans">Arbitrary cents per step. Used for historical temperaments.</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">NonOctaveTuning</td><td class="py-2 pr-4">new NonOctaveTuning(name, steps, periodRatio)</td><td class="py-2 text-neutral-400 font-sans">Non-octave period (e.g. Bohlen-Pierce: 13 steps, ratio 3).</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">TET12</td><td class="py-2 pr-4">EDO(12)</td><td class="py-2 text-neutral-400 font-sans">Standard 12-tone equal temperament preset.</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">TET24</td><td class="py-2 pr-4">EDO(24)</td><td class="py-2 text-neutral-400 font-sans">Quarter-tone tuning.</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">TET31</td><td class="py-2 pr-4">EDO(31)</td><td class="py-2 text-neutral-400 font-sans">31-TET meantone approximation.</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">PtolemaicJI</td><td class="py-2 pr-4">JustIntonation</td><td class="py-2 text-neutral-400 font-sans">Ptolemaic intense diatonic scale ratios.</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">FiveLimitJI</td><td class="py-2 pr-4">JustIntonation</td><td class="py-2 text-neutral-400 font-sans">5-limit chromatic just intonation.</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">WerckmeisterIII</td><td class="py-2 pr-4">CentTuning</td><td class="py-2 text-neutral-400 font-sans">Historical well temperament (Bach era).</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">BohlenPierce</td><td class="py-2 pr-4">NonOctaveTuning</td><td class="py-2 text-neutral-400 font-sans">13 steps to the tritave (3:1).</td></tr>
+        <tr><td class="py-2 pr-4">tuning.getInterval(steps)</td><td class="py-2 pr-4">→ Interval</td><td class="py-2 text-neutral-400 font-sans">Returns { cents, ratio } for a given step count.</td></tr>
+        <tr><td class="py-2 pr-4">tuning.getStepFromStandard(s)</td><td class="py-2 pr-4">→ number</td><td class="py-2 text-neutral-400 font-sans">Maps a 12-TET step to the closest step in this tuning.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Note / Scale / Chord -->
+  <div class="mb-8">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Core Classes</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Method</th><th class="py-1 pr-4 font-normal">Returns</th><th class="py-1 font-normal">Description</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4 text-indigo-400">new Note(tuning, stepsFromA4)</td><td class="py-2 pr-4">Note</td><td class="py-2 text-neutral-400 font-sans">A pitch in a tuning. <code>.frequency</code> returns Hz.</td></tr>
+        <tr><td class="py-2 pr-4">note.transpose(steps)</td><td class="py-2 pr-4">Note</td><td class="py-2 text-neutral-400 font-sans">Returns a new Note shifted by n steps.</td></tr>
+        <tr><td class="py-2 pr-4">note.getName()</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Returns best-effort 12-TET name (e.g. "C4").</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">new Scale(name, tuning, root, pattern[])</td><td class="py-2 pr-4">Scale</td><td class="py-2 text-neutral-400 font-sans">Pattern = step intervals (e.g. [2,2,1,2,2,2,1] for major).</td></tr>
+        <tr><td class="py-2 pr-4">scale.getNotes(octaves)</td><td class="py-2 pr-4">Note[]</td><td class="py-2 text-neutral-400 font-sans">Returns notes for n octaves.</td></tr>
+        <tr><td class="py-2 pr-4">scale.getMode(n)</td><td class="py-2 pr-4">Scale</td><td class="py-2 text-neutral-400 font-sans">Returns the nth mode (1 = root mode).</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">new Chord(name, tuning, root, intervals[])</td><td class="py-2 pr-4">Chord</td><td class="py-2 text-neutral-400 font-sans">intervals[] = steps from root (e.g. [0, 4, 7]).</td></tr>
+        <tr><td class="py-2 pr-4">chord.getNotes()</td><td class="py-2 pr-4">Note[]</td><td class="py-2 text-neutral-400 font-sans">Returns notes in root position.</td></tr>
+        <tr><td class="py-2 pr-4">chord.getInversion(n)</td><td class="py-2 pr-4">Note[]</td><td class="py-2 text-neutral-400 font-sans">Returns notes in nth inversion.</td></tr>
+        <tr><td class="py-2 pr-4">chord.getVoicing(type)</td><td class="py-2 pr-4">Note[]</td><td class="py-2 text-neutral-400 font-sans">type: 'close'|'drop2'|'drop3'|'rootless'|'open'|'quartal'</td></tr>
+        <tr><td class="py-2 pr-4">chord.transpose(steps)</td><td class="py-2 pr-4">Chord</td><td class="py-2 text-neutral-400 font-sans">Returns transposed chord.</td></tr>
+        <tr><td class="py-2 pr-4">chord.getTritoneSubstitution()</td><td class="py-2 pr-4">Chord | null</td><td class="py-2 text-neutral-400 font-sans">12-TET only. Returns subV7 equivalent.</td></tr>
+        <tr><td class="py-2 pr-4 text-emerald-400">Chord.smoothTransition(prev[], chord)</td><td class="py-2 pr-4">Note[]</td><td class="py-2 text-neutral-400 font-sans">Optimal voice leading from previous notes to chord.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Parsers -->
+  <div class="mb-8">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Parsers</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Function</th><th class="py-1 pr-4 font-normal">Returns</th><th class="py-1 font-normal">Example input</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4">parseNote(str)</td><td class="py-2 pr-4">Note</td><td class="py-2 text-neutral-400">"C4", "Bb3", "F#5"</td></tr>
+        <tr><td class="py-2 pr-4">parseChordSymbol(str, tuning?)</td><td class="py-2 pr-4">Chord</td><td class="py-2 text-neutral-400">"Cmaj9/E", "F#m7b5", "Db7alt", "V7alt"</td></tr>
+        <tr><td class="py-2 pr-4">parseScaleSymbol(str, tuning?)</td><td class="py-2 pr-4">Scale</td><td class="py-2 text-neutral-400">"D dorian", "Bb harmonic minor"</td></tr>
+        <tr><td class="py-2 pr-4">parseRomanProgression(str, key, tuning?)</td><td class="py-2 pr-4">Chord[]</td><td class="py-2 text-neutral-400">"ii7 - V7alt - Imaj7", "C major"</td></tr>
+        <tr><td class="py-2 pr-4">parseScala(text)</td><td class="py-2 pr-4">TuningSystem</td><td class="py-2 text-neutral-400">.scl file content as string</td></tr>
+        <tr><td class="py-2 pr-4">parseNoteToStep12TET(name, octave?)</td><td class="py-2 pr-4">number</td><td class="py-2 text-neutral-400">"C#", 4 → -8</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Harmony -->
+  <div class="mb-8">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Harmony (static)</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Method</th><th class="py-1 pr-4 font-normal">Returns</th><th class="py-1 font-normal">Description</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4">Harmony.detectChords(notes[])</td><td class="py-2 pr-4">string[]</td><td class="py-2 text-neutral-400 font-sans">12-TET only. All matching chord names from CHORD_FORMULAS.</td></tr>
+        <tr><td class="py-2 pr-4">Harmony.checkVoiceLeading(a[], b[], ruleset?)</td><td class="py-2 pr-4">VoiceLeadingIssue[]</td><td class="py-2 text-neutral-400 font-sans">ruleset: 'strict' (Bach) | 'contemporary'.</td></tr>
+        <tr><td class="py-2 pr-4">Harmony.analyzeCadence(c1, c2, key)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Identifies cadence type between two chords in key.</td></tr>
+        <tr><td class="py-2 pr-4">Harmony.getSuggestedScales(chord, next?, ruleset?)</td><td class="py-2 pr-4">{scale, hint?}[]</td><td class="py-2 text-neutral-400 font-sans">ruleset: 'berklee'|'classical'|'modal'.</td></tr>
+        <tr><td class="py-2 pr-4">Harmony.getBorrowedChords(key, tuning?)</td><td class="py-2 pr-4">Chord[]</td><td class="py-2 text-neutral-400 font-sans">Modal interchange chords for the key.</td></tr>
+        <tr><td class="py-2 pr-4">Harmony.getNegativeHarmony(chord, keyCenter)</td><td class="py-2 pr-4">Chord</td><td class="py-2 text-neutral-400 font-sans">12-TET only. Axis inversion around key's P5 midpoint.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SetTheory / NeoRiemannian / KeyDetection / CircleOfFifths -->
+  <div class="mb-8">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Analysis Classes (static)</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Method</th><th class="py-1 pr-4 font-normal">Returns</th><th class="py-1 font-normal">Description</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4">SetTheory.getPitchClasses(notes[])</td><td class="py-2 pr-4">number[]</td><td class="py-2 text-neutral-400 font-sans">Unique PCs, A=0 convention.</td></tr>
+        <tr><td class="py-2 pr-4">SetTheory.getPitchClassesC0(notes[])</td><td class="py-2 pr-4">number[]</td><td class="py-2 text-neutral-400 font-sans">Unique PCs, C=0 (standard set-theory convention).</td></tr>
+        <tr><td class="py-2 pr-4">SetTheory.normalForm(pcs[])</td><td class="py-2 pr-4">number[]</td><td class="py-2 text-neutral-400 font-sans">Most compact rotation of the pitch class set.</td></tr>
+        <tr><td class="py-2 pr-4">SetTheory.primeForm(pcs[])</td><td class="py-2 pr-4">number[]</td><td class="py-2 text-neutral-400 font-sans">Transpositionally and inversionally equivalent form.</td></tr>
+        <tr><td class="py-2 pr-4">SetTheory.intervalVector(pcs[])</td><td class="py-2 pr-4">number[6]</td><td class="py-2 text-neutral-400 font-sans">Count of interval classes 1–6.</td></tr>
+        <tr><td class="py-2 pr-4">NeoRiemannian.P(chord) / .L / .R</td><td class="py-2 pr-4">Chord | null</td><td class="py-2 text-neutral-400 font-sans">PLR transformations. Requires major or minor triad.</td></tr>
+        <tr><td class="py-2 pr-4">KeyDetection.detect(notes[])</td><td class="py-2 pr-4">{key, confidence}[]</td><td class="py-2 text-neutral-400 font-sans">Krumhansl-Schmuckler algorithm. confidence = Pearson r.</td></tr>
+        <tr><td class="py-2 pr-4">CircleOfFifths.majorKeys</td><td class="py-2 pr-4">string[12]</td><td class="py-2 text-neutral-400 font-sans">['C','G','D','A','E','B','F#','Db','Ab','Eb','Bb','F']</td></tr>
+        <tr><td class="py-2 pr-4">CircleOfFifths.getSignature(key)</td><td class="py-2 pr-4">{sharps, flats}</td><td class="py-2 text-neutral-400 font-sans">Number of accidentals in the key signature.</td></tr>
+        <tr><td class="py-2 pr-4">CircleOfFifths.getRelative(key)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Relative major/minor key.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Rhythm / Stream / ABCBridge -->
+  <div class="mb-8">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Rhythm, Stream & Export</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Class / Method</th><th class="py-1 pr-4 font-normal">Returns</th><th class="py-1 font-normal">Description</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4 text-indigo-400">new Duration(value, dots?)</td><td class="py-2 pr-4">Duration</td><td class="py-2 text-neutral-400 font-sans">value = fraction of whole note (0.25 = quarter). Static presets: Duration.Quarter, .Half, etc.</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">new TimeSignature(numerators[], denominator)</td><td class="py-2 pr-4">TimeSignature</td><td class="py-2 text-neutral-400 font-sans">numerators[] supports additive meters: [3,2,2] = 7/8. Static: TimeSignature.Common, .Waltz, .Balkan7.</td></tr>
+        <tr><td class="py-2 pr-4">Polyrhythm.euclidean(k, n)</td><td class="py-2 pr-4">boolean[]</td><td class="py-2 text-neutral-400 font-sans">Bjorklund algorithm: k pulses in n steps.</td></tr>
+        <tr><td class="py-2 pr-4 text-indigo-400">new MusicStream(timeSig, bpm)</td><td class="py-2 pr-4">MusicStream</td><td class="py-2 text-neutral-400 font-sans">Temporal event container. Standard contract for audio engines.</td></tr>
+        <tr><td class="py-2 pr-4">stream.addEvent(notes[], dur, vel?)</td><td class="py-2 pr-4">void</td><td class="py-2 text-neutral-400 font-sans">Appends event and advances internal time cursor.</td></tr>
+        <tr><td class="py-2 pr-4">stream.toJSON()</td><td class="py-2 pr-4">object</td><td class="py-2 text-neutral-400 font-sans">Standard serialization: {metadata, events[]}.</td></tr>
+        <tr><td class="py-2 pr-4">ABCBridge.noteToABC(note)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Single note to ABC pitch string.</td></tr>
+        <tr><td class="py-2 pr-4">ABCBridge.chordToABC(chord|notes[])</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Returns [notes] ABC chord group.</td></tr>
+        <tr><td class="py-2 pr-4">ABCBridge.scaleToABC(scale, octaves?)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">All notes of the scale as ABC sequence.</td></tr>
+        <tr><td class="py-2 pr-4">ABCBridge.progressionToABC(Note[][])</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Chord groups separated by barlines.</td></tr>
+        <tr><td class="py-2 pr-4">ABCBridge.streamToABC(stream)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">MusicStream events to ABC notation.</td></tr>
+        <tr><td class="py-2 pr-4">ABCBridge.wrapInHeaders(body, title, meter, key)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Adds X:1 T: M: L:1/4 K: headers.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Utils -->
+  <div class="mb-4">
+    <h3 class="text-neutral-300 font-medium text-base mb-3 border-b border-neutral-800 pb-2">Utilities</h3>
+    <table class="w-full text-sm text-left">
+      <thead><tr class="text-neutral-500"><th class="py-1 pr-4 font-normal">Function</th><th class="py-1 pr-4 font-normal">Returns</th><th class="py-1 font-normal">Description</th></tr></thead>
+      <tbody class="text-neutral-300 font-mono divide-y divide-neutral-800">
+        <tr><td class="py-2 pr-4">get12TETName(stepsFromA4, preferFlats?)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">e.g. get12TETName(-9) → "C4"</td></tr>
+        <tr><td class="py-2 pr-4">get12TETBaseName(steps, preferFlats?)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">Without octave: get12TETBaseName(-9) → "C"</td></tr>
+        <tr><td class="py-2 pr-4">getEnharmonics(noteName)</td><td class="py-2 pr-4">string[]</td><td class="py-2 text-neutral-400 font-sans">getEnharmonics("C#") → ["Db"]</td></tr>
+        <tr><td class="py-2 pr-4">getIntervalName(steps, is12TET?)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">getIntervalName(7) → "P5"</td></tr>
+        <tr><td class="py-2 pr-4">getSemanticIntervalName(cents)</td><td class="py-2 pr-4">string</td><td class="py-2 text-neutral-400 font-sans">getSemanticIntervalName(700) → "Perfect 5th (P5)"</td></tr>
+        <tr><td class="py-2 pr-4">freqToMidi(freq, baseA4?)</td><td class="py-2 pr-4">number</td><td class="py-2 text-neutral-400 font-sans">Nearest MIDI note. freqToMidi(440) → 69</td></tr>
+        <tr><td class="py-2 pr-4">freqToMidiPitchBend(freq, baseA4?)</td><td class="py-2 pr-4">{note, centsOffset}</td><td class="py-2 text-neutral-400 font-sans">For microtonal MIDI playback.</td></tr>
+        <tr><td class="py-2 pr-4">midiToFreq(midi, baseA4?)</td><td class="py-2 pr-4">number</td><td class="py-2 text-neutral-400 font-sans">midiToFreq(69) → 440</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 
   </main>
 
