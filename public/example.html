@@ -289,7 +289,33 @@ Javanese Pelog
   </div>
   <pre id="out-rhythm" class="out" style="min-height:8rem"></pre>
 </section>
-    <section id="abc" class="sec"><!-- Task 11 --></section>
+<section id="abc" class="sec">
+  <h2 class="sec-title">9. ABC Notation Export</h2>
+  <p class="sec-sub">abc-bridge · stream</p>
+  <p class="text-neutral-400 text-sm mb-4"><code class="text-neutral-300">ABCBridge</code> converts UMT objects (scales, chords, progressions, streams) to ABC notation strings. The full pipeline: UMT objects → ABC string → abcjs renders the staff.</p>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label>Scale or progression to export</label>
+      <input id="t9-input" type="text" value="C major" class="inp mb-2">
+      <label>Export type</label>
+      <select id="t9-type" class="sel w-full">
+        <option value="scale">Scale (scaleToABC)</option>
+        <option value="chord">Chord (chordToABC)</option>
+        <option value="progression">Progression (progressionToABC)</option>
+        <option value="stream">MusicStream (streamToABC)</option>
+      </select>
+    </div>
+    <div>
+      <label>Key (for ABC header)</label>
+      <input id="t9-key" type="text" value="C" class="inp mb-2">
+      <label>Meter</label>
+      <input id="t9-meter" type="text" value="4/4" class="inp">
+    </div>
+  </div>
+  <button class="btn mb-4" onclick="runABC()">Export & Render</button>
+  <div id="staff-abc" class="bg-white rounded-lg p-3 mb-3 min-h-12"></div>
+  <pre id="out-abc" class="out"></pre>
+</section>
     <section id="utils" class="sec"><!-- Task 12 --></section>
     <section id="reference" class="sec"><!-- Task 13 --></section>
 
@@ -852,6 +878,52 @@ Werckmeister III Well Temperament
       text += JSON.stringify({ metadata: json.metadata, events: json.events.slice(0, 2) }, null, 2);
       out('out-rhythm', text);
     } catch(e) { outErr('out-rhythm', e); }
+  }
+
+  // ── Section 9: ABC Notation Export ────────────────────────────────────────
+
+  function runABC() {
+    try {
+      const input = document.getElementById('t9-input').value.trim();
+      const type = document.getElementById('t9-type').value;
+      const key = document.getElementById('t9-key').value.trim();
+      const meter = document.getElementById('t9-meter').value.trim();
+
+      let abcBody = '';
+      let title = input;
+
+      if (type === 'scale') {
+        const scale = UMT.parseScaleSymbol(input);
+        abcBody = UMT.ABCBridge.scaleToABC(scale);
+        title = scale.name;
+      } else if (type === 'chord') {
+        const chord = UMT.parseChordSymbol(input);
+        abcBody = UMT.ABCBridge.chordToABC(chord) + ' |]';
+        title = chord.name;
+      } else if (type === 'progression') {
+        const chords = UMT.parseRomanProgression(input, `${key} major`);
+        const voiced = [];
+        let prev = [];
+        for (const chord of chords) {
+          const next = UMT.Chord.smoothTransition(prev, chord);
+          voiced.push(next);
+          prev = next;
+        }
+        abcBody = UMT.ABCBridge.progressionToABC(voiced);
+        title = input;
+      } else if (type === 'stream') {
+        const scale = UMT.parseScaleSymbol(input);
+        const timeSig = new UMT.TimeSignature([4], 4);
+        const stream = new UMT.MusicStream(timeSig, 120);
+        scale.getNotes(1).forEach(n => stream.addEvent([n], UMT.Duration.Quarter));
+        abcBody = UMT.ABCBridge.streamToABC(stream);
+        title = `Stream: ${input}`;
+      }
+
+      const fullABC = UMT.ABCBridge.wrapInHeaders(abcBody, title, meter, key);
+      out('out-abc', fullABC);
+      renderABC('staff-abc', fullABC);
+    } catch(e) { outErr('out-abc', e); }
   }
   </script>
 </body>
