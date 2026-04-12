@@ -163,7 +163,49 @@
   </div>
   <pre id="out-progressions" class="out" style="min-height:10rem"></pre>
 </section>
-    <section id="harmony" class="sec"><!-- Task 7 --></section>
+    <section id="harmony" class="sec">
+  <h2 class="sec-title">5. Harmony & Key Analysis</h2>
+  <p class="sec-sub">harmony · key-detection · circle</p>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
+    <!-- Chord detection + analysis -->
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Chord & Key Detection</p>
+      <label>Notes (space-separated, e.g. C4 E4 G4 Bb4)</label>
+      <input id="t5-notes" type="text" value="C4 E4 G4 Bb4" class="inp mb-2">
+      <button class="btn w-full" onclick="runHarmonyDetect()">Detect</button>
+    </div>
+    <!-- Cadence analysis -->
+    <div>
+      <p class="text-neutral-300 font-medium text-sm mb-2">Cadence & Suggested Scales</p>
+      <label>Chord 1</label>
+      <input id="t5-c1" type="text" value="G7" class="inp mb-1">
+      <label>Chord 2</label>
+      <input id="t5-c2" type="text" value="Cmaj7" class="inp mb-1">
+      <label>Key</label>
+      <input id="t5-key" type="text" value="C major" class="inp mb-2">
+      <div class="flex gap-2">
+        <button class="btn flex-1" onclick="runHarmonyCadence()">Analyze cadence</button>
+        <button class="btn-sm" onclick="runHarmonyNeg()">Negative harmony</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Circle of Fifths -->
+  <div class="mb-4">
+    <p class="text-neutral-300 font-medium text-sm mb-2">Circle of Fifths</p>
+    <div class="flex gap-3 items-end mb-2">
+      <div class="flex-1">
+        <label>Key to highlight</label>
+        <input id="t5-circle-key" type="text" value="C" class="inp">
+      </div>
+      <button class="btn" onclick="renderCircle()">Render</button>
+    </div>
+    <div id="circle-svg" class="flex justify-center"></div>
+  </div>
+
+  <pre id="out-harmony" class="out" style="min-height:10rem"></pre>
+</section>
     <section id="settheory" class="sec"><!-- Task 8 --></section>
     <section id="microtonal" class="sec"><!-- Task 9 --></section>
     <section id="rhythm" class="sec"><!-- Task 10 --></section>
@@ -413,6 +455,115 @@
       setTimeout(() => poly.dispose(), (chords.length + 1) * chordDur * 1000);
       out('out-progressions', `Playing ${chords.length} chords…`);
     } catch(e) { outErr('out-progressions', e); }
+  }
+
+  // ── Section 5: Harmony & Key Analysis ────────────────────────────────────
+
+  function runHarmonyDetect() {
+    try {
+      const noteStrs = document.getElementById('t5-notes').value.trim().split(/\s+/);
+      const notes = noteStrs.map(s => UMT.parseNote(s));
+
+      const detected = UMT.Harmony.detectChords(notes);
+      const keys = UMT.KeyDetection.detect(notes).slice(0, 5);
+      const chord = UMT.parseChordSymbol(detected[0] !== 'Unknown Chord' ? detected[0] : 'C');
+      const scales = detected[0] !== 'Unknown Chord'
+        ? UMT.Harmony.getSuggestedScales(chord).slice(0, 5)
+        : [];
+
+      let text = `Notes: ${noteStrs.join(' ')}\n\n`;
+      text += `Detected chords:\n  ${detected.join(', ')}\n\n`;
+      text += `Key detection (top 5):\n`;
+      keys.forEach(k => { text += `  ${k.key.padEnd(16)} r = ${k.confidence.toFixed(3)}\n`; });
+      if (scales.length > 0) {
+        text += `\nSuggested scales for ${detected[0]}:\n`;
+        scales.forEach(s => { text += `  ${s.scale}${s.hint ? ' — ' + s.hint : ''}\n`; });
+      }
+      out('out-harmony', text);
+    } catch(e) { outErr('out-harmony', e); }
+  }
+
+  function runHarmonyCadence() {
+    try {
+      const c1str = document.getElementById('t5-c1').value.trim();
+      const c2str = document.getElementById('t5-c2').value.trim();
+      const keyStr = document.getElementById('t5-key').value.trim();
+      const chord1 = UMT.parseChordSymbol(c1str);
+      const chord2 = UMT.parseChordSymbol(c2str);
+
+      const cadence = UMT.Harmony.analyzeCadence(chord1, chord2, keyStr);
+      const borrowed = UMT.Harmony.getBorrowedChords(keyStr).slice(0, 8);
+      const scales1 = UMT.Harmony.getSuggestedScales(chord1, chord2).slice(0, 4);
+
+      let text = `${c1str} → ${c2str} in ${keyStr}\n`;
+      text += `Cadence: ${cadence}\n\n`;
+      text += `Scales for ${c1str} → ${c2str}:\n`;
+      scales1.forEach(s => { text += `  ${s.scale}${s.hint ? ' — ' + s.hint : ''}\n`; });
+      text += `\nBorrowed chords in ${keyStr}:\n  `;
+      text += borrowed.map(c => c.name).join(', ');
+      out('out-harmony', text);
+    } catch(e) { outErr('out-harmony', e); }
+  }
+
+  function runHarmonyNeg() {
+    try {
+      const c1str = document.getElementById('t5-c1').value.trim();
+      const keyStr = document.getElementById('t5-key').value.trim();
+      const chord = UMT.parseChordSymbol(c1str);
+      const keyMatch = keyStr.match(/^([A-G][#b]*)/i);
+      const keyCenter = keyMatch ? keyMatch[1] : 'C';
+      const neg = UMT.Harmony.getNegativeHarmony(chord, keyCenter);
+      const negNotes = neg.getNotes().map(n => UMT.get12TETName(n.stepsFromBase));
+      let text = `Negative harmony of ${c1str} in ${keyStr}:\n`;
+      text += `Result: ${neg.name}\n`;
+      text += `Notes: ${negNotes.join(', ')}`;
+      out('out-harmony', text);
+    } catch(e) { outErr('out-harmony', e); }
+  }
+
+  function renderCircle() {
+    const targetKey = document.getElementById('t5-circle-key').value.trim();
+    const majorKeys = UMT.CircleOfFifths.majorKeys;
+    const minorKeys = UMT.CircleOfFifths.minorKeys;
+
+    const cx = 200, cy = 200, rOuter = 160, rInner = 110, rText = 178, rTextInner = 128;
+    const sliceAngle = (2 * Math.PI) / 12;
+
+    let svg = `<svg viewBox="0 0 400 400" width="320" height="320" xmlns="http://www.w3.org/2000/svg">`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="${rOuter + 15}" fill="#171717"/>`;
+
+    majorKeys.forEach((key, i) => {
+      const angle = i * sliceAngle - Math.PI / 2;
+      const midAngle = angle + sliceAngle / 2;
+
+      const x1 = cx + rInner * Math.cos(angle), y1 = cy + rInner * Math.sin(angle);
+      const x2 = cx + rOuter * Math.cos(angle), y2 = cy + rOuter * Math.sin(angle);
+      const x3 = cx + rOuter * Math.cos(angle + sliceAngle), y3 = cy + rOuter * Math.sin(angle + sliceAngle);
+      const x4 = cx + rInner * Math.cos(angle + sliceAngle), y4 = cy + rInner * Math.sin(angle + sliceAngle);
+
+      const sig = UMT.CircleOfFifths.getSignature(key);
+      const accCount = sig.sharps > 0 ? sig.sharps : -sig.flats;
+      const highlight = key === targetKey;
+      const fill = highlight ? '#4f46e5' : (Math.abs(accCount) <= 2 ? '#262626' : '#1c1c1c');
+
+      svg += `<path d="M${x1},${y1} L${x2},${y2} A${rOuter},${rOuter} 0 0,1 ${x3},${y3} L${x4},${y4} A${rInner},${rInner} 0 0,0 ${x1},${y1}" fill="${fill}" stroke="#404040" stroke-width="1"/>`;
+
+      const tx = cx + rText * Math.cos(midAngle), ty = cy + rText * Math.sin(midAngle);
+      svg += `<text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="central" fill="${highlight ? '#fff' : '#e5e5e5'}" font-size="13" font-family="sans-serif" font-weight="${highlight ? 'bold' : 'normal'}">${key}</text>`;
+
+      // Inner ring: relative minor
+      const minor = minorKeys[i];
+      const mhighlight = minor === targetKey.toLowerCase();
+      const mx = cx + rTextInner * Math.cos(midAngle), my = cy + rTextInner * Math.sin(midAngle);
+      svg += `<text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="central" fill="${mhighlight ? '#818cf8' : '#737373'}" font-size="11" font-family="sans-serif">${minor}</text>`;
+    });
+
+    svg += `<circle cx="${cx}" cy="${cy}" r="${rInner - 5}" fill="#111"/>`;
+    svg += `<text x="${cx}" y="${cy - 8}" text-anchor="middle" fill="#737373" font-size="11" font-family="sans-serif">relative</text>`;
+    svg += `<text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="#a3a3a3" font-size="12" font-family="sans-serif">minor</text>`;
+    svg += '</svg>';
+
+    document.getElementById('circle-svg').innerHTML = svg;
   }
   </script>
 </body>
