@@ -143,7 +143,26 @@
   <div id="staff-chords" class="bg-white rounded-lg p-2 mb-3 min-h-8"></div>
   <pre id="out-chords" class="out"></pre>
 </section>
-    <section id="progressions" class="sec"><!-- Task 6 --></section>
+    <section id="progressions" class="sec">
+  <h2 class="sec-title">4. Progressions & Voice Leading</h2>
+  <p class="sec-sub">parser · harmony · chord</p>
+  <p class="text-neutral-400 text-sm mb-4">Parse Roman numeral progressions. <code class="text-neutral-300">Chord.smoothTransition</code> optimizes voice leading between chords. <code class="text-neutral-300">Harmony.checkVoiceLeading</code> flags strict counterpoint issues.</p>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+    <div class="sm:col-span-2">
+      <label>Progression (Roman numerals, separate with " - ")</label>
+      <input id="t4-prog" type="text" value="ii7 - V7alt - Imaj7" class="inp" placeholder="e.g. ii7 - V7alt - Imaj7">
+    </div>
+    <div>
+      <label>Key</label>
+      <input id="t4-key" type="text" value="C major" class="inp" placeholder="e.g. C major, Bb minor">
+    </div>
+  </div>
+  <div class="flex gap-3 mb-4">
+    <button class="btn" onclick="runProgressions()">Run</button>
+    <button class="btn-sm" onclick="runProgressionsAudio()">Play progression</button>
+  </div>
+  <pre id="out-progressions" class="out" style="min-height:10rem"></pre>
+</section>
     <section id="harmony" class="sec"><!-- Task 7 --></section>
     <section id="settheory" class="sec"><!-- Task 8 --></section>
     <section id="microtonal" class="sec"><!-- Task 9 --></section>
@@ -329,6 +348,71 @@
       const notes = voicing === 'close' ? (inv === 0 ? chord.getNotes() : chord.getInversion(inv)) : chord.getVoicing(voicing);
       playFreqs(notes.map(n => n.frequency), 'chord');
     } catch(e) { outErr('out-chords', e); }
+  }
+
+  // ── Section 4: Progressions & Voice Leading ───────────────────────────────
+
+  function runProgressions() {
+    try {
+      const progStr = document.getElementById('t4-prog').value.trim();
+      const keyStr = document.getElementById('t4-key').value.trim();
+      const chords = UMT.parseRomanProgression(progStr, keyStr);
+
+      // Apply smooth voice leading
+      const voiced = [];
+      let prev = [];
+      for (const chord of chords) {
+        const next = UMT.Chord.smoothTransition(prev, chord);
+        voiced.push(next);
+        prev = next;
+      }
+
+      let text = `Key: ${keyStr}\nProgression: ${progStr}\n\n`;
+      chords.forEach((chord, i) => {
+        const vNotes = voiced[i];
+        const noteNames = vNotes.map(n => UMT.get12TETName(n.stepsFromBase)).join(', ');
+        text += `Chord ${i+1}: ${chord.name}\n  Voiced: ${noteNames}\n`;
+        if (i < chords.length - 1) {
+          const issues = UMT.Harmony.checkVoiceLeading(vNotes, voiced[i+1]);
+          if (issues.length > 0) {
+            text += `  Voice leading warnings → ${i+2}:\n`;
+            issues.forEach(iss => { text += `    ⚠ ${iss.message}\n`; });
+          } else {
+            text += `  Voice leading → ${i+2}: clean\n`;
+          }
+        }
+        text += '\n';
+      });
+
+      out('out-progressions', text);
+    } catch(e) { outErr('out-progressions', e); }
+  }
+
+  async function runProgressionsAudio() {
+    try {
+      const progStr = document.getElementById('t4-prog').value.trim();
+      const keyStr = document.getElementById('t4-key').value.trim();
+      const chords = UMT.parseRomanProgression(progStr, keyStr);
+
+      await Tone.start();
+      const poly = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'triangle' },
+        envelope: { attack: 0.05, release: 0.8 }
+      }).toDestination();
+
+      const chordDur = 1.5;
+      let prev = [];
+      chords.forEach((chord, i) => {
+        const notes = UMT.Chord.smoothTransition(prev, chord);
+        prev = notes;
+        const freqs = notes.map(n => n.frequency);
+        const time = Tone.now() + i * chordDur;
+        poly.triggerAttackRelease(freqs, chordDur - 0.1, time);
+      });
+
+      setTimeout(() => poly.dispose(), (chords.length + 1) * chordDur * 1000);
+      out('out-progressions', `Playing ${chords.length} chords…`);
+    } catch(e) { outErr('out-progressions', e); }
   }
   </script>
 </body>
