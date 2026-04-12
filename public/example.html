@@ -52,7 +52,40 @@
     </header>
 
     <!-- SECTIONS: filled in by subsequent tasks -->
-    <section id="tuning" class="sec"><!-- Task 3 --></section>
+    <section id="tuning" class="sec">
+  <h2 class="sec-title">1. Tuning Systems</h2>
+  <p class="sec-sub">tuning · interval · note · presets</p>
+  <p class="text-neutral-400 text-sm mb-4">Select a tuning system and a root note. UMT generates the scale steps and computes the frequency of each note using the tuning's interval ratios.</p>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+    <div>
+      <label>Tuning</label>
+      <select id="t1-tuning" class="sel w-full">
+        <option value="TET12">12-TET (Standard)</option>
+        <option value="TET24">24-TET (Quarter tones)</option>
+        <option value="TET31">31-TET (Meantone)</option>
+        <option value="FiveLimitJI">Just Intonation (5-Limit)</option>
+        <option value="PtolemaicJI">Just Intonation (Ptolemaic)</option>
+        <option value="WerckmeisterIII">Werckmeister III</option>
+        <option value="BohlenPierce">Bohlen-Pierce</option>
+        <option value="custom">Custom EDO</option>
+      </select>
+    </div>
+    <div>
+      <label>Custom EDO (steps/octave)</label>
+      <input id="t1-edo" type="number" value="19" min="5" max="72" class="inp">
+    </div>
+    <div>
+      <label>Root (steps from A4)</label>
+      <input id="t1-root" type="number" value="-9" class="inp">
+      <span class="text-neutral-600 text-xs">−9 = C4, 0 = A4</span>
+    </div>
+  </div>
+  <div class="flex gap-3 mb-4">
+    <button class="btn" onclick="runTuning()">Run</button>
+    <button class="btn-sm" onclick="runTuningAudio()">Play arpeggio</button>
+  </div>
+  <pre id="out-tuning" class="out"></pre>
+</section>
     <section id="scales" class="sec"><!-- Task 4 --></section>
     <section id="chords" class="sec"><!-- Task 5 --></section>
     <section id="progressions" class="sec"><!-- Task 6 --></section>
@@ -107,6 +140,51 @@
 
   // ── Section functions ─────────────────────────────────────────────────────
   // (filled in by subsequent tasks)
+
+  // ── Section 1: Tuning Systems ─────────────────────────────────────────────
+
+  function getTuning1() {
+    const key = document.getElementById('t1-tuning').value;
+    const edoN = parseInt(document.getElementById('t1-edo').value, 10);
+    const tunings = {
+      TET12: UMT.TET12, TET24: UMT.TET24, TET31: UMT.TET31,
+      FiveLimitJI: UMT.FiveLimitJI, PtolemaicJI: UMT.PtolemaicJI,
+      WerckmeisterIII: UMT.WerckmeisterIII, BohlenPierce: UMT.BohlenPierce
+    };
+    return key === 'custom' ? new UMT.EDO(edoN) : tunings[key];
+  }
+
+  function runTuning() {
+    try {
+      const tuning = getTuning1();
+      const root = parseInt(document.getElementById('t1-root').value, 10);
+      const actualRoot = tuning.getStepFromStandard(root);
+      const scale = UMT.ChromaticScale(tuning, actualRoot);
+      const notes = scale.getNotes(1);
+
+      let text = `Tuning: ${tuning.name}\n`;
+      text += `Octave steps: ${tuning.octaveSteps}\n\n`;
+      text += 'Step  Cents      Hz\n';
+      text += '───────────────────────────\n';
+      notes.forEach((n, i) => {
+        const interval = tuning.getInterval(n.stepsFromBase - actualRoot);
+        text += `${String(i).padStart(2)}    ${interval.cents.toFixed(1).padStart(8)} ¢   ${n.frequency.toFixed(3).padStart(9)} Hz\n`;
+      });
+      out('out-tuning', text);
+    } catch(e) { outErr('out-tuning', e); }
+  }
+
+  function runTuningAudio() {
+    try {
+      const tuning = getTuning1();
+      const root = parseInt(document.getElementById('t1-root').value, 10);
+      const actualRoot = tuning.getStepFromStandard(root);
+      const scale = UMT.ChromaticScale(tuning, actualRoot);
+      const freqs = scale.getNotes(1).map(n => n.frequency);
+      playFreqs(freqs, 'arpeggio');
+      out('out-tuning', `Playing arpeggio (${freqs.length} notes)…`);
+    } catch(e) { outErr('out-tuning', e); }
+  }
   </script>
 </body>
 </html>
