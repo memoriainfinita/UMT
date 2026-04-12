@@ -24,6 +24,8 @@
 - [coordinate-system] Steps from A4=0. C4=-9 in 12-TET. Confirmed 2026-04.
 - [library-language] All library strings in English. Demo UI in Spanish. Confirmed 2026-04.
 - [build-umt] `npm run build:umt` must run before `next build`. Already in `build` script. Confirmed 2026-04.
+- [audio-lib] Tone.js vía CDN para audio en demos vanilla. Confirmed 2026-04.
+- [sheet-music] abcjs vía CDN + ABCBridge para partituras en demos vanilla. Confirmed 2026-04.
 
 ## History
 
@@ -232,9 +234,28 @@ Decisiones clave:
 ## TODO
 
 - [ ] Crear repo en GitHub y actualizar URL CDN en README
-- [ ] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas) — librería lista para esto
+- [x] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas) — librería lista para esto
 - [ ] Test completo de la demo en navegador (probar todas las secciones)
 - [ ] Considerar añadir tests unitarios para los módulos core
 - [ ] Revisar spelling del b7 en acordes dominantes en tonalidades de sostenidos (C7 → A# en vez de Bb — limitación de diseño conocida, requiere lógica por intervalo)
 - [x] Revisión capa alta — harmony.ts, circle.ts, set-theory.ts, key-detection.ts, neo-riemannian.ts, scala.ts, rhythm.ts, abc-bridge.ts, utils.ts, index.ts, umt.ts
 - [x] Overhaul sistema bemoles/sostenidos — sesión 8
+
+## History
+
+### 2026-04-12 — Migración demo vanilla HTML
+
+Demo migrada de Next.js a un único `public/example.html`. Archivados: `app/`, `components/`, `lib/audio.ts`, configs Next.js → `archive/next-demo/`. `public/example.html` anterior → `archive/example-v0.html`. `package.json` limpiado: eliminadas deps Next/React/lucide.
+
+Secciones implementadas (11 + API Reference):
+1. Tuning Systems — selector + arpeggio Tone.js
+2. Scales & Modes — parseScaleSymbol + abcjs staff
+3. Chords & Voicings — voicings, inversiones, abcjs, Tone.js
+4. Progressions & Voice Leading — parseRomanProgression + smoothTransition
+5. Harmony & Key Analysis — detectChords, analyzeCadence, getSuggestedScales, getNegativeHarmony, Circle SVG
+6. Set Theory & Neo-Riemannian — normalForm, primeForm, intervalVector, PLR
+7. Microtonal & Scala — parseScala + presets Pelog/BP/Werck
+8. Rhythm & Meter — Polyrhythm.euclidean, MusicStream, Tone.MembraneSynth
+9. ABC Notation Export — ABCBridge + abcjs render
+10. Utilities — MIDI↔freq, enarmónicos, nombres de intervalo
+11. API Reference — tablas estáticas de todas las clases y métodos
