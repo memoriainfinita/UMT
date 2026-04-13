@@ -92,6 +92,7 @@
       display: block;
       margin-bottom: 0.25rem;
     }
+    .abcjs-container { color: #000; }
     .abcjs-container svg { max-width: 100%; }
   </style>
 </head>
@@ -178,7 +179,7 @@
     <button class="btn" onclick="runScales()">Run</button>
     <button class="btn-sm" onclick="runScalesAudio()">Play arpeggio</button>
   </div>
-  <div id="staff-scales" class="bg-white rounded-lg p-2 mb-3 min-h-8"></div>
+  <div id="staff-scales" class="rounded-lg p-2 mb-3 min-h-8" style="background:#fff;color:#000"></div>
   <pre id="out-scales" class="out"></pre>
 </section>
     <section id="chords" class="sec">
@@ -214,7 +215,7 @@
     <button class="btn" onclick="runChords()">Run</button>
     <button class="btn-sm" onclick="runChordsAudio()">Play chord</button>
   </div>
-  <div id="staff-chords" class="bg-white rounded-lg p-2 mb-3 min-h-8"></div>
+  <div id="staff-chords" class="rounded-lg p-2 mb-3 min-h-8" style="background:#fff;color:#000"></div>
   <pre id="out-chords" class="out"></pre>
 </section>
     <section id="progressions" class="sec">
@@ -387,7 +388,7 @@ Javanese Pelog
     </div>
   </div>
   <button class="btn mb-4" onclick="runABC()">Export & Render</button>
-  <div id="staff-abc" class="bg-white rounded-lg p-3 mb-3 min-h-12"></div>
+  <div id="staff-abc" class="rounded-lg p-3 mb-3 min-h-12" style="background:#fff;color:#000"></div>
   <pre id="out-abc" class="out"></pre>
 </section>
 <section id="utils" class="sec">
@@ -1082,23 +1083,40 @@ Werckmeister III Well Temperament
       const pattern = UMT.Polyrhythm.euclidean(k, n);
 
       await Tone.start();
-      const stepDur = 0.12;
+      Tone.Transport.stop();
+      Tone.Transport.cancel();
+      Tone.Transport.position = 0;
+
       const membrane = new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 5 }).toDestination();
       const hihat = new Tone.MetalSynth({ frequency: 400, envelope: { attack: 0.001, decay: 0.04, release: 0.01 }, harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }).toDestination();
       hihat.volume.value = -12;
 
-      const now = Tone.now();
+      // 16th note at 120bpm = 0.125s; use seconds so Tone.Part doesn't depend on Transport meter
+      const stepDur = 60 / Tone.Transport.bpm.value / 4;
+      const events = [];
       for (let rep = 0; rep < 2; rep++) {
         pattern.forEach((pulse, i) => {
-          const t = now + (rep * n + i) * stepDur;
-          if (pulse) {
-            membrane.triggerAttackRelease('C1', '32n', t);
-          } else {
-            hihat.triggerAttackRelease('16n', t);
-          }
+          events.push({ time: (rep * n + i) * stepDur, type: pulse ? 'kick' : 'hat' });
         });
       }
-      setTimeout(() => { membrane.dispose(); hihat.dispose(); }, (2 * n + 2) * stepDur * 1000);
+
+      const part = new Tone.Part((time, ev) => {
+        if (ev.type === 'kick') membrane.triggerAttackRelease('C1', '32n', time);
+        else hihat.triggerAttackRelease('16n', time);
+      }, events);
+      part.start(0);
+
+      Tone.Transport.start('+0.1');
+
+      const totalMs = (2 * n * stepDur + 1) * 1000;
+      setTimeout(() => {
+        Tone.Transport.stop();
+        Tone.Transport.cancel();
+        part.dispose();
+        membrane.dispose();
+        hihat.dispose();
+      }, totalMs);
+
       out('out-rhythm', `Playing E(${k},${n}) × 2…`);
     } catch(e) { outErr('out-rhythm', e); }
   }
