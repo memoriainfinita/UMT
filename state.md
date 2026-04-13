@@ -243,6 +243,13 @@ Decisiones clave:
 
 ## History
 
+### 2026-04-13 — Fixes visuales y audio demo
+
+Bugs corregidos en `public/example.html`:
+
+- **Pentagrama gris:** `body` tiene `text-neutral-100` (blanco); abcjs usa `currentColor` en el SVG → notación invisible sobre fondo blanco. Fix: `color:#000` en los tres divs contenedores (`staff-scales`, `staff-chords`, `staff-abc`) + regla CSS `.abcjs-container { color: #000 }`.
+- **Rhythm audio error:** `triggerAttackRelease` en bucle con tiempos absolutos causaba "Start time must be strictly greater than previous start time". Fix: reescrito con `Tone.Part` + `Tone.Transport`, que gestiona el scheduling correctamente.
+
 ### 2026-04-13 — Testing Playwright + fixes demo
 
 32/32 tests pasados. Configuración: `tests/demo.spec.js` + `playwright.config.js` con `webServer` (levanta http-server automáticamente). Comando: `npx playwright test`.
