@@ -53,9 +53,11 @@ export class Scale {
     let pf: boolean;
     if (this.preferFlats !== undefined) {
       pf = this.preferFlats;
-    } else {
+    } else if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
       const rootFlatName = new Note(this.tuningSystem, this.rootStep).getName({ preferFlats: true });
       pf = usesFlats(rootFlatName);
+    } else {
+      pf = false; // non-12-TET tunings have no flat/sharp preference
     }
 
     const createNote = (step: number): Note => {
