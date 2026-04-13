@@ -235,13 +235,24 @@ Decisiones clave:
 
 - [ ] Crear repo en GitHub y actualizar URL CDN en README
 - [x] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas) — librería lista para esto
-- [ ] Test completo de la demo en navegador (probar todas las secciones)
+- [x] Test completo de la demo con Playwright — 32/32 pasados
 - [ ] Considerar añadir tests unitarios para los módulos core
 - [ ] Revisar spelling del b7 en acordes dominantes en tonalidades de sostenidos (C7 → A# en vez de Bb — limitación de diseño conocida, requiere lógica por intervalo)
 - [x] Revisión capa alta — harmony.ts, circle.ts, set-theory.ts, key-detection.ts, neo-riemannian.ts, scala.ts, rhythm.ts, abc-bridge.ts, utils.ts, index.ts, umt.ts
 - [x] Overhaul sistema bemoles/sostenidos — sesión 8
 
 ## History
+
+### 2026-04-13 — Testing Playwright + fixes demo
+
+32/32 tests pasados. Configuración: `tests/demo.spec.js` + `playwright.config.js` con `webServer` (levanta http-server automáticamente). Comando: `npx playwright test`.
+
+Bugs encontrados y corregidos:
+
+- `example.html` — `@apply` Tailwind no se aplicaba: reemplazado con CSS nativo en `<style>`
+- `example.html` — `scale.stepsPattern` → undefined: corregido a `scale.stepPattern`
+- `scale.ts` — `getNotes()` en tunings no-12-TET llamaba `usesFlats("Step -5")` → crash: añadido guard para solo calcular `pf` en 12-TET
+- `playwright.config.js` — añadido `webServer` para levantar/parar http-server automáticamente
 
 ### 2026-04-12 — Migración demo vanilla HTML
 
