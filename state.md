@@ -236,12 +236,19 @@ Decisiones clave:
 - [ ] Crear repo en GitHub y actualizar URL CDN en README
 - [x] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas) — librería lista para esto
 - [x] Test completo de la demo con Playwright — 32/32 pasados
-- [ ] Considerar añadir tests unitarios para los módulos core
+- [x] Añadir tests unitarios — vitest configurado, 42 tests en `tests/unit/circle.test.ts`
 - [ ] Revisar spelling del b7 en acordes dominantes en tonalidades de sostenidos (C7 → A# en vez de Bb — limitación de diseño conocida, requiere lógica por intervalo)
 - [x] Revisión capa alta — harmony.ts, circle.ts, set-theory.ts, key-detection.ts, neo-riemannian.ts, scala.ts, rhythm.ts, abc-bridge.ts, utils.ts, index.ts, umt.ts
 - [x] Overhaul sistema bemoles/sostenidos — sesión 8
 
 ## History
+
+### 2026-04-18 — CircleOfFifths expansion + vitest
+
+Spec: `docs/superpowers/specs/2026-04-18-circle-of-fifths-expansion-design.md`
+Plan: `docs/superpowers/plans/2026-04-18-circle-of-fifths-expansion.md`
+
+Añadidos 6 métodos nuevos a `circle.ts`: `getPosition`, `navigate`, `getDistance`, `getParallel`, `getNeighbors`, `getRelatedKeys`. Nuevo tipo exportado: `RelatedKey`. Vitest configurado (`npm run test:unit`), 42 tests pasando. Bundle reconstruido a 38.8kb.
 
 ### 2026-04-13 — Fixes visuales y audio demo
 
