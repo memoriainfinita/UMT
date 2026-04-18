@@ -233,13 +233,17 @@ Decisiones clave:
 
 ## TODO
 
-- [ ] **Ejecutar `docs/plan-teoria-completa.md`** — 6 fases, ~205 tests nuevos
+- [ ] **Ejecutar `docs/plan-teoria-completa.md`** — 10 fases, ~455 tests nuevos (v2: revisión profunda incluye lagunas omitidas + huecos nuevos)
   - [ ] Fase 1: acordes diatónicos + características modales
-  - [ ] Fase 2: análisis de progresión completa + cadencias modales + voice leading avanzado
-  - [ ] Fase 3: intermodalidad universal + pivot chords + modulación (breaking: `getBorrowedChords`)
-  - [ ] Fase 4: progresiones presets + detección de secuencias
-  - [ ] Fase 5: upper-structure triads + slash chord analysis
-  - [ ] Fase 6: set theory avanzado, dodecafonismo, contrapunto, xen, melodía, MusicXML/LilyPond
+  - [ ] Fase 2: análisis de progresión + voice leading clásico completo (doblado, 6/4, falsas relaciones, quintas ocultas)
+  - [ ] Fase 3: intermodalidad universal + pivot chords + modulación + sustitución completa + Coltrane matrix (breaking: `getBorrowedChords`, `checkVoiceLeading`)
+  - [ ] Fase 4: progresiones presets + secuencias + análisis formal (AABA, sonata, rondó...)
+  - [ ] Fase 5: UST + slash/polychord + chord-scale completeness + enharmonic respelling
+  - [ ] Fase 6: set theory completo (Tn/TnI, subset) + dodecafonismo + contrapunto 1-5 + canon + Schenker básico + melodía
+  - [ ] Fase 7: rítmica avanzada (hemiola, síncopa, clave patterns, polymeter, metric modulation, isorhythm)
+  - [ ] Fase 8: bajo cifrado + escalas griegas + hexacordos + musica ficta + ragas + maqamat + solfège
+  - [ ] Fase 9: Messiaen modes completos + Tonnetz + MOS + comma pumps + xen + temperament compare + espectral + Tymoczko OPTIC
+  - [ ] Fase 10: MusicXML + LilyPond + ABC mejorado
 - [ ] Crear repo en GitHub y actualizar URL CDN en README
 - [x] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas) — librería lista para esto
 - [x] Test completo de la demo con Playwright — 32/32 pasados
@@ -249,6 +253,10 @@ Decisiones clave:
 - [x] Overhaul sistema bemoles/sostenidos — sesión 8
 
 ## History
+
+### 2026-04-18 — Plan v2: revisión profunda
+
+Revisión del plan inicial. Detectadas 11 lagunas del diagnóstico original que se habían quedado fuera + 22 huecos nuevos (bajo cifrado, forma musical, ragas, maqamat, hexacordos, musica ficta, análisis espectral, Tymoczko OPTIC, Schenker, Messiaen modes 4-7, metric modulation, isorhythm, clave patterns, sustituciones armónicas completas, Coltrane matrix como módulo, chord-scale completeness, polychord parser, etc.). Plan reescrito: 10 fases (antes 6), ~455 tests (antes 205). Decisión: incluir todo, incluso lo previamente descartado (Schenker básico, ragas, Tymoczko). Bumps de versión escalonados: 2.0 tras fase 3, 3.0 tras fase 6, 4.0 tras fase 9.
 
 ### 2026-04-18 — Análisis teórico profundo + plan global de expansión
 
