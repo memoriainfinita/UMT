@@ -51,3 +51,69 @@ describe('CircleOfFifths.navigate', () => {
     expect(CircleOfFifths.navigate('X', 1)).toBe('');
   });
 });
+
+describe('CircleOfFifths.getDistance', () => {
+  it('C to G is 1', () => {
+    expect(CircleOfFifths.getDistance('C', 'G')).toBe(1);
+  });
+  it('C to F is 1', () => {
+    expect(CircleOfFifths.getDistance('C', 'F')).toBe(1);
+  });
+  it('C to D is 2', () => {
+    expect(CircleOfFifths.getDistance('C', 'D')).toBe(2);
+  });
+  it('C to F# is 6 (tritone — max distance)', () => {
+    expect(CircleOfFifths.getDistance('C', 'F#')).toBe(6);
+  });
+  it('is symmetric: G to C equals C to G', () => {
+    expect(CircleOfFifths.getDistance('G', 'C')).toBe(1);
+  });
+  it('same key returns 0', () => {
+    expect(CircleOfFifths.getDistance('C', 'C')).toBe(0);
+  });
+  it('returns -1 for mixed modes', () => {
+    expect(CircleOfFifths.getDistance('C', 'a')).toBe(-1);
+  });
+  it('works for minor keys', () => {
+    expect(CircleOfFifths.getDistance('a', 'e')).toBe(1);
+  });
+});
+
+describe('CircleOfFifths.getParallel', () => {
+  it('C major → c minor', () => {
+    expect(CircleOfFifths.getParallel('C')).toBe('c');
+  });
+  it('a minor → A major', () => {
+    expect(CircleOfFifths.getParallel('a')).toBe('A');
+  });
+  it('F# major → f# minor', () => {
+    expect(CircleOfFifths.getParallel('F#')).toBe('f#');
+  });
+  it('Bb major → bb minor', () => {
+    expect(CircleOfFifths.getParallel('Bb')).toBe('bb');
+  });
+  it('f# minor → F# major', () => {
+    expect(CircleOfFifths.getParallel('f#')).toBe('F#');
+  });
+  it('double application returns original', () => {
+    expect(CircleOfFifths.getParallel(CircleOfFifths.getParallel('D'))).toBe('D');
+  });
+});
+
+describe('CircleOfFifths.getNeighbors', () => {
+  it('radius 1 from C returns G and F', () => {
+    expect(CircleOfFifths.getNeighbors('C')).toEqual(['G', 'F']);
+  });
+  it('radius 2 from C returns G, F, D, Bb', () => {
+    expect(CircleOfFifths.getNeighbors('C', 2)).toEqual(['G', 'F', 'D', 'Bb']);
+  });
+  it('does not include the key itself', () => {
+    expect(CircleOfFifths.getNeighbors('C')).not.toContain('C');
+  });
+  it('works for minor keys', () => {
+    expect(CircleOfFifths.getNeighbors('a')).toEqual(['e', 'd']);
+  });
+  it('radius 0 returns empty array', () => {
+    expect(CircleOfFifths.getNeighbors('C', 0)).toEqual([]);
+  });
+});

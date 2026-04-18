@@ -105,4 +105,51 @@ export class CircleOfFifths {
     if (index === -1) return '';
     return circle[(index - 1 + 12) % 12];
   }
+
+  /**
+   * Shortest distance (0–6) between two keys on the same circle.
+   * Returns -1 if keys are of different modes or unrecognized.
+   */
+  static getDistance(key1: string, key2: string): number {
+    const n1 = this.normalizeKey(key1);
+    const n2 = this.normalizeKey(key2);
+    const isMinor1 = n1 === n1.toLowerCase() && n1.length > 0;
+    const isMinor2 = n2 === n2.toLowerCase() && n2.length > 0;
+    if (isMinor1 !== isMinor2) return -1;
+    const pos1 = this.getPosition(key1);
+    const pos2 = this.getPosition(key2);
+    if (pos1 === -1 || pos2 === -1) return -1;
+    const diff = Math.abs(pos1 - pos2);
+    return Math.min(diff, 12 - diff);
+  }
+
+  /**
+   * Returns the parallel key — same root, opposite mode.
+   * 'C' → 'c', 'a' → 'A', 'F#' → 'f#'.
+   */
+  static getParallel(key: string): string {
+    const normalized = this.normalizeKey(key);
+    if (!normalized) return '';
+    const isMinor = normalized === normalized.toLowerCase() && normalized.length > 0;
+    if (isMinor) {
+      return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    } else {
+      return normalized.charAt(0).toLowerCase() + normalized.slice(1);
+    }
+  }
+
+  /**
+   * Returns keys within radius steps on the same circle, sorted closest first.
+   * Clockwise neighbor before counter-clockwise at each distance. Excludes key itself.
+   */
+  static getNeighbors(key: string, radius = 1): string[] {
+    const result: string[] = [];
+    for (let d = 1; d <= radius; d++) {
+      const cw = this.navigate(key, d);
+      const ccw = this.navigate(key, -d);
+      if (cw) result.push(cw);
+      if (ccw && ccw !== cw) result.push(ccw);
+    }
+    return result;
+  }
 }
