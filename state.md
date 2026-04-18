@@ -233,6 +233,13 @@ Decisiones clave:
 
 ## TODO
 
+- [ ] **Ejecutar `docs/plan-teoria-completa.md`** — 6 fases, ~205 tests nuevos
+  - [ ] Fase 1: acordes diatónicos + características modales
+  - [ ] Fase 2: análisis de progresión completa + cadencias modales + voice leading avanzado
+  - [ ] Fase 3: intermodalidad universal + pivot chords + modulación (breaking: `getBorrowedChords`)
+  - [ ] Fase 4: progresiones presets + detección de secuencias
+  - [ ] Fase 5: upper-structure triads + slash chord analysis
+  - [ ] Fase 6: set theory avanzado, dodecafonismo, contrapunto, xen, melodía, MusicXML/LilyPond
 - [ ] Crear repo en GitHub y actualizar URL CDN en README
 - [x] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas) — librería lista para esto
 - [x] Test completo de la demo con Playwright — 32/32 pasados
@@ -242,6 +249,22 @@ Decisiones clave:
 - [x] Overhaul sistema bemoles/sostenidos — sesión 8
 
 ## History
+
+### 2026-04-18 — Análisis teórico profundo + plan global de expansión
+
+Auditoría de la cobertura de teoría armónica de la librería. Detectadas lagunas estructurales:
+
+- **Modos**: catálogo completo en `dictionaries.ts` pero sin sistema — faltan características modales, brillo, parent scale, avoid notes.
+- **Acordes diatónicos por escala**: ausentes. Laguna más grave — bloquea análisis funcional.
+- **Análisis de progresión**: `analyzeCadence` solo evalúa 2 acordes. No hay análisis de progresión completa (función T/S/D, préstamos, secundarios, modulaciones).
+- **Intercambio modal**: `getBorrowedChords` hardcoded solo mayor↔menor paralelo + Dorian. Faltan 7 modos paralelos + menor armónica/melódica + armónica mayor.
+- **Modulación**: cero lógica de pivot chord, clasificación de modulación, distancia modal.
+- **Progresiones/secuencias preset**: ausentes (ii-V-I, Coltrane changes, rhythm changes, blues 12, Pachelbel...).
+- **Jazz avanzado**: sin UST, sin análisis de slash chords.
+- **Set theory**: falta Forte names, Z-relations, complements.
+- **Dodecafonismo, contrapunto, MOS, Tonnetz, análisis melódico, MusicXML/LilyPond**: ausentes.
+
+Plan global escrito en `docs/plan-teoria-completa.md`. 6 fases, ~205 tests nuevos. Decisión: breaking changes permitidos, bump 2.0.0 al terminar fase 3. Sin implementación en esta sesión — solo diagnóstico + plan.
 
 ### 2026-04-18 — CircleOfFifths expansion + vitest
 
