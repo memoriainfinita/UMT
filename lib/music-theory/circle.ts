@@ -1,3 +1,9 @@
+export type RelatedKey = {
+  key: string;
+  relationship: 'relative' | 'parallel' | 'dominant' | 'subdominant' | 'neighbor';
+  distance: number;
+};
+
 /**
  * Circle of Fifths utility.
  * Convention: major keys use uppercase ('C', 'G'...), minor keys use lowercase ('a', 'e'...).
@@ -150,6 +156,33 @@ export class CircleOfFifths {
       if (cw) result.push(cw);
       if (ccw && ccw !== cw) result.push(ccw);
     }
+    return result;
+  }
+
+  /**
+   * Returns all tonally related keys sorted by distance ascending.
+   * Covers: relative, parallel, dominant, subdominant, and ±2 neighbors.
+   */
+  static getRelatedKeys(key: string): RelatedKey[] {
+    const result: RelatedKey[] = [];
+
+    const rel = this.getRelative(key);
+    if (rel) result.push({ key: rel, relationship: 'relative', distance: 0 });
+
+    const par = this.getParallel(key);
+    if (par) result.push({ key: par, relationship: 'parallel', distance: 0 });
+
+    const dom = this.getDominant(key);
+    if (dom) result.push({ key: dom, relationship: 'dominant', distance: 1 });
+
+    const sub = this.getSubdominant(key);
+    if (sub) result.push({ key: sub, relationship: 'subdominant', distance: 1 });
+
+    const n2cw = this.navigate(key, 2);
+    const n2ccw = this.navigate(key, -2);
+    if (n2cw) result.push({ key: n2cw, relationship: 'neighbor', distance: 2 });
+    if (n2ccw) result.push({ key: n2ccw, relationship: 'neighbor', distance: 2 });
+
     return result;
   }
 }
