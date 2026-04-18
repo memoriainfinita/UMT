@@ -82,6 +82,19 @@ export class CircleOfFifths {
   }
 
   /**
+   * Moves steps positions clockwise (positive) or counter-clockwise (negative).
+   * Returns empty string if key is not recognized.
+   */
+  static navigate(key: string, steps: number): string {
+    const normalized = this.normalizeKey(key);
+    const isMinor = normalized === normalized.toLowerCase() && normalized.length > 0;
+    const circle = isMinor ? this.minorKeys : this.majorKeys;
+    const pos = circle.indexOf(normalized);
+    if (pos === -1) return '';
+    return circle[((pos + steps) % 12 + 12) % 12];
+  }
+
+  /**
    * Gets the subdominant key (perfect fourth up / one step counter-clockwise).
    */
   static getSubdominant(key: string): string {
