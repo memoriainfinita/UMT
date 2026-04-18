@@ -71,6 +71,17 @@ export class CircleOfFifths {
   }
 
   /**
+   * Returns the 0–11 index of the key on its circle (C/a = 0, G/e = 1…).
+   * Returns -1 if the key is not recognized.
+   */
+  static getPosition(key: string): number {
+    const normalized = this.normalizeKey(key);
+    const isMinor = normalized === normalized.toLowerCase() && normalized.length > 0;
+    const circle = isMinor ? this.minorKeys : this.majorKeys;
+    return circle.indexOf(normalized);
+  }
+
+  /**
    * Gets the subdominant key (perfect fourth up / one step counter-clockwise).
    */
   static getSubdominant(key: string): string {
