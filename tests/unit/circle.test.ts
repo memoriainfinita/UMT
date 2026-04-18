@@ -27,3 +27,27 @@ describe('CircleOfFifths.getPosition', () => {
     expect(CircleOfFifths.getPosition('X')).toBe(-1);
   });
 });
+
+describe('CircleOfFifths.navigate', () => {
+  it('1 step clockwise from C is G', () => {
+    expect(CircleOfFifths.navigate('C', 1)).toBe('G');
+  });
+  it('1 step counter-clockwise from C is F', () => {
+    expect(CircleOfFifths.navigate('C', -1)).toBe('F');
+  });
+  it('2 steps clockwise from C is D', () => {
+    expect(CircleOfFifths.navigate('C', 2)).toBe('D');
+  });
+  it('wraps around: 12 steps returns same key', () => {
+    expect(CircleOfFifths.navigate('G', 12)).toBe('G');
+  });
+  it('wraps around: -12 steps returns same key', () => {
+    expect(CircleOfFifths.navigate('D', -12)).toBe('D');
+  });
+  it('works for minor keys', () => {
+    expect(CircleOfFifths.navigate('a', 1)).toBe('e');
+  });
+  it('returns empty string for unknown key', () => {
+    expect(CircleOfFifths.navigate('X', 1)).toBe('');
+  });
+});
