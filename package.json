@@ -4,12 +4,14 @@
   "private": true,
   "scripts": {
     "build:umt": "npx -y esbuild lib/music-theory/umt.ts --bundle --minify --sourcemap --format=iife --global-name=UMT --outfile=public/umt.js",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:unit": "vitest run"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@types/node": "^20",
     "eslint": "9.39.1",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^4.1.4"
   }
 }
