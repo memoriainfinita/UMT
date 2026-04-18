@@ -117,3 +117,42 @@ describe('CircleOfFifths.getNeighbors', () => {
     expect(CircleOfFifths.getNeighbors('C', 0)).toEqual([]);
   });
 });
+
+describe('CircleOfFifths.getRelatedKeys', () => {
+  it('returns 6 entries for C major', () => {
+    expect(CircleOfFifths.getRelatedKeys('C')).toHaveLength(6);
+  });
+  it('includes relative minor with distance 0', () => {
+    const related = CircleOfFifths.getRelatedKeys('C');
+    expect(related).toContainEqual({ key: 'a', relationship: 'relative', distance: 0 });
+  });
+  it('includes parallel minor with distance 0', () => {
+    const related = CircleOfFifths.getRelatedKeys('C');
+    expect(related).toContainEqual({ key: 'c', relationship: 'parallel', distance: 0 });
+  });
+  it('includes dominant with distance 1', () => {
+    const related = CircleOfFifths.getRelatedKeys('C');
+    expect(related).toContainEqual({ key: 'G', relationship: 'dominant', distance: 1 });
+  });
+  it('includes subdominant with distance 1', () => {
+    const related = CircleOfFifths.getRelatedKeys('C');
+    expect(related).toContainEqual({ key: 'F', relationship: 'subdominant', distance: 1 });
+  });
+  it('includes two neighbors at distance 2', () => {
+    const related = CircleOfFifths.getRelatedKeys('C');
+    const neighbors = related.filter(r => r.relationship === 'neighbor');
+    expect(neighbors).toHaveLength(2);
+    expect(neighbors.every(n => n.distance === 2)).toBe(true);
+  });
+  it('is sorted by distance ascending', () => {
+    const related = CircleOfFifths.getRelatedKeys('C');
+    for (let i = 1; i < related.length; i++) {
+      expect(related[i].distance).toBeGreaterThanOrEqual(related[i - 1].distance);
+    }
+  });
+  it('works for minor keys', () => {
+    const related = CircleOfFifths.getRelatedKeys('a');
+    expect(related).toContainEqual({ key: 'C', relationship: 'relative', distance: 0 });
+    expect(related).toContainEqual({ key: 'A', relationship: 'parallel', distance: 0 });
+  });
+});
