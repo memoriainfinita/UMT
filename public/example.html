@@ -480,6 +480,26 @@ Javanese Pelog
   <pre id="out-intermodal" class="out"></pre>
 </section>
 
+<section id="progressions" class="sec">
+  <h2 class="sec-title">4d. Progresiones, secuencias y forma (Fase 4)</h2>
+  <p class="sec-sub">Diccionario de progresiones, detección de secuencias, análisis formal, retrogradación</p>
+  <div class="flex gap-3 flex-wrap mb-4">
+    <select id="t4-prog-id" class="inp w-48">
+      <option value="ii-V-I">ii-V-I</option>
+      <option value="blues-12">Blues 12 compases</option>
+      <option value="pachelbel">Pachelbel</option>
+      <option value="coltrane-changes">Coltrane changes</option>
+      <option value="andalusian">Andaluza</option>
+      <option value="rhythm-changes">Rhythm changes</option>
+      <option value="turnaround-jazz">Turnaround jazz</option>
+      <option value="backdoor-ii-V">Backdoor ii-V</option>
+    </select>
+    <input id="t4-key" class="inp w-36" value="C major" placeholder="Tonalidad">
+    <button onclick="runPhase4()" class="btn">Analizar</button>
+  </div>
+  <pre id="out-phase4" class="out"></pre>
+</section>
+
 <section id="reference" class="sec">
   <h2 class="sec-title">11. API Reference</h2>
   <p class="sec-sub">All exported classes and key methods</p>
@@ -1410,6 +1430,53 @@ Werckmeister III Well Temperament
 
       out('out-intermodal', text);
     } catch(e) { outErr('out-intermodal', e); }
+  }
+
+  function runPhase4() {
+    try {
+      const progId = document.getElementById('t4-prog-id').value.trim();
+      const key    = document.getElementById('t4-key').value.trim();
+
+      // Progression lookup
+      const entry = UMT.PROGRESSIONS[progId];
+      if (!entry) throw new Error(`Unknown progression: ${progId}`);
+      const chords = UMT.getProgression(progId, key);
+      let text = `=== ${entry.name} (${entry.style}) in ${key} ===\n`;
+      text += `Description: ${entry.description}\n`;
+      text += `Roman numerals: ${entry.romanNumerals.join(' - ')}\n`;
+      text += `Realized chords: ${chords.map(c => c.name).join(' - ')}\n`;
+
+      // Sequence detection
+      const seq = UMT.Harmony.detectSequence(chords);
+      text += `\nSequence type: ${seq.type} (confidence: ${(seq.confidence * 100).toFixed(0)}%)\n`;
+
+      // Formal analysis
+      const form = UMT.FormAnalyzer.analyzeHarmonic(chords, key);
+      text += `\nForm analysis:\n`;
+      text += `  Type: ${form.type} (confidence: ${(form.confidence * 100).toFixed(0)}%)\n`;
+      text += `  Sections: ${form.sections.map(s => `${s.label}[${s.start}-${s.end}]`).join(' ')}\n`;
+
+      // Voice leading smoothness
+      const smooth = UMT.Harmony.voiceLeadingSmoothness(chords);
+      text += `\nVoice leading smoothness: ${(smooth * 100).toFixed(1)}%\n`;
+
+      // Retrograde
+      const retro = UMT.Harmony.retrogradeProgression(chords);
+      text += `\nRetrograde: ${retro.map(c => c.name).join(' - ')}\n`;
+
+      // Reprises
+      const reprises = UMT.FormAnalyzer.detectReprise(chords);
+      if (reprises.length > 0) {
+        text += `\nRepeated segments found: ${reprises.length}\n`;
+        reprises.slice(0, 3).forEach(r => {
+          text += `  At index ${r.start}, length ${r.length}: ${chords.slice(r.start, r.start + r.length).map(c => c.name).join('-')}\n`;
+        });
+      } else {
+        text += `\nNo repeated segments found.\n`;
+      }
+
+      out('out-phase4', text);
+    } catch(e) { outErr('out-phase4', e); }
   }
   </script>
 </body>

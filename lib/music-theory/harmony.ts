@@ -1182,6 +1182,107 @@ export class Harmony {
 
     return [s(`${root} major`), s(`${root} minor`)];
   }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  //  Fase 4: sequence detection, retrograde/inversion, smoothness
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Detects common harmonic sequences in a chord progression.
+   */
+  static detectSequence(chords: Chord[]): { type: string; confidence: number } {
+    if (chords.length < 3) return { type: 'unknown', confidence: 0 };
+    const oct = chords[0].tuningSystem.octaveSteps;
+    const roots = chords.map(c => ((c.rootStep % oct) + oct) % oct);
+
+    // Compute interval classes between consecutive roots
+    const intervals: number[] = [];
+    for (let i = 1; i < roots.length; i++) {
+      intervals.push(((roots[i] - roots[i - 1]) + oct) % oct);
+    }
+
+    // Circle of fifths descending: each root is a P4 (5 semitones) above the last
+    const is5desc = intervals.every(iv => iv === 5);
+    if (is5desc) return { type: 'circle-of-fifths-descending', confidence: 1 };
+
+    // Circle of fifths ascending: each root is a P5 (7 semitones) above the last
+    const is5asc = intervals.every(iv => iv === 7);
+    if (is5asc) return { type: 'circle-of-fifths-ascending', confidence: 1 };
+
+    // Parallel descending: all roots descend by the same step and quality matches
+    const allSameInterval = intervals.every(iv => iv === intervals[0]);
+    if (allSameInterval && intervals[0] !== 0) {
+      const descending = intervals[0] > oct / 2 || intervals[0] === 1 || intervals[0] === 2;
+      if (descending) return { type: 'parallel-descending', confidence: 0.85 };
+      return { type: 'parallel-ascending', confidence: 0.85 };
+    }
+
+    // Pachelbel: I-V-vi-iii-IV-I-IV-V (roots: 0,7,9,4,5,0,5,7 relative to key)
+    // Simplified: detect the interval pattern 7,2,7,1,7,5,2 (mod 12)
+    if (intervals.length >= 7) {
+      const pachPattern = [7, 2, 7, 1, 7, 5, 2];
+      const matchPach = pachPattern.every((iv, i) => intervals[i] === iv);
+      if (matchPach) return { type: 'pachelbel', confidence: 1 };
+      // Partial match
+      const partial = pachPattern.slice(0, intervals.length).filter((iv, i) => intervals[i] === iv).length;
+      if (partial / Math.min(pachPattern.length, intervals.length) >= 0.7) {
+        return { type: 'pachelbel', confidence: 0.75 };
+      }
+    }
+
+    // Romanesca: I-V-vi-III (roots: 0,7,9,4)
+    if (intervals.length >= 3) {
+      const romPattern = [7, 2, 7];
+      const matchRom = romPattern.every((iv, i) => intervals[i] === iv);
+      if (matchRom) return { type: 'romanesca', confidence: 0.85 };
+    }
+
+    return { type: 'unknown', confidence: 0 };
+  }
+
+  /**
+   * Returns the retrograde (reversed order) of a chord progression.
+   */
+  static retrogradeProgression(chords: Chord[]): Chord[] {
+    return chords.slice().reverse();
+  }
+
+  /**
+   * Returns a harmonically inverted progression around `axisNote`.
+   * Each chord's root is reflected: newRoot = 2*axis - root (in steps).
+   * Chord quality is preserved.
+   */
+  static invertProgression(chords: Chord[], axisNote: Note): Chord[] {
+    return chords.map(c => {
+      const axisStep = axisNote.stepsFromBase;
+      const newRootStep = 2 * axisStep - c.rootStep;
+      const rootDelta = newRootStep - c.rootStep;
+      return c.transpose(rootDelta);
+    });
+  }
+
+  /**
+   * Measures average voice-leading smoothness across a progression (0 = rough, 1 = smooth).
+   * Uses root-motion size relative to the octave as a proxy: smaller intervals = smoother.
+   */
+  static voiceLeadingSmoothness(chords: Chord[]): number {
+    if (chords.length <= 1) return 1;
+    const oct = chords[0].tuningSystem.octaveSteps;
+    let totalDistance = 0;
+    let count = 0;
+    for (let i = 1; i < chords.length; i++) {
+      const r1 = ((chords[i - 1].rootStep % oct) + oct) % oct;
+      const r2 = ((chords[i].rootStep % oct) + oct) % oct;
+      const diff = Math.abs(r2 - r1);
+      const distance = Math.min(diff, oct - diff); // smallest interval class
+      totalDistance += distance;
+      count++;
+    }
+    const avgDistance = totalDistance / count;
+    // Normalize: max meaningful distance is half an octave (tritone = 6 in 12-TET)
+    const maxDist = oct / 2;
+    return Math.max(0, 1 - avgDistance / maxDist);
+  }
 }
 
 // ============================================================================
