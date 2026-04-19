@@ -235,7 +235,7 @@ Decisiones clave:
 
 - [ ] **Ejecutar `docs/plan-teoria-completa.md`** — 10 fases, ~455 tests nuevos (v2: revisión profunda incluye lagunas omitidas + huecos nuevos)
   - [x] Fase 1: acordes diatónicos + características modales
-  - [ ] Fase 2: análisis de progresión + voice leading clásico completo (doblado, 6/4, falsas relaciones, quintas ocultas)
+  - [x] Fase 2: análisis de progresión + voice leading clásico completo (doblado, 6/4, falsas relaciones, quintas ocultas)
   - [ ] Fase 3: intermodalidad universal + pivot chords + modulación + sustitución completa + Coltrane matrix (breaking: `getBorrowedChords`, `checkVoiceLeading`)
   - [ ] Fase 4: progresiones presets + secuencias + análisis formal (AABA, sonata, rondó...)
   - [ ] Fase 5: UST + slash/polychord + chord-scale completeness + enharmonic respelling
@@ -253,6 +253,27 @@ Decisiones clave:
 - [x] Overhaul sistema bemoles/sostenidos — sesión 8
 
 ## History
+
+### 2026-04-19 — Fase 2: análisis de progresión + voice leading clásico
+
+Fase 2 del plan `docs/plan-teoria-completa.md` ejecutada. Commit: pendiente.
+
+**Nuevos métodos en `Harmony`:**
+- `analyzeProgression(chords, keySymbol)` — devuelve `ChordAnalysis[]` con roman, degree, function (T/S/D), isDiatonic, isBorrowed/borrowedFrom, isSecondary/secondaryTarget, cadenceWithNext, substitutionCandidate. También devuelve `ModulationEvent[]` (detección básica por ventana de 3 acordes) y `harmonicRhythm` (densidad de cambios).
+- `analyzeSixFour(progression, keySymbol, index)` — clasifica un acorde en 2ª inversión: cadencial/pedal/passing/arpeggiated/none.
+- `checkDoubling(voicing, chord, keySymbol?)` — flags: Doubled Leading Tone, Missing Root/Third/Fifth, Improper Doubling (3ª duplicada en mayor).
+- `analyzeCadence` ampliado: añadidas Phrygian (♭II→I), Phrygian Half (iv→V), Minor Plagal (iv→i), Picardy Third (i→I).
+
+**`checkVoiceLeading` — breaking change de firma:**
+- Nuevo parámetro `context?: { keySymbol?, chordA?, chordB? }` para checks contextuals.
+- Ruleset añadido: `'species'` (básico; species completo en fase 6).
+- Nuevos issue types: Leading Tone Unresolved, 7th Unresolved, Forbidden Leap, Hidden Fifth/Octave, Direct Fifth/Octave, False Relation, Doubled Leading Tone.
+
+**Tests:** 53 en `tests/unit/harmony-phase2.test.ts`. Total: 157/157 pasando.
+
+**Bundle:** `public/umt.js` reconstruido a 54.8kb (antes 45.7kb).
+
+**Demo:** nueva sección `#analysis` (4b) en `public/example.html` con `analyzeProgression` interactivo.
 
 ### 2026-04-19 — Fase 1: acordes diatónicos + características modales
 
