@@ -237,8 +237,7 @@ Decisiones clave:
   - [x] Fase 1: acordes diatónicos + características modales
   - [x] Fase 2: análisis de progresión + voice leading clásico completo (doblado, 6/4, falsas relaciones, quintas ocultas)
   - [x] Fase 3: intermodalidad universal + pivot chords + modulación + sustitución completa + Coltrane matrix (breaking: `getBorrowedChords`)
-  - [ ] Fase 4: progresiones presets + secuencias + análisis formal (AABA, sonata, rondó...)
-  - [ ] Fase 4: progresiones presets + secuencias + análisis formal (AABA, sonata, rondó...)
+  - [x] Fase 4: progresiones presets + secuencias + análisis formal (AABA, sonata, rondó...)
   - [ ] Fase 5: UST + slash/polychord + chord-scale completeness + enharmonic respelling
   - [ ] Fase 6: set theory completo (Tn/TnI, subset) + dodecafonismo + contrapunto 1-5 + canon + Schenker básico + melodía
   - [ ] Fase 7: rítmica avanzada (hemiola, síncopa, clave patterns, polymeter, metric modulation, isorhythm)
@@ -254,6 +253,26 @@ Decisiones clave:
 - [x] Overhaul sistema bemoles/sostenidos — sesión 8
 
 ## History
+
+### 2026-04-19 — Fase 4: progresiones, secuencias y análisis formal
+
+Commit: bc3577c. 32 tests nuevos. Total: 242/242 pasando. Bundle: 65.6kb.
+
+**Nuevo módulo `progressions.ts`:**
+- `PROGRESSIONS` — 16 progresiones nombradas: ii-V-I, ii-V-i, blues-12, blues-minor, blues-jazz, rhythm-changes, coltrane-changes, andalusian, pachelbel, turnaround-jazz, backdoor-ii-V, bird-blues, giant-steps-cycle, I-V-vi-IV, I-vi-IV-V, I-IV-V.
+- `getProgression(id, keySymbol)` — realiza la progresión en cualquier tonalidad.
+
+**Nuevo módulo `form.ts`:**
+- `FormAnalyzer.analyzeHarmonic(chords, key, barsPerSection?)` — detecta AABA, ABAB, ternary, binary, strophic, through-composed, etc. Con `confidence`.
+- `FormAnalyzer.detectReprise(chords, minLength?)` — encuentra segmentos repetidos.
+
+**Nuevos métodos en `Harmony`:**
+- `detectSequence(chords)` — detecta circle-of-fifths descending/ascending, parallel-descending/ascending, pachelbel, romanesca.
+- `retrogradeProgression(chords)` — inversión de orden.
+- `invertProgression(chords, axisNote)` — inversión armónica alrededor de un eje.
+- `voiceLeadingSmoothness(chords)` — métrica 0–1 de suavidad del voice leading.
+
+**Demo:** nueva sección `#progressions` en `public/example.html`.
 
 ### 2026-04-19 — Fase 3: intermodalidad universal + modulación + sustitución + Coltrane
 
