@@ -179,3 +179,115 @@ export const SCALE_PATTERNS: Record<string, readonly number[]> = {
   'gypsy major':          [1, 3, 1, 2, 1, 3, 1],  // = double harmonic
   'gypsy minor':          [2, 1, 3, 1, 1, 3, 1],  // = hungarian minor
 };
+
+
+/**
+ * MODAL_DEGREE_QUALITIES — chord qualities per scale degree for each classical mode.
+ *
+ * `triads[i]` is the triad quality on degree i+1; `sevenths[i]` is the seventh-chord
+ * quality on degree i+1. Values are suffixes compatible with `CHORD_FORMULAS`
+ * (empty string = major triad; 'M' would be redundant).
+ *
+ * Verified against `Scale.getDiatonicChords` for each mode rooted at C.
+ */
+export interface ModalDegreeQualities {
+  readonly triads: readonly string[];
+  readonly sevenths: readonly string[];
+}
+
+export const MODAL_DEGREE_QUALITIES: Readonly<Record<string, ModalDegreeQualities>> = Object.freeze({
+  // ── Diatonic (major system) ──
+  'ionian':     Object.freeze({ triads: ['', 'm', 'm', '', '', 'm', 'dim'],     sevenths: ['maj7','m7','m7','maj7','7','m7','m7b5'] }),
+  'dorian':     Object.freeze({ triads: ['m', 'm', '', '', 'm', 'dim', ''],     sevenths: ['m7','m7','maj7','7','m7','m7b5','maj7'] }),
+  'phrygian':   Object.freeze({ triads: ['m', '', '', 'm', 'dim', '', 'm'],     sevenths: ['m7','maj7','7','m7','m7b5','maj7','m7'] }),
+  'lydian':     Object.freeze({ triads: ['', '', 'm', 'dim', '', 'm', 'm'],     sevenths: ['maj7','7','m7','m7b5','maj7','m7','m7'] }),
+  'mixolydian': Object.freeze({ triads: ['', 'm', 'dim', '', 'm', 'm', ''],     sevenths: ['7','m7','m7b5','maj7','m7','m7','maj7'] }),
+  'aeolian':    Object.freeze({ triads: ['m', 'dim', '', 'm', 'm', '', ''],     sevenths: ['m7','m7b5','maj7','m7','m7','maj7','7'] }),
+  'locrian':    Object.freeze({ triads: ['dim', '', 'm', 'm', '', '', 'm'],     sevenths: ['m7b5','maj7','m7','m7','maj7','7','m7'] }),
+
+  // ── Harmonic Minor ──
+  'harmonic minor': Object.freeze({
+    triads:   ['m', 'dim', 'aug', 'm', '', '', 'dim'],
+    sevenths: ['mM7', 'm7b5', 'augM7', 'm7', '7', 'maj7', 'dim7'],
+  }),
+
+  // ── Melodic Minor (ascending / jazz minor) ──
+  'melodic minor': Object.freeze({
+    triads:   ['m', 'm', 'aug', '', '', 'dim', 'dim'],
+    sevenths: ['mM7', 'm7', 'augM7', '7', '7', 'm7b5', 'm7b5'],
+  }),
+
+  // ── Aliases ──
+  'major':        Object.freeze({ triads: ['', 'm', 'm', '', '', 'm', 'dim'],     sevenths: ['maj7','m7','m7','maj7','7','m7','m7b5'] }),
+  'minor':        Object.freeze({ triads: ['m', 'dim', '', 'm', 'm', '', ''],     sevenths: ['m7','m7b5','maj7','m7','m7','maj7','7'] }),
+  'natural minor':Object.freeze({ triads: ['m', 'dim', '', 'm', 'm', '', ''],     sevenths: ['m7','m7b5','maj7','m7','m7','maj7','7'] }),
+  'jazz minor':   Object.freeze({ triads: ['m', 'm', 'aug', '', '', 'dim', 'dim'],sevenths: ['mM7','m7','augM7','7','7','m7b5','m7b5'] }),
+});
+
+
+/**
+ * MODE_PARENT_FAMILY — for each mode, the family it belongs to and its 1-indexed
+ * position within that family. Enables `Scale.getParentScale()` and
+ * `Scale.getRelativeMode()` navigation within classical modal systems.
+ */
+export interface ModeParent {
+  readonly family: string;       // parent scale type (e.g. 'major', 'harmonic minor')
+  readonly degree: number;       // 1-indexed degree within the family
+  readonly familyModes: readonly string[];  // modes in order, for relative-mode lookup
+}
+
+const MAJOR_FAMILY = ['ionian', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'aeolian', 'locrian'];
+const HARMONIC_MINOR_FAMILY = ['harmonic minor', 'locrian #6', 'ionian #5', 'dorian #4', 'phrygian dominant', 'lydian #2', 'super locrian bb7'];
+const MELODIC_MINOR_FAMILY = ['melodic minor', 'dorian b2', 'lydian augmented', 'lydian dominant', 'mixolydian b6', 'locrian #2', 'altered'];
+
+export const MODE_PARENT_FAMILY: Readonly<Record<string, ModeParent>> = Object.freeze({
+  // Major family
+  'ionian':     Object.freeze({ family: 'major', degree: 1, familyModes: MAJOR_FAMILY }),
+  'dorian':     Object.freeze({ family: 'major', degree: 2, familyModes: MAJOR_FAMILY }),
+  'phrygian':   Object.freeze({ family: 'major', degree: 3, familyModes: MAJOR_FAMILY }),
+  'lydian':     Object.freeze({ family: 'major', degree: 4, familyModes: MAJOR_FAMILY }),
+  'mixolydian': Object.freeze({ family: 'major', degree: 5, familyModes: MAJOR_FAMILY }),
+  'aeolian':    Object.freeze({ family: 'major', degree: 6, familyModes: MAJOR_FAMILY }),
+  'locrian':    Object.freeze({ family: 'major', degree: 7, familyModes: MAJOR_FAMILY }),
+  'major':      Object.freeze({ family: 'major', degree: 1, familyModes: MAJOR_FAMILY }),
+  'minor':      Object.freeze({ family: 'major', degree: 6, familyModes: MAJOR_FAMILY }),
+  'natural minor': Object.freeze({ family: 'major', degree: 6, familyModes: MAJOR_FAMILY }),
+
+  // Harmonic minor family
+  'harmonic minor':    Object.freeze({ family: 'harmonic minor', degree: 1, familyModes: HARMONIC_MINOR_FAMILY }),
+  'locrian #6':        Object.freeze({ family: 'harmonic minor', degree: 2, familyModes: HARMONIC_MINOR_FAMILY }),
+  'ionian #5':         Object.freeze({ family: 'harmonic minor', degree: 3, familyModes: HARMONIC_MINOR_FAMILY }),
+  'dorian #4':         Object.freeze({ family: 'harmonic minor', degree: 4, familyModes: HARMONIC_MINOR_FAMILY }),
+  'phrygian dominant': Object.freeze({ family: 'harmonic minor', degree: 5, familyModes: HARMONIC_MINOR_FAMILY }),
+  'lydian #2':         Object.freeze({ family: 'harmonic minor', degree: 6, familyModes: HARMONIC_MINOR_FAMILY }),
+  'super locrian bb7': Object.freeze({ family: 'harmonic minor', degree: 7, familyModes: HARMONIC_MINOR_FAMILY }),
+
+  // Melodic minor family
+  'melodic minor':    Object.freeze({ family: 'melodic minor', degree: 1, familyModes: MELODIC_MINOR_FAMILY }),
+  'jazz minor':       Object.freeze({ family: 'melodic minor', degree: 1, familyModes: MELODIC_MINOR_FAMILY }),
+  'dorian b2':        Object.freeze({ family: 'melodic minor', degree: 2, familyModes: MELODIC_MINOR_FAMILY }),
+  'lydian augmented': Object.freeze({ family: 'melodic minor', degree: 3, familyModes: MELODIC_MINOR_FAMILY }),
+  'lydian dominant':  Object.freeze({ family: 'melodic minor', degree: 4, familyModes: MELODIC_MINOR_FAMILY }),
+  'mixolydian b6':    Object.freeze({ family: 'melodic minor', degree: 5, familyModes: MELODIC_MINOR_FAMILY }),
+  'locrian #2':       Object.freeze({ family: 'melodic minor', degree: 6, familyModes: MELODIC_MINOR_FAMILY }),
+  'altered':          Object.freeze({ family: 'melodic minor', degree: 7, familyModes: MELODIC_MINOR_FAMILY }),
+});
+
+
+/**
+ * MODE_BRIGHTNESS — ordering of diatonic modes by sharpness relative to the parent major.
+ * Lydian (+1 raised degree) brightest; Locrian (5 flat degrees vs major) darkest.
+ * Values are integers: positive = brighter than Ionian, negative = darker.
+ */
+export const MODE_BRIGHTNESS: Readonly<Record<string, number>> = Object.freeze({
+  'lydian':      1,
+  'ionian':      0,
+  'major':       0,
+  'mixolydian': -1,
+  'dorian':     -2,
+  'aeolian':    -3,
+  'minor':      -3,
+  'natural minor': -3,
+  'phrygian':   -4,
+  'locrian':    -5,
+});
