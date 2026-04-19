@@ -468,6 +468,18 @@ Javanese Pelog
   </div>
   <pre id="out-utils" class="out mt-4"></pre>
 </section>
+<section id="intermodal" class="sec">
+  <h2 class="sec-title">4c. Intermodalidad y sustitución (Fase 3)</h2>
+  <p class="sec-sub">Acordes prestados, pivot chords, matriz de Coltrane, sustituciones</p>
+  <div class="flex gap-3 flex-wrap mb-4">
+    <input id="t3p-key" class="inp w-40" value="C major" placeholder="Tonalidad (e.g. C major)">
+    <input id="t3p-chord" class="inp w-40" value="G7" placeholder="Acorde (e.g. G7)">
+    <input id="t3p-keyB" class="inp w-40" value="G major" placeholder="Tonalidad destino">
+    <button onclick="runIntermodal()" class="btn">Analizar</button>
+  </div>
+  <pre id="out-intermodal" class="out"></pre>
+</section>
+
 <section id="reference" class="sec">
   <h2 class="sec-title">11. API Reference</h2>
   <p class="sec-sub">All exported classes and key methods</p>
@@ -981,7 +993,7 @@ Javanese Pelog
       text += `Scales for ${c1str} → ${c2str}:\n`;
       scales1.forEach(s => { text += `  ${s.scale}${s.hint ? ' — ' + s.hint : ''}\n`; });
       text += `\nBorrowed chords in ${keyStr}:\n  `;
-      text += borrowed.map(c => c.name).join(', ');
+      text += borrowed.map(b => b.chord.name).join(', ');
       out('out-harmony', text);
     } catch(e) { outErr('out-harmony', e); }
   }
@@ -1360,6 +1372,44 @@ Werckmeister III Well Temperament
       text += `get12TETBaseName(${stepsA}): ${UMT.get12TETBaseName(stepsA)}`;
       out('out-utils', text);
     } catch(e) { outErr('out-utils', e); }
+  }
+
+  function runIntermodal() {
+    try {
+      const keyA = document.getElementById('t3p-key').value.trim();
+      const chordStr = document.getElementById('t3p-chord').value.trim();
+      const keyB = document.getElementById('t3p-keyB').value.trim();
+      const c = UMT.parseChordSymbol(chordStr);
+      let text = '';
+
+      // Borrowed chords
+      const borrowed = UMT.Harmony.getBorrowedChords(keyA, { sources: ['phrygian','mixolydian','aeolian','dorian'] });
+      text += `Borrowed chords in ${keyA}:\n`;
+      borrowed.slice(0, 10).forEach(b => {
+        text += `  ${b.chord.name.padEnd(10)} ← ${b.sourceMode} (brightness ${b.brightness >= 0 ? '+' : ''}${b.brightness})${b.characteristic ? ' ★' : ''}\n`;
+      });
+
+      // Pivot chords
+      const pivots = UMT.Harmony.findPivotChords(keyA, keyB, 'seventh');
+      text += `\nPivot chords (${keyA} → ${keyB}):\n`;
+      if (pivots.length === 0) text += '  (none)\n';
+      pivots.forEach(p => {
+        text += `  ${p.chord.name.padEnd(10)} — deg ${p.functionInA.degree}(${p.functionInA.function}) in ${keyA}, deg ${p.functionInB.degree}(${p.functionInB.function}) in ${keyB}\n`;
+      });
+
+      // Coltrane axis
+      const axis = UMT.Harmony.getColtraneAxis(keyA.split(' ')[0]);
+      text += `\nColtrane axis of ${axis.root}: ${axis.majorThirds.join(' — ')}\n`;
+      const subs = UMT.Harmony.getColtraneSubstitutions(c, keyA);
+      text += `Coltrane subs for ${chordStr}: ${subs.map(s => s.name).join(', ')}\n`;
+
+      // Harmonic substitutions
+      const hSubs = UMT.getSubstitutions(c, keyA);
+      text += `\nSubstitutions for ${chordStr} in ${keyA}:\n`;
+      hSubs.forEach(s => { text += `  [${s.type}] ${s.chord.name} — ${s.explanation}\n`; });
+
+      out('out-intermodal', text);
+    } catch(e) { outErr('out-intermodal', e); }
   }
   </script>
 </body>

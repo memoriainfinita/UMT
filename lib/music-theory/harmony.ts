@@ -1,10 +1,36 @@
 import { Chord } from './chord';
 import { parseScaleSymbol, parseChordSymbol } from './parser';
 import { get12TETName, get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
-import { CHORD_FORMULAS } from './dictionaries';
+import { CHORD_FORMULAS, MODE_BRIGHTNESS } from './dictionaries';
 import { Note } from './note';
 import { Scale } from './scale';
-import { TuningSystem, TET12 } from './tuning';
+import { TuningSystem, TET12, EDO } from './tuning';
+
+// ============================================================================
+//  Module constants
+// ============================================================================
+
+const EXTENDED_MODE_BRIGHTNESS: Record<string, number> = {
+  ...MODE_BRIGHTNESS,
+  'harmonic major':  -1,
+  'melodic minor':   -2,
+  'harmonic minor':  -3,
+};
+
+// Characteristic pitch offsets (semitones from home tonic) for each parallel mode.
+// A borrowed chord is "characteristic" if it contains one of these PCs.
+const MODE_CHARACTERISTIC_PC: Record<string, number[]> = {
+  'lydian':          [6],         // #4
+  'mixolydian':      [10],        // b7
+  'dorian':          [9],         // natural 6 in minor context
+  'aeolian':         [8, 10],     // b6, b7
+  'minor':           [8, 10],
+  'phrygian':        [1],         // b2
+  'locrian':         [1, 6],      // b2, b5
+  'harmonic minor':  [11],        // raised 7
+  'melodic minor':   [9, 11],     // raised 6 and 7
+  'harmonic major':  [8],         // b6
+};
 
 // ============================================================================
 //  Types
@@ -55,6 +81,25 @@ export interface ModulationEvent {
 export interface SixFourAnalysis {
   type: 'cadential' | 'pedal' | 'passing' | 'arpeggiated' | 'none';
   resolution?: Chord;
+}
+
+export interface BorrowedChord {
+  chord: Chord;
+  sourceMode: string;
+  brightness: number;
+  function: 'T' | 'S' | 'D' | 'unknown';
+  characteristic: boolean;
+}
+
+export interface PivotChord {
+  chord: Chord;
+  functionInA: { degree: number; function: 'T' | 'S' | 'D' };
+  functionInB: { degree: number; function: 'T' | 'S' | 'D' };
+}
+
+export interface ColtraneAxis {
+  root: string;
+  majorThirds: [string, string, string];
 }
 
 // ============================================================================
@@ -730,55 +775,245 @@ export class Harmony {
   }
 
   /**
-   * Returns a list of borrowed chords from parallel modes (Modal Interchange).
+   * Returns borrowed chords from parallel modes (Modal Interchange).
+   *
+   * **Breaking change (v2):** now returns `BorrowedChord[]` instead of `Chord[]`.
+   * Each entry includes the source mode, brightness, harmonic function in the
+   * home key, and whether the chord is characteristic of its source mode.
+   *
+   * @param keySymbol - e.g. `'C major'`, `'A minor'`
+   * @param options.sources - Limit results to these mode names only.
+   * @param options.tuning - Defaults to TET12; returns [] for non-12-TET.
    */
-  static getBorrowedChords(keySymbol: string, tuning: TuningSystem = TET12): Chord[] {
+  static getBorrowedChords(
+    keySymbol: string,
+    options?: { sources?: string[]; tuning?: TuningSystem }
+  ): BorrowedChord[] {
+    const tuning = options?.tuning ?? TET12;
     if (tuning.octaveSteps !== 12) return [];
-    const match = keySymbol.match(/^([A-G][#b]*)\s+(.*)$/i);
+
+    const match = keySymbol.match(/^([A-G][#b]*)\s+(.+)$/i);
     if (!match) return [];
-    const [, rootName, type] = match;
-    const isMajor = type.toLowerCase().includes('major') || type.toLowerCase().includes('ionian');
+    const [, rootName] = match;
 
-    const borrowedChords: Chord[] = [];
+    const homeKey = parseKey(keySymbol, tuning);
+    const homePcsArr = [...homeKey.scalePcs].sort((a, b) => a - b);
 
-    if (isMajor) {
-      const minorScale = parseScaleSymbol(`${rootName} minor`, tuning);
-      const minorNotes = minorScale.getNotes(1);
-      const b3  = get12TETBaseName(minorNotes[2].stepsFromBase, minorNotes[2].preferFlats);
-      const b6  = get12TETBaseName(minorNotes[5].stepsFromBase, minorNotes[5].preferFlats);
-      const b7  = get12TETBaseName(minorNotes[6].stepsFromBase, minorNotes[6].preferFlats);
-      const p4  = get12TETBaseName(minorNotes[3].stepsFromBase, minorNotes[3].preferFlats);
-      const p5  = get12TETBaseName(minorNotes[4].stepsFromBase, minorNotes[4].preferFlats);
-      const p2  = get12TETBaseName(minorNotes[1].stepsFromBase, minorNotes[1].preferFlats);
+    const candidateModes = [
+      'lydian', 'mixolydian', 'dorian', 'aeolian', 'phrygian', 'locrian',
+      'harmonic minor', 'melodic minor', 'harmonic major',
+    ];
+    const sourcesToCheck = options?.sources
+      ? candidateModes.filter(m => options.sources!.includes(m))
+      : candidateModes;
 
-      borrowedChords.push(parseChordSymbol(`${rootName}m7`, tuning));
-      borrowedChords.push(parseChordSymbol(`${p2}m7b5`, tuning));
-      borrowedChords.push(parseChordSymbol(`${b3}maj7`, tuning));
-      borrowedChords.push(parseChordSymbol(`${p4}m7`, tuning));
-      borrowedChords.push(parseChordSymbol(`${p5}m7`, tuning));
-      borrowedChords.push(parseChordSymbol(`${b6}maj7`, tuning));
-      borrowedChords.push(parseChordSymbol(`${b7}7`, tuning));
+    const results: BorrowedChord[] = [];
 
-      const dorianScale = parseScaleSymbol(`${rootName} dorian`, tuning);
-      const dorianNotes = dorianScale.getNotes(1);
-      const d6 = get12TETBaseName(dorianNotes[5].stepsFromBase, dorianNotes[5].preferFlats);
-      const p4d = get12TETBaseName(dorianNotes[3].stepsFromBase, dorianNotes[3].preferFlats);
-      borrowedChords.push(parseChordSymbol(`${d6}m7`, tuning));
-      borrowedChords.push(parseChordSymbol(`${p4d}7`, tuning));
-    } else {
-      const majorScale = parseScaleSymbol(`${rootName} major`, tuning);
-      const majorNotes = majorScale.getNotes(1);
-      const p4   = get12TETBaseName(majorNotes[3].stepsFromBase, majorNotes[3].preferFlats);
-      const p5   = get12TETBaseName(majorNotes[4].stepsFromBase, majorNotes[4].preferFlats);
-      const maj3 = get12TETBaseName(majorNotes[2].stepsFromBase, majorNotes[2].preferFlats);
+    for (const mode of sourcesToCheck) {
+      let modeScale: Scale;
+      try {
+        modeScale = parseScaleSymbol(`${rootName} ${mode}`, tuning);
+      } catch { continue; }
 
-      borrowedChords.push(parseChordSymbol(`${rootName}maj7`, tuning));
-      borrowedChords.push(parseChordSymbol(`${maj3}7`, tuning));
-      borrowedChords.push(parseChordSymbol(`${p4}maj7`, tuning));
-      borrowedChords.push(parseChordSymbol(`${p5}7`, tuning));
+      // Skip modes with identical PC content to home key (e.g. 'ionian' when home is 'major')
+      const modePcsArr = modeScale.getPitchClasses().sort((a, b) => a - b);
+      if (modePcsArr.length === homePcsArr.length && modePcsArr.every((pc, i) => pc === homePcsArr[i])) {
+        continue;
+      }
+
+      const brightness = EXTENDED_MODE_BRIGHTNESS[mode] ?? 0;
+      const charPcs = MODE_CHARACTERISTIC_PC[mode] ?? [];
+
+      let diatonicChords: Chord[];
+      try {
+        diatonicChords = modeScale.getDiatonicChords('seventh');
+      } catch { continue; }
+
+      for (const c of diatonicChords) {
+        const cPcs = c.getPitchClasses();
+        // Skip if all PCs already in home key (not borrowed)
+        if (cPcs.every(pc => homeKey.scalePcs.includes(pc))) continue;
+
+        const { degree, quality } = getRomanForChord(c, homeKey);
+        const fn = getFunction(degree, quality, homeKey.isMinor);
+
+        // characteristic = chord contains a mode-defining PC (relative to home tonic)
+        const tonicPc = homeKey.tonicPc;
+        const characteristic = cPcs.some(pc =>
+          charPcs.some(offset => ((tonicPc + offset) % 12) === pc)
+        );
+
+        results.push({ chord: c, sourceMode: mode, brightness, function: fn, characteristic });
+      }
     }
 
-    return borrowedChords;
+    return results;
+  }
+
+  /**
+   * Finds chords that are diatonic to both keys and can therefore serve as pivot chords
+   * for modulation between them. Returns `PivotChord[]` with harmonic function in each key.
+   */
+  static findPivotChords(
+    keyA: string,
+    keyB: string,
+    type: 'triad' | 'seventh' = 'triad'
+  ): PivotChord[] {
+    const tuning = TET12;
+    let kA: KeyInfo, kB: KeyInfo;
+    try {
+      kA = parseKey(keyA, tuning);
+      kB = parseKey(keyB, tuning);
+    } catch { return []; }
+
+    let chordsA: Chord[], chordsB: Chord[];
+    try {
+      chordsA = kA.scale.getDiatonicChords(type);
+      chordsB = kB.scale.getDiatonicChords(type);
+    } catch { return []; }
+
+    const results: PivotChord[] = [];
+
+    for (let i = 0; i < chordsA.length; i++) {
+      const cA = chordsA[i];
+      const pcsA = cA.getPitchClasses();
+
+      for (let j = 0; j < chordsB.length; j++) {
+        const cB = chordsB[j];
+        const pcsB = cB.getPitchClasses();
+
+        if (pcsA.length !== pcsB.length) continue;
+        const sameChord = pcsA.every(pc => pcsB.includes(pc));
+        if (!sameChord) continue;
+
+        const degreeA = i + 1;
+        const degreeB = j + 1;
+        const { quality: qualA } = getRomanForChord(cA, kA);
+        const { quality: qualB } = getRomanForChord(cB, kB);
+        const fnA = getFunction(degreeA, qualA, kA.isMinor) as 'T' | 'S' | 'D';
+        const fnB = getFunction(degreeB, qualB, kB.isMinor) as 'T' | 'S' | 'D';
+
+        results.push({
+          chord: cA,
+          functionInA: { degree: degreeA, function: fnA },
+          functionInB: { degree: degreeB, function: fnB },
+        });
+        break;
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Classifies the type of modulation between two key areas based on the transitional chords.
+   *
+   * - `'enharmonic'`: both keys have identical pitch class content.
+   * - `'chromatic'`: the tonic notes are one semitone apart.
+   * - `'pivot'`: a chord in `chordsA` is diatonic to `keyB`.
+   * - `'common-tone'`: the last chord of A and first chord of B share at least one PC.
+   * - `'direct'`: abrupt modulation, no smooth transition detected.
+   */
+  static classifyModulation(
+    chordsA: Chord[],
+    chordsB: Chord[],
+    keyA: string,
+    keyB: string
+  ): 'direct' | 'pivot' | 'enharmonic' | 'chromatic' | 'common-tone' {
+    const tuning = TET12;
+
+    let scaleA: Scale, scaleB: Scale;
+    try {
+      scaleA = parseScaleSymbol(keyA, tuning);
+      scaleB = parseScaleSymbol(keyB, tuning);
+    } catch { return 'direct'; }
+
+    // Enharmonic: identical PC content
+    const pcsA = scaleA.getPitchClasses().sort((a, b) => a - b);
+    const pcsB = scaleB.getPitchClasses().sort((a, b) => a - b);
+    if (pcsA.length === pcsB.length && pcsA.every((pc, i) => pc === pcsB[i])) {
+      return 'enharmonic';
+    }
+
+    // Chromatic: tonic PCs 1 semitone apart
+    const tonicA = pcMod(scaleA.rootStep, 12);
+    const tonicB = pcMod(scaleB.rootStep, 12);
+    const semiDiff = Math.min(((tonicB - tonicA + 12) % 12), ((tonicA - tonicB + 12) % 12));
+    if (semiDiff === 1) return 'chromatic';
+
+    // Pivot: any chord in chordsA is diatonic to keyB
+    const pcsBSet = new Set(pcsB);
+    for (const c of chordsA) {
+      if (c.getPitchClasses().every(pc => pcsBSet.has(pc))) return 'pivot';
+    }
+
+    // Common-tone: last chord of A shares a PC with first chord of B
+    if (chordsA.length > 0 && chordsB.length > 0) {
+      const lastAPcs = new Set(chordsA[chordsA.length - 1].getPitchClasses());
+      if (chordsB[0].getPitchClasses().some(pc => lastAPcs.has(pc))) return 'common-tone';
+    }
+
+    return 'direct';
+  }
+
+  /**
+   * Applies negative harmony to each chord in the progression, preserving order.
+   */
+  static getNegativeProgression(chords: Chord[], keyCenter: string): Chord[] {
+    return chords.map(c => Harmony.getNegativeHarmony(c, keyCenter));
+  }
+
+  /**
+   * Returns the Coltrane axis for a given key root: the three roots separated by
+   * equal major thirds (dividing the octave into thirds). Used in Coltrane Changes.
+   *
+   * Example: `'C'` → `{ root: 'C', majorThirds: ['C', 'E', 'Ab'] }`.
+   */
+  static getColtraneAxis(key: string): ColtraneAxis {
+    const rootMatch = key.match(/^([A-G][#b]*)/i);
+    const rootName = rootMatch ? rootMatch[1] : 'C';
+    const rootPc = pcMod(parseNoteToStep12TET(rootName, 4), 12);
+    const pc1 = (rootPc + 4) % 12;
+    const pc2 = (rootPc + 8) % 12;
+
+    const pf0 = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[rootPc], 'major');
+    const pf1 = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[pc1], 'major');
+    const pf2 = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[pc2], 'major');
+
+    return {
+      root: rootName,
+      majorThirds: [
+        pf0 ? NOTE_NAMES_12TET_FLAT[rootPc] : NOTE_NAMES_12TET_SHARP[rootPc],
+        pf1 ? NOTE_NAMES_12TET_FLAT[pc1]    : NOTE_NAMES_12TET_SHARP[pc1],
+        pf2 ? NOTE_NAMES_12TET_FLAT[pc2]    : NOTE_NAMES_12TET_SHARP[pc2],
+      ],
+    };
+  }
+
+  /**
+   * Returns the two Coltrane substitutions for a chord: the other two roots on the
+   * same major-third axis, using the same chord quality as the original.
+   */
+  static getColtraneSubstitutions(chord: Chord, _keySymbol: string): Chord[] {
+    const oct = chord.tuningSystem.octaveSteps;
+    if (oct !== 12) return [];
+
+    const rootPc = pcMod(chord.rootStep, 12);
+    const pc1 = (rootPc + 4) % 12;
+    const pc2 = (rootPc + 8) % 12;
+
+    const quality = chordQualityFromIntervals(chord, 12);
+    const suffix = quality === 'M' ? '' : quality;
+
+    const pf1 = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[pc1], 'major');
+    const pf2 = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[pc2], 'major');
+    const name1 = (pf1 ? NOTE_NAMES_12TET_FLAT[pc1] : NOTE_NAMES_12TET_SHARP[pc1]) + suffix;
+    const name2 = (pf2 ? NOTE_NAMES_12TET_FLAT[pc2] : NOTE_NAMES_12TET_SHARP[pc2]) + suffix;
+
+    return [
+      parseChordSymbol(name1, chord.tuningSystem),
+      parseChordSymbol(name2, chord.tuningSystem),
+    ];
   }
 
   /**
