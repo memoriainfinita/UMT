@@ -261,6 +261,27 @@
   </div>
   <pre id="out-progressions" class="out" style="min-height:10rem"></pre>
 </section>
+    <section id="analysis" class="sec">
+  <h2 class="sec-title">4b. Progression Analysis & Voice Leading</h2>
+  <p class="sec-sub">harmony · parser</p>
+  <p class="text-neutral-400 text-sm mb-4">
+    <code class="text-neutral-300">Harmony.analyzeProgression</code> returns Roman numeral, function (T/S/D), borrowing, secondary dominants and cadences per chord.
+    <code class="text-neutral-300">Harmony.checkVoiceLeading</code> now also detects leading-tone resolution, 7th resolution, hidden 5ths, false relations.
+    <code class="text-neutral-300">Harmony.checkDoubling</code> flags convention violations.
+  </p>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+    <div class="sm:col-span-2">
+      <label>Progression (Roman numerals)</label>
+      <input id="t4b-prog" type="text" value="I ii V7 I bVII7 I" class="inp" placeholder="e.g. I ii V7 I">
+    </div>
+    <div>
+      <label>Key</label>
+      <input id="t4b-key" type="text" value="C major" class="inp" placeholder="e.g. C major">
+    </div>
+  </div>
+  <button class="btn mb-4" onclick="runAnalysis()">Analyze Progression</button>
+  <pre id="out-analysis" class="out" style="min-height:12rem"></pre>
+</section>
     <section id="harmony" class="sec">
   <h2 class="sec-title">5. Harmony & Key Analysis</h2>
   <p class="sec-sub">harmony · key-detection · circle</p>
@@ -822,6 +843,37 @@ Javanese Pelog
   }
 
   // ── Section 4: Progressions & Voice Leading ───────────────────────────────
+
+  function runAnalysis() {
+    try {
+      const progStr = document.getElementById('t4b-prog').value.trim();
+      const keyStr = document.getElementById('t4b-key').value.trim();
+      const chords = UMT.parseRomanProgression(progStr, keyStr);
+      const { analysis, modulations, harmonicRhythm } = UMT.Harmony.analyzeProgression(chords, keyStr);
+
+      let text = `Key: ${keyStr}  |  Harmonic rhythm: ${harmonicRhythm.toFixed(2)}\n\n`;
+      analysis.forEach((a, i) => {
+        text += `[${i+1}] ${a.chord.name.padEnd(8)} ${a.roman.padEnd(10)} fn:${a.function}`;
+        if (a.isDiatonic) text += '  diatonic';
+        if (a.isBorrowed) text += `  borrowed(${a.borrowedFrom})`;
+        if (a.isSecondary) text += `  secondary(${a.secondaryTarget})`;
+        if (a.substitutionCandidate) text += `  ${a.substitutionCandidate}`;
+        if (a.cadenceWithNext) text += `\n       → ${a.cadenceWithNext}`;
+        text += '\n';
+      });
+
+      if (modulations.length > 0) {
+        text += `\nModulations detected:\n`;
+        modulations.forEach(m => {
+          text += `  [${m.atIndex}] ${m.fromKey} → ${m.toKey} (${m.type}`;
+          if (m.pivotChord) text += `, pivot: ${m.pivotChord.name}`;
+          text += ')\n';
+        });
+      }
+
+      out('out-analysis', text);
+    } catch(e) { outErr('out-analysis', e); }
+  }
 
   function runProgressions() {
     try {
