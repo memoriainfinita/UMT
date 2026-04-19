@@ -1,8 +1,45 @@
+import { NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
+import { MODE_BRIGHTNESS } from './dictionaries';
+
 export type RelatedKey = {
   key: string;
   relationship: 'relative' | 'parallel' | 'dominant' | 'subdominant' | 'neighbor';
   distance: number;
 };
+
+/**
+ * A modal key: a root note, a mode name, and the parent major key that the mode is derived from.
+ * For example, D dorian is derived from C major (D is the 2nd degree of C major).
+ */
+export interface ModalKey {
+  root: string;
+  mode: string;
+  parentMajorKey: string;
+}
+
+// Semitone offset from major tonic to each mode's root (A4=0 system, same as TET12 steps)
+const MODAL_DEGREE_OFFSET: Record<string, number> = {
+  'ionian': 0, 'major': 0,
+  'dorian': 2,
+  'phrygian': 4,
+  'lydian': 5,
+  'mixolydian': 7,
+  'aeolian': 9, 'minor': 9, 'natural minor': 9,
+  'locrian': 11,
+};
+
+// Canonical major key name by pitch class (A=0 system)
+const MAJOR_KEY_NAME_BY_PC: readonly string[] = [
+  'A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab',
+];
+
+// Build root-name → PC map from note name arrays (A=0 system)
+const ROOT_NAME_TO_PC: Record<string, number> = {};
+NOTE_NAMES_12TET_FLAT.forEach((n, i) => { ROOT_NAME_TO_PC[n] = i; });
+NOTE_NAMES_12TET_SHARP.forEach((n, i) => { ROOT_NAME_TO_PC[n] = i; });
+
+// Canonical diatonic modes ordered by brightness (brightest first)
+const CANONICAL_DIATONIC_MODES = ['lydian', 'ionian', 'mixolydian', 'dorian', 'aeolian', 'phrygian', 'locrian'] as const;
 
 /**
  * Circle of Fifths utility.
@@ -184,5 +221,67 @@ export class CircleOfFifths {
     if (n2ccw) result.push({ key: n2ccw, relationship: 'neighbor', distance: 2 });
 
     return result;
+  }
+
+  // ── Modal extensions ───────────────────────────────────────────────────────
+
+  /**
+   * Returns the `ModalKey` for a given root and mode name, computing the
+   * parent major key (the major scale from which this mode is derived).
+   *
+   * For example, D dorian → parent major key = C (D is degree 2 of C major).
+   * Only the 7 diatonic modes of the major family are supported.
+   */
+  static getModalKey(root: string, mode: string): ModalKey {
+    const modeLower = mode.toLowerCase();
+    const offset = MODAL_DEGREE_OFFSET[modeLower];
+
+    // Build root-name → PC map from the note name arrays
+    const pc = ROOT_NAME_TO_PC[root] ?? ROOT_NAME_TO_PC[root.charAt(0).toUpperCase() + root.slice(1)];
+    if (pc === undefined || offset === undefined) {
+      return { root, mode: modeLower, parentMajorKey: '' };
+    }
+
+    const parentPc = ((pc - offset) % 12 + 12) % 12;
+    const parentName = MAJOR_KEY_NAME_BY_PC[parentPc] ?? '';
+    return { root, mode: modeLower, parentMajorKey: parentName };
+  }
+
+  /**
+   * Returns modal keys with the same root and adjacent brightness (within `radius` steps).
+   * Neighbors are modes of the same root note that are brighter or darker than the input.
+   */
+  static getModalNeighbors(modalKey: ModalKey, radius = 1): ModalKey[] {
+    const myBrightness = MODE_BRIGHTNESS[modalKey.mode];
+    if (myBrightness === undefined) return [];
+
+    const results: ModalKey[] = [];
+    for (const mode of CANONICAL_DIATONIC_MODES) {
+      if (mode === modalKey.mode) continue;
+      const brightness = MODE_BRIGHTNESS[mode];
+      if (brightness === undefined) continue;
+      const diff = Math.abs(brightness - myBrightness);
+      if (diff >= 1 && diff <= radius) {
+        const mk = CircleOfFifths.getModalKey(modalKey.root, mode);
+        if (mk.parentMajorKey) results.push(mk);
+      }
+    }
+
+    results.sort((a, b) => {
+      const ba = Math.abs((MODE_BRIGHTNESS[a.mode] ?? 0) - myBrightness);
+      const bb = Math.abs((MODE_BRIGHTNESS[b.mode] ?? 0) - myBrightness);
+      return ba - bb;
+    });
+
+    return results;
+  }
+
+  /**
+   * Returns the circle-of-fifths distance between the parent major keys of two modal keys.
+   * Distance 0 means both modes share the same parent major key.
+   */
+  static getModalDistance(keyA: ModalKey, keyB: ModalKey): number {
+    if (!keyA.parentMajorKey || !keyB.parentMajorKey) return -1;
+    return CircleOfFifths.getDistance(keyA.parentMajorKey, keyB.parentMajorKey);
   }
 }
