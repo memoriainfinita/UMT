@@ -234,7 +234,7 @@ Decisiones clave:
 ## TODO
 
 - [ ] **Ejecutar `docs/plan-teoria-completa.md`** — 10 fases, ~455 tests nuevos (v2: revisión profunda incluye lagunas omitidas + huecos nuevos)
-  - [ ] Fase 1: acordes diatónicos + características modales
+  - [x] Fase 1: acordes diatónicos + características modales
   - [ ] Fase 2: análisis de progresión + voice leading clásico completo (doblado, 6/4, falsas relaciones, quintas ocultas)
   - [ ] Fase 3: intermodalidad universal + pivot chords + modulación + sustitución completa + Coltrane matrix (breaking: `getBorrowedChords`, `checkVoiceLeading`)
   - [ ] Fase 4: progresiones presets + secuencias + análisis formal (AABA, sonata, rondó...)
@@ -253,6 +253,28 @@ Decisiones clave:
 - [x] Overhaul sistema bemoles/sostenidos — sesión 8
 
 ## History
+
+### 2026-04-19 — Fase 1: acordes diatónicos + características modales
+
+Primera fase del plan `docs/plan-teoria-completa.md` ejecutada.
+
+**Nuevos métodos en `Scale`:**
+- `getDiatonicChords(type)` — triadas o séptimas por grado, apilando terceras diatónicas. Nombres canónicos en 12-TET vía match contra `CHORD_FORMULAS`; etiqueta estructural `Root(0,3,7)` en otros tunings.
+- `getChordOnDegree(degree, type)` — 1-indexed, throw en fuera de rango.
+- `getModalCharacteristics()` — devuelve `{characteristicDegrees, characteristicIntervals, brightness, avoidNotes, parentScaleName, parentModeDegree}`. Brightness vía tabla `MODE_BRIGHTNESS`, avoid notes computados como grados a ½ tono por encima de una nota de la tríada tónica.
+- `getParentScale()` — reconstruye escala padre (p.ej. D dorian → C major) desde `MODE_PARENT_FAMILY`.
+- `getRelativeMode(name)` — rota a otro modo de la misma familia (D dorian → F lydian); null si cross-family.
+
+**Nuevas tablas en `dictionaries.ts`:**
+- `MODAL_DEGREE_QUALITIES` — triadas y séptimas por grado para los 7 modos diatónicos + modos de la familia menor armónica/melódica, frozen.
+- `MODE_PARENT_FAMILY` — mapa de modo → {family, degree, familyModes[]} para los 3 sistemas modales clásicos.
+- `MODE_BRIGHTNESS` — ordenamiento Lydian (+1) … Locrian (-5).
+
+**Tests:** 24 en `scale-diatonic.test.ts` + 38 en `scale-modal.test.ts`. Total: 104/104 pasando.
+
+**Bundle:** `public/umt.js` reconstruido a 45.7kb (antes 38.8kb).
+
+**Demo:** nueva sección `#modal` (2b) en `public/example.html` entre Scales y Chords. API reference ampliada con los 5 métodos nuevos. Playwright demo tests no re-ejecutados — verificación visual pendiente.
 
 ### 2026-04-18 — Plan v2: revisión profunda
 

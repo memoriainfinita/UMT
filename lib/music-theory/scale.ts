@@ -1,6 +1,47 @@
 import { TuningSystem, EDO } from './tuning';
 import { Note } from './note';
+import { Chord } from './chord';
+import { SCALE_PATTERNS, MODE_PARENT_FAMILY, MODE_BRIGHTNESS } from './dictionaries';
 import { usesFlats, preferFlatsForKey, get12TETBaseName } from './utils';
+
+/**
+ * Characteristic analysis of a modal scale: brightness relative to Ionian,
+ * degrees that differ from the parallel major, jazz avoid notes, and parent-family info.
+ */
+export interface ModalCharacteristics {
+  characteristicDegrees: number[];
+  characteristicIntervals: string[];
+  brightness: number;
+  avoidNotes: number[];
+  parentScaleName?: string;
+  parentModeDegree?: number;
+}
+
+/**
+ * Suffix lookup for diatonic chord naming in 12-TET.
+ * Keys are sorted, unique pitch-class interval sets (from root, mod 12) joined with commas.
+ * Value is the suffix appended to the root name (empty for major triad).
+ */
+const TRIAD_SUFFIX_BY_PCS: Record<string, string> = {
+  '0,4,7': '',
+  '0,3,7': 'm',
+  '0,3,6': 'dim',
+  '0,4,8': 'aug',
+  '0,2,7': 'sus2',
+  '0,5,7': 'sus4',
+};
+
+const SEVENTH_SUFFIX_BY_PCS: Record<string, string> = {
+  '0,4,7,11': 'maj7',
+  '0,3,7,10': 'm7',
+  '0,4,7,10': '7',
+  '0,3,6,9': 'dim7',
+  '0,3,6,10': 'm7b5',
+  '0,3,7,11': 'mM7',
+  '0,4,8,10': 'aug7',
+  '0,4,8,11': 'augM7',
+  '0,4,6,10': '7b5',
+};
 
 /**
  * A scale: a root pitch plus an ordered pattern of step intervals within a tuning system.
@@ -139,6 +180,197 @@ export class Scale {
     }
 
     return new Scale(`${this.name} (Mode ${degree})`, this.tuningSystem, newRootStep, newPattern);
+  }
+
+  /**
+   * Returns the diatonic chords built by stacking thirds on each scale degree.
+   * - `'triad'` (default): three-note chord (root, 3rd, 5th).
+   * - `'seventh'`: four-note chord (root, 3rd, 5th, 7th).
+   *
+   * In 12-TET, chord names are canonical (e.g. `Bm7b5`, `Caug`). In other tuning systems
+   * a structural label is used (e.g. `"C (0,3,7)"`) since the chord dictionary is 12-TET specific.
+   *
+   * Scales with fewer than 5 notes may not support `'seventh'` on every degree.
+   */
+  getDiatonicChords(type: 'triad' | 'seventh' = 'triad'): Chord[] {
+    const len = this.stepPattern.length;
+    const maxOffset = type === 'seventh' ? 6 : 4;
+    const octavesNeeded = Math.ceil((len + maxOffset) / len);
+    const notes = this.getNotes(octavesNeeded);
+    const offsets = type === 'seventh' ? [0, 2, 4, 6] : [0, 2, 4];
+    const is12TET = this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12;
+    const os = this.tuningSystem.octaveSteps;
+
+    const chords: Chord[] = [];
+    for (let d = 0; d < len; d++) {
+      const rootStep = notes[d].stepsFromBase;
+      const intervals = offsets.map(o => notes[d + o].stepsFromBase - rootStep);
+      const rootPf = notes[d].preferFlats;
+
+      let chordName: string;
+      if (is12TET) {
+        const pcs = Array.from(new Set(intervals.map(i => ((i % os) + os) % os))).sort((a, b) => a - b);
+        const key = pcs.join(',');
+        const lookup = type === 'seventh' ? SEVENTH_SUFFIX_BY_PCS : TRIAD_SUFFIX_BY_PCS;
+        const suffix = lookup[key];
+        const rootName = get12TETBaseName(rootStep, rootPf);
+        chordName = suffix !== undefined ? `${rootName}${suffix}` : `${rootName}(${pcs.join(',')})`;
+      } else {
+        const rootName = new Note(this.tuningSystem, rootStep).getName();
+        chordName = `${rootName}(${intervals.join(',')})`;
+      }
+
+      chords.push(new Chord(chordName, this.tuningSystem, rootStep, intervals, undefined, rootPf));
+    }
+    return chords;
+  }
+
+  /**
+   * Returns the diatonic chord built on a single scale degree (1-indexed).
+   * See `getDiatonicChords` for details on `type` and naming.
+   */
+  getChordOnDegree(degree: number, type: 'triad' | 'seventh' = 'triad'): Chord {
+    const len = this.stepPattern.length;
+    if (!Number.isInteger(degree) || degree < 1 || degree > len) {
+      throw new RangeError(`Scale.getChordOnDegree: degree must be an integer between 1 and ${len}, got ${degree}.`);
+    }
+    return this.getDiatonicChords(type)[degree - 1];
+  }
+
+  /**
+   * Identifies the canonical scale-type key (e.g. "dorian", "phrygian dominant") by
+   * matching the scale's name first, then falling back to `SCALE_PATTERNS` pattern lookup.
+   * Returns null if no match is found.
+   */
+  private getCanonicalType(): string | null {
+    const match = this.name.match(/^[A-G][#b]*\s+(.*)$/i);
+    if (match) {
+      const typeRaw = match[1].trim().toLowerCase();
+      if (SCALE_PATTERNS[typeRaw]) return typeRaw;
+    }
+    if (!(this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12)) return null;
+    const key = this.stepPattern.join(',');
+    for (const [type, pat] of Object.entries(SCALE_PATTERNS)) {
+      if (pat.join(',') === key) return type;
+    }
+    return null;
+  }
+
+  /**
+   * Returns modal characteristics: brightness (relative to Ionian), the degrees that
+   * differ from the parallel major, traditional jazz avoid notes, and parent-family info.
+   *
+   * `characteristicDegrees`/`characteristicIntervals` and `avoidNotes` are only computed
+   * in 12-TET. Brightness uses `MODE_BRIGHTNESS`; returns 0 if the mode is unknown.
+   */
+  getModalCharacteristics(): ModalCharacteristics {
+    const type = this.getCanonicalType();
+    const parent = type ? MODE_PARENT_FAMILY[type] : undefined;
+    const brightness = type && MODE_BRIGHTNESS[type] !== undefined ? MODE_BRIGHTNESS[type] : 0;
+
+    const characteristicDegrees: number[] = [];
+    const characteristicIntervals: string[] = [];
+    const avoidNotes: number[] = [];
+
+    const is12TET = this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12;
+    if (is12TET) {
+      const os = this.tuningSystem.octaveSteps;
+      const scalePcs = this.getPitchClasses();
+      const rootPc = scalePcs[0];
+
+      // Compare to parallel Ionian (7-note scales only — other lengths skip this comparison)
+      if (scalePcs.length === 7) {
+        const ionianIntervals = [0, 2, 4, 5, 7, 9, 11];
+        for (let i = 0; i < 7; i++) {
+          const rel = ((scalePcs[i] - rootPc) % os + os) % os;
+          if (rel !== ionianIntervals[i]) {
+            characteristicDegrees.push(i + 1);
+            const diff = rel - ionianIntervals[i];
+            const accidental = diff > 0 ? '#' : 'b';
+            characteristicIntervals.push(`${accidental}${i + 1}`);
+          }
+        }
+      }
+
+      // Avoid notes: scale degrees exactly one semitone above a tonic-triad tone
+      const triad = this.getChordOnDegree(1, 'triad');
+      const triadPcs = new Set(triad.getPitchClasses());
+      for (let i = 0; i < scalePcs.length; i++) {
+        const pc = scalePcs[i];
+        if (triadPcs.has(pc)) continue;
+        const belowPc = ((pc - 1) % os + os) % os;
+        if (triadPcs.has(belowPc)) avoidNotes.push(i + 1);
+      }
+    }
+
+    return {
+      characteristicDegrees,
+      characteristicIntervals,
+      brightness,
+      avoidNotes,
+      parentScaleName: parent?.family,
+      parentModeDegree: parent?.degree,
+    };
+  }
+
+  /**
+   * Returns the parent scale of this mode (e.g. D Dorian → C major), or null if
+   * this scale is not a recognized mode of a known family.
+   */
+  getParentScale(): Scale | null {
+    const type = this.getCanonicalType();
+    if (!type) return null;
+    const parent = MODE_PARENT_FAMILY[type];
+    if (!parent) return null;
+    const parentPattern12TET = SCALE_PATTERNS[parent.family];
+    if (!parentPattern12TET) return null;
+
+    const parentPattern = parentPattern12TET.map(s => this.tuningSystem.getStepFromStandard(s));
+    let stepShift = 0;
+    for (let i = 0; i < parent.degree - 1; i++) stepShift += parentPattern[i];
+    const parentRootStep = this.rootStep - stepShift;
+
+    const is12TET = this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12;
+    let rootName: string;
+    let pf: boolean;
+    if (is12TET) {
+      const flatName = get12TETBaseName(parentRootStep, true);
+      pf = preferFlatsForKey(flatName, parent.family);
+      rootName = get12TETBaseName(parentRootStep, pf);
+    } else {
+      rootName = new Note(this.tuningSystem, parentRootStep).getName();
+      pf = false;
+    }
+    return new Scale(`${rootName} ${parent.family}`, this.tuningSystem, parentRootStep, parentPattern, pf);
+  }
+
+  /**
+   * Returns the relative mode within the same modal family (e.g. D Dorian → F Lydian).
+   * Returns null if the target mode is in a different family or either mode is unknown.
+   */
+  getRelativeMode(targetModeName: string): Scale | null {
+    const parent = this.getParentScale();
+    if (!parent) return null;
+    const target = targetModeName.trim().toLowerCase();
+    const targetParent = MODE_PARENT_FAMILY[target];
+    const currentType = this.getCanonicalType();
+    if (!currentType || !targetParent) return null;
+    const currentParent = MODE_PARENT_FAMILY[currentType];
+    if (!currentParent || currentParent.family !== targetParent.family) return null;
+
+    const modeScale = parent.getMode(targetParent.degree);
+    const is12TET = this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12;
+    let rootName: string;
+    let pf: boolean;
+    if (is12TET) {
+      const flatName = get12TETBaseName(modeScale.rootStep, true);
+      pf = preferFlatsForKey(flatName, target);
+      rootName = get12TETBaseName(modeScale.rootStep, pf);
+    } else {
+      rootName = new Note(this.tuningSystem, modeScale.rootStep).getName();
+      pf = false;
+    }
+    return new Scale(`${rootName} ${target}`, this.tuningSystem, modeScale.rootStep, modeScale.stepPattern, pf);
   }
 
   /**
