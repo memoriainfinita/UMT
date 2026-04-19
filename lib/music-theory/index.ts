@@ -17,3 +17,5 @@ export * from './abc-bridge';
 export * from './neo-riemannian';
 export * from './key-detection';
 export * from './substitution';
+export * from './progressions';
+export * from './form';
