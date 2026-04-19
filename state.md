@@ -236,7 +236,8 @@ Decisiones clave:
 - [ ] **Ejecutar `docs/plan-teoria-completa.md`** — 10 fases, ~455 tests nuevos (v2: revisión profunda incluye lagunas omitidas + huecos nuevos)
   - [x] Fase 1: acordes diatónicos + características modales
   - [x] Fase 2: análisis de progresión + voice leading clásico completo (doblado, 6/4, falsas relaciones, quintas ocultas)
-  - [ ] Fase 3: intermodalidad universal + pivot chords + modulación + sustitución completa + Coltrane matrix (breaking: `getBorrowedChords`, `checkVoiceLeading`)
+  - [x] Fase 3: intermodalidad universal + pivot chords + modulación + sustitución completa + Coltrane matrix (breaking: `getBorrowedChords`)
+  - [ ] Fase 4: progresiones presets + secuencias + análisis formal (AABA, sonata, rondó...)
   - [ ] Fase 4: progresiones presets + secuencias + análisis formal (AABA, sonata, rondó...)
   - [ ] Fase 5: UST + slash/polychord + chord-scale completeness + enharmonic respelling
   - [ ] Fase 6: set theory completo (Tn/TnI, subset) + dodecafonismo + contrapunto 1-5 + canon + Schenker básico + melodía
@@ -253,6 +254,30 @@ Decisiones clave:
 - [x] Overhaul sistema bemoles/sostenidos — sesión 8
 
 ## History
+
+### 2026-04-19 — Fase 3: intermodalidad universal + modulación + sustitución + Coltrane
+
+**Breaking change:** `Harmony.getBorrowedChords` retorna `BorrowedChord[]` en lugar de `Chord[]`. El campo `chord` contiene el acorde; además: `sourceMode`, `brightness`, `function`, `characteristic`.
+
+**Nuevos métodos en `Harmony`:**
+- `getBorrowedChords(keySymbol, options?)` — reescrito. Cubre 9 modos paralelos (lydian→locrian + harmonic/melodic minor + harmonic major). Soporta opción `sources` para filtrar por modo.
+- `findPivotChords(keyA, keyB, type?)` — devuelve `PivotChord[]` con `functionInA` y `functionInB` por grado.
+- `classifyModulation(chordsA, chordsB, keyA, keyB)` — clasifica como direct/pivot/enharmonic/chromatic/common-tone.
+- `getNegativeProgression(chords, keyCenter)` — aplica negative harmony a cada acorde de la progresión.
+- `getColtraneAxis(key)` — devuelve `ColtraneAxis` con las 3 raíces por terceras mayores.
+- `getColtraneSubstitutions(chord, keySymbol)` — devuelve los 2 sustitutos Coltrane del acorde.
+
+**Nuevo módulo `substitution.ts`:**
+- `getSubstitutions(chord, keySymbol)` — devuelve `SubstitutionOption[]` cubriendo: tritone, sus4, deceptive, diatonic (I→iii/vi, IV→ii).
+
+**Nuevos métodos en `CircleOfFifths`:**
+- `getModalKey(root, mode)` — devuelve `ModalKey` con `parentMajorKey`.
+- `getModalNeighbors(modalKey, radius?)` — modos con misma raíz por adyacencia de brightness.
+- `getModalDistance(keyA, keyB)` — distancia entre parent major keys en el círculo.
+
+**Tests:** 53 en `tests/unit/harmony-phase3.test.ts`. Total: 210/210 pasando.
+**Bundle:** 59.1kb (antes 54.8kb).
+**Demo:** nueva sección `#intermodal` en `public/example.html`.
 
 ### 2026-04-19 — Fase 2: análisis de progresión + voice leading clásico
 

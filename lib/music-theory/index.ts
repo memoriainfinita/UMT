@@ -16,3 +16,4 @@ export * from './rhythm';
 export * from './abc-bridge';
 export * from './neo-riemannian';
 export * from './key-detection';
+export * from './substitution';
