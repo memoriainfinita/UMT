@@ -163,6 +163,19 @@ export const SCALE_PATTERNS: Record<string, readonly number[]> = {
   'chinese':              [4, 2, 1, 4, 1],        // Chinese pentatonic (Gong scale)
   'egyptian':             [2, 3, 2, 3, 2],        // Egyptian / Suspended pentatonic
 
+  // ── Ancient Greek modes (differ from medieval church modes) ─────────────────
+  // NOTE: Greek modes are defined descending from their characteristic tetrachord.
+  // These are ascending Western 12-TET approximations for reference only.
+  // Greek Dorian ≠ medieval Dorian; Greek Phrygian ≠ medieval Phrygian, etc.
+  'greek-dorian':       [2, 1, 2, 2, 2, 1, 2],  // = medieval Phrygian (E mode)
+  'greek-phrygian':     [1, 2, 2, 2, 1, 2, 2],  // = medieval Dorian (D mode) [descending: W H W W W H W]
+  'greek-lydian':       [2, 2, 2, 1, 2, 2, 1],  // = medieval Mixolydian (G mode)
+  'greek-mixolydian':   [2, 2, 1, 2, 2, 1, 2],  // = medieval Aeolian (A mode)
+  'greek-hypodorian':   [2, 1, 2, 2, 1, 2, 2],  // = medieval Aeolian (plagal Dorian)
+  'greek-hypophrygian': [1, 2, 2, 1, 2, 2, 2],  // plagal Phrygian
+  'greek-hypolydian':   [2, 2, 1, 2, 2, 2, 1],  // = medieval Ionian (plagal Lydian)
+  'greek-hypomixolydian':[2, 1, 2, 2, 2, 1, 2], // = plagal Mixolydian
+
   // ── Aliases ───────────────────────────────────────────────────────────────
   'major':                [2, 2, 1, 2, 2, 2, 1],  // = ionian
   'minor':                [2, 1, 2, 2, 1, 2, 2],  // = aeolian
