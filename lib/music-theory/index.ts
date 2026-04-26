@@ -36,3 +36,5 @@ export * from './xen';
 export * from './spectral';
 export * from './temperament-analysis';
 export * from './voice-leading-geometry';
+export * from './musicxml-bridge';
+export * from './lilypond-bridge';
