@@ -1,7 +1,7 @@
 import { Chord } from './chord';
 import { parseScaleSymbol, parseChordSymbol } from './parser';
 import { get12TETName, get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
-import { CHORD_FORMULAS, MODE_BRIGHTNESS } from './dictionaries';
+import { CHORD_FORMULAS, SCALE_PATTERNS, MODE_BRIGHTNESS } from './dictionaries';
 import { Note } from './note';
 import { Scale } from './scale';
 import { TuningSystem, TET12, EDO } from './tuning';
@@ -102,6 +102,22 @@ export interface ColtraneAxis {
   majorThirds: [string, string, string];
 }
 
+export type SlashType = 'inversion' | 'hybrid' | 'polychord' | 'upper-structure';
+
+export interface SlashAnalysis {
+  type: SlashType;
+  upperStructure?: Chord;
+  lowerRoot?: Note;
+  lowerChord?: Chord;
+  resultingTensions?: string[];
+}
+
+export interface RespellContext {
+  keySymbol?: string;
+  functionalRole?: 'secondary-dominant' | 'chromatic-mediant' | 'passing' | 'neighbor';
+  direction?: 'ascending' | 'descending';
+}
+
 // ============================================================================
 //  Module-level helpers
 // ============================================================================
@@ -152,6 +168,12 @@ function chordQualityFromIntervals(chord: Chord, oct: number): string {
 }
 
 const ROMAN_UPPER = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+
+// Interval (semitone from bass) → tension name, used by analyzeSlash
+const TENSION_NAMES: Record<number, string> = {
+  0: 'R', 1: 'b9', 2: '9', 3: '#9', 4: 'M3', 5: '11',
+  6: '#11', 7: 'P5', 8: 'b13', 9: '13', 10: 'b7', 11: 'M7',
+};
 
 function qualityToRomanParts(quality: string): { upper: boolean; suffix: string } {
   switch (quality) {
@@ -1282,6 +1304,185 @@ export class Harmony {
     // Normalize: max meaningful distance is half an octave (tritone = 6 in 12-TET)
     const maxDist = oct / 2;
     return Math.max(0, 1 - avgDistance / maxDist);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  //  Phase 5: slash analysis, chord-scale completeness, enharmonic respelling
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Analyzes a slash chord and classifies it as inversion, hybrid, polychord, or upper-structure.
+   * Returns `{ type: 'inversion' }` for chords without a bass note.
+   */
+  static analyzeSlash(chord: Chord): SlashAnalysis {
+    const ts = chord.tuningSystem;
+    const oct = ts.octaveSteps;
+    if (oct !== 12) return { type: 'hybrid' };
+    if (chord.bassStep === undefined) return { type: 'inversion' };
+
+    const bassPc = ((chord.bassStep % oct) + oct) % oct;
+    const rootPc = ((chord.rootStep % oct) + oct) % oct;
+    const chordPcs = chord.intervalsInSteps.map(i => ((rootPc + i) % oct + oct) % oct);
+
+    const lowerRoot = new Note(ts, chord.bassStep);
+
+    // Inversion: bass is a chord tone
+    if (chordPcs.includes(bassPc)) {
+      return { type: 'inversion', lowerRoot };
+    }
+
+    // Detect what the upper voices form
+    const upperNotes = chord.getNotes();
+    const upperDetected = Harmony.detectChords(upperNotes);
+    const upperChordName = upperDetected[0] !== 'Unknown Chord' ? upperDetected[0] : null;
+
+    const tensions = chordPcs.map(pc => {
+      const interval = ((pc - bassPc + oct) % oct);
+      return TENSION_NAMES[interval] ?? null;
+    }).filter(Boolean) as string[];
+
+    if (upperChordName) {
+      const upperChord = parseChordSymbol(upperChordName, ts);
+      const upperRootPc = ((upperChord.rootStep % oct) + oct) % oct;
+      const upperOffset = ((upperRootPc - bassPc + oct) % oct);
+
+      // Upper-structure offsets: 1(bII), 2(II), 3(bIII), 8(bVI), 9(VI), 10(bVII)
+      if ([1, 2, 3, 8, 9, 10].includes(upperOffset)) {
+        return { type: 'upper-structure', upperStructure: upperChord, lowerRoot, resultingTensions: tensions };
+      }
+
+      // Polychord: upper forms a separate recognizable chord over a different root
+      const lowerPf = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[bassPc], 'major');
+      const lowerName = lowerPf ? NOTE_NAMES_12TET_FLAT[bassPc] : NOTE_NAMES_12TET_SHARP[bassPc];
+      let lowerChord: Chord | undefined;
+      try { lowerChord = parseChordSymbol(lowerName, ts); } catch { /* ignore */ }
+
+      return { type: 'polychord', upperStructure: upperChord, lowerRoot, lowerChord, resultingTensions: tensions };
+    }
+
+    return { type: 'hybrid', lowerRoot, resultingTensions: tensions };
+  }
+
+  /**
+   * Returns all scales from the dictionary that contain every pitch class of the chord.
+   * `completeness` = chord notes / scale notes (how much of the scale the chord fills).
+   * Results are sorted by completeness descending.
+   */
+  static getAllContainingScales(chord: Chord): { scale: Scale; completeness: number }[] {
+    const ts = chord.tuningSystem;
+    const oct = ts.octaveSteps;
+    if (oct !== 12) return [];
+
+    const chordPcsArr = chord.getPitchClasses();
+    if (chordPcsArr.length === 0) return [];
+    const chordPcsSet = new Set(chordPcsArr);
+
+    // Canonical scale types only (no aliases to avoid duplicate results)
+    const CANONICAL = [
+      'major', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'aeolian', 'locrian',
+      'harmonic minor', 'locrian #6', 'ionian #5', 'dorian #4', 'phrygian dominant', 'lydian #2', 'super locrian bb7',
+      'harmonic major',
+      'melodic minor', 'dorian b2', 'lydian augmented', 'lydian dominant', 'mixolydian b6', 'locrian #2', 'altered',
+      'whole tone', 'augmented', 'whole-half diminished', 'half-whole diminished',
+      'pentatonic major', 'pentatonic minor', 'blues', 'blues major',
+      'bebop dominant', 'bebop major', 'bebop dorian',
+      'double harmonic', 'hungarian minor', 'neapolitan minor', 'neapolitan major', 'persian',
+      'prometheus', 'hirajoshi', 'kumoi', 'in', 'iwato', 'yo', 'chinese', 'egyptian',
+    ];
+
+    const results: { scale: Scale; completeness: number }[] = [];
+
+    for (const type of CANONICAL) {
+      const pattern = SCALE_PATTERNS[type];
+      if (!pattern) continue;
+
+      for (let rootPc = 0; rootPc < 12; rootPc++) {
+        // Build scale PCs from step pattern
+        const scalePcs: number[] = [];
+        let cumulative = 0;
+        for (const interval of pattern) {
+          scalePcs.push((rootPc + cumulative) % 12);
+          cumulative += interval;
+        }
+        const scalePcsSet = new Set(scalePcs);
+
+        if (![...chordPcsSet].every(pc => scalePcsSet.has(pc))) continue;
+
+        const completeness = chordPcsSet.size / scalePcsSet.size;
+        const pf = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[rootPc], type);
+        const rootName = pf ? NOTE_NAMES_12TET_FLAT[rootPc] : NOTE_NAMES_12TET_SHARP[rootPc];
+
+        try {
+          const scale = parseScaleSymbol(`${rootName} ${type}`, ts);
+          results.push({ scale, completeness });
+        } catch { /* skip */ }
+      }
+    }
+
+    results.sort((a, b) => b.completeness - a.completeness);
+    return results;
+  }
+
+  /**
+   * Respells a note's accidental based on key context or melodic direction.
+   * - `keySymbol`: use the key's flat/sharp preference.
+   * - `direction: 'ascending'`: prefer sharps; `'descending'`: prefer flats.
+   * Returns the original note if no context applies.
+   */
+  static respellNote(note: Note, context: RespellContext): Note {
+    const ts = note.tuningSystem;
+    if (ts.octaveSteps !== 12) return note;
+
+    let useFlats: boolean;
+
+    if (context.keySymbol) {
+      const m = context.keySymbol.match(/^([A-G][#b]*)\s+(.*)$/i);
+      const root = m ? m[1] : 'C';
+      const mode = m ? m[2].toLowerCase().trim() : 'major';
+      useFlats = preferFlatsForKey(root, mode);
+    } else if (context.direction === 'ascending') {
+      useFlats = false;
+    } else if (context.direction === 'descending') {
+      useFlats = true;
+    } else {
+      return note;
+    }
+
+    const names = useFlats ? NOTE_NAMES_12TET_FLAT : NOTE_NAMES_12TET_SHARP;
+    const pc = ((note.stepsFromBase % 12) + 12) % 12;
+    const octave = Math.floor((note.stepsFromBase + 9) / 12) + 4;
+    return new Note(ts, note.stepsFromBase, `${names[pc]}${octave}`);
+  }
+
+  /**
+   * Respells a chord's root (and updates the name) based on key context or melodic direction.
+   */
+  static respellChord(chord: Chord, context: RespellContext): Chord {
+    const ts = chord.tuningSystem;
+    if (ts.octaveSteps !== 12) return chord;
+
+    let useFlats: boolean;
+
+    if (context.keySymbol) {
+      const m = context.keySymbol.match(/^([A-G][#b]*)\s+(.*)$/i);
+      const root = m ? m[1] : 'C';
+      const mode = m ? m[2].toLowerCase().trim() : 'major';
+      useFlats = preferFlatsForKey(root, mode);
+    } else if (context.direction === 'ascending') {
+      useFlats = false;
+    } else if (context.direction === 'descending') {
+      useFlats = true;
+    } else {
+      return chord;
+    }
+
+    const rootPc = ((chord.rootStep % 12) + 12) % 12;
+    const newRootName = useFlats ? NOTE_NAMES_12TET_FLAT[rootPc] : NOTE_NAMES_12TET_SHARP[rootPc];
+    const quality = chordQualityFromIntervals(chord, 12);
+    const suffix = quality === 'M' ? '' : quality;
+    const newName = `${newRootName}${suffix}`;
+
+    return new Chord(newName, ts, chord.rootStep, chord.intervalsInSteps, chord.bassStep, useFlats);
   }
 }
 

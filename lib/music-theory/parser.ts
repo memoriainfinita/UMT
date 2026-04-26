@@ -269,3 +269,40 @@ export function parseRomanProgression(progression: string, keySymbol: string, tu
     return new Chord(chordName, tuning, rootStep, intervals, undefined, preferFlats);
   });
 }
+
+/**
+ * Parses a polychord notation into two separate chords.
+ *
+ * Formats supported:
+ * - `"Fmaj7|Gmaj7"` — upper chord | lower chord (vertical stack)
+ * - `"D/C"` — if C is not a chord tone of D, treated as polychord (non-inversion slash)
+ *
+ * @throws if the symbol cannot be parsed.
+ */
+export function parsePolychord(
+  symbol: string,
+  tuning: TuningSystem = TET12
+): { upper: Chord; lower: Chord } {
+  const s = symbol.trim();
+
+  // Explicit polychord separator: `|`
+  if (s.includes('|')) {
+    const [upperSym, lowerSym] = s.split('|').map(p => p.trim());
+    return {
+      upper: parseChordSymbol(upperSym, tuning),
+      lower: parseChordSymbol(lowerSym, tuning),
+    };
+  }
+
+  // Slash notation: re-parse, treating bass as lower root triad
+  if (s.includes('/')) {
+    const [upperSym, bassSym] = s.split('/').map(p => p.trim());
+    const upper = parseChordSymbol(upperSym, tuning);
+    const normalizedBass = bassSym.charAt(0).toUpperCase() + bassSym.slice(1);
+    const lower = parseChordSymbol(normalizedBass, tuning);
+    return { upper, lower };
+  }
+
+  throw new Error(`parsePolychord: unrecognized polychord format "${symbol}". Use "|" or "/" separator.`);
+}
+

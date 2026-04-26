@@ -500,6 +500,20 @@ Javanese Pelog
   <pre id="out-phase4" class="out"></pre>
 </section>
 
+<section id="phase5" class="sec">
+  <h2 class="sec-title">4e. Jazz / Armonía contemporánea (Fase 5)</h2>
+  <p class="sec-sub">Upper Structure Triads, análisis de slash chords, poliacordes, chord-scale completeness, reortografía enarmónica</p>
+  <div class="flex gap-3 flex-wrap mb-4">
+    <input id="t5-chord"  class="inp w-32" value="G7"      placeholder="Acorde dominante">
+    <input id="t5-slash"  class="inp w-32" value="D/C"     placeholder="Slash chord">
+    <input id="t5-poly"   class="inp w-40" value="Fmaj7|G7" placeholder="Poliacorde (A|B)">
+    <input id="t5-respell-chord" class="inp w-28" value="C#maj7" placeholder="Reortografiar">
+    <input id="t5-respell-key"   class="inp w-32" value="Db major" placeholder="En tonalidad">
+    <button onclick="runPhase5()" class="btn">Analizar</button>
+  </div>
+  <pre id="out-phase5" class="out"></pre>
+</section>
+
 <section id="reference" class="sec">
   <h2 class="sec-title">11. API Reference</h2>
   <p class="sec-sub">All exported classes and key methods</p>
@@ -1477,6 +1491,64 @@ Werckmeister III Well Temperament
 
       out('out-phase4', text);
     } catch(e) { outErr('out-phase4', e); }
+  }
+
+  function runPhase5() {
+    try {
+      const chordSym  = document.getElementById('t5-chord').value.trim();
+      const slashSym  = document.getElementById('t5-slash').value.trim();
+      const polyStr   = document.getElementById('t5-poly').value.trim();
+      const respellCh = document.getElementById('t5-respell-chord').value.trim();
+      const respellKey= document.getElementById('t5-respell-key').value.trim();
+      let text = '';
+
+      // Upper Structure Triads
+      const domChord = UMT.parseChordSymbol(chordSym);
+      const usts = UMT.getUpperStructures(domChord);
+      text += `Upper Structure Triads over ${chordSym}:\n`;
+      if (usts.length === 0) {
+        text += '  (only available for 12-TET dominant chords)\n';
+      } else {
+        usts.forEach(u => {
+          text += `  ${u.label.padEnd(10)} → ${u.triad.name.padEnd(8)} tensions: ${u.tensions.join(', ')}\n`;
+        });
+      }
+
+      // Slash chord analysis
+      if (slashSym) {
+        const slashChord = UMT.parseChordSymbol(slashSym);
+        const analysis = UMT.Harmony.analyzeSlash(slashChord);
+        text += `\nSlash analysis of ${slashSym}:\n`;
+        text += `  Type: ${analysis.type}\n`;
+        if (analysis.lowerRoot) text += `  Bass note: ${analysis.lowerRoot.name}\n`;
+        if (analysis.upperStructure) text += `  Upper chord: ${analysis.upperStructure.name}\n`;
+        if (analysis.resultingTensions?.length) text += `  Tensions: ${analysis.resultingTensions.join(', ')}\n`;
+      }
+
+      // Polychord parser
+      if (polyStr) {
+        const pc = UMT.parsePolychord(polyStr);
+        text += `\nPolychord "${polyStr}":\n`;
+        text += `  Upper: ${pc.upper.name} [${pc.upper.intervalsInSteps.join(',')}]\n`;
+        text += `  Lower: ${pc.lower.name} [${pc.lower.intervalsInSteps.join(',')}]\n`;
+      }
+
+      // Chord-scale completeness
+      const scales = UMT.Harmony.getAllContainingScales(domChord);
+      text += `\nTop scales containing ${chordSym} (${scales.length} total):\n`;
+      scales.slice(0, 8).forEach(s => {
+        text += `  ${s.scale.name.padEnd(26)} completeness: ${(s.completeness * 100).toFixed(0)}%\n`;
+      });
+
+      // Enharmonic respelling
+      if (respellCh && respellKey) {
+        const rc = UMT.parseChordSymbol(respellCh);
+        const respelled = UMT.Harmony.respellChord(rc, { keySymbol: respellKey });
+        text += `\nRespell ${respellCh} in ${respellKey}: ${respelled.name}\n`;
+      }
+
+      out('out-phase5', text);
+    } catch(e) { outErr('out-phase5', e); }
   }
   </script>
 </body>
