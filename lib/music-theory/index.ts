@@ -19,3 +19,4 @@ export * from './key-detection';
 export * from './substitution';
 export * from './progressions';
 export * from './form';
+export * from './upper-structures';
