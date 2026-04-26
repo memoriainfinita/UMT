@@ -500,6 +500,21 @@ Javanese Pelog
   <pre id="out-phase4" class="out"></pre>
 </section>
 
+<section id="phase8" class="sec">
+  <h2 class="sec-title">4h. Bajo cifrado, Ragas, Maqamat, Solfège (Fase 8)</h2>
+  <p class="sec-sub">Bajo cifrado, modos griegos, hexacordos de Guido, ragas, maqamat, solfège fijo y móvil</p>
+  <div class="flex gap-3 flex-wrap mb-4">
+    <input id="t8-bass"    class="inp w-24" value="C4"    placeholder="Nota bajo">
+    <input id="t8-figure"  class="inp w-20" value="6/4"   placeholder="Cifrado">
+    <input id="t8-raga"    class="inp w-32" value="yaman"  placeholder="Raga (id)">
+    <input id="t8-maqam"   class="inp w-32" value="bayati" placeholder="Maqam (id)">
+    <input id="t8-note"    class="inp w-20" value="G4"    placeholder="Nota solfeo">
+    <input id="t8-key"     class="inp w-28" value="C major" placeholder="Tonalidad">
+    <button onclick="runPhase8()" class="btn">Analizar</button>
+  </div>
+  <pre id="out-phase8" class="out"></pre>
+</section>
+
 <section id="phase7" class="sec">
   <h2 class="sec-title">4g. Rítmica avanzada (Fase 7)</h2>
   <p class="sec-sub">Transformaciones rítmicas, detección de clave, polymeter, modulación métrica, isorritmo</p>
@@ -1677,6 +1692,64 @@ Werckmeister III Well Temperament
 
       out('out-phase7', text);
     } catch(e) { outErr('out-phase7', e); }
+  }
+
+  function runPhase8() {
+    try {
+      const bassStr  = document.getElementById('t8-bass').value.trim();
+      const figStr   = document.getElementById('t8-figure').value.trim();
+      const ragaId   = document.getElementById('t8-raga').value.trim();
+      const maqamId  = document.getElementById('t8-maqam').value.trim();
+      const noteStr  = document.getElementById('t8-note').value.trim();
+      const keyStr   = document.getElementById('t8-key').value.trim();
+      let text = '';
+
+      // Figured bass
+      if (bassStr) {
+        const bassNote = UMT.parseNote(bassStr);
+        const parsed = UMT.FiguredBass.parse(figStr);
+        text += `Figured bass ${bassStr} ${figStr || '(root)'}:\n`;
+        text += `  Intervals: [${parsed.intervals.join(',')}] semitones above bass\n`;
+        const chord = UMT.FiguredBass.realize(bassNote, figStr, keyStr);
+        text += `  Realized: ${chord.name} [${chord.intervalsInSteps.join(',')}]\n`;
+      }
+
+      // Hexachord
+      const note = UMT.parseNote(noteStr);
+      text += `\nHexachord syllables for ${noteStr}:\n`;
+      ['naturale','durum','molle'].forEach(h => {
+        const syl = UMT.Hexachord.getSyllable(note, h);
+        text += `  ${h.padEnd(10)}: ${syl ?? '(not in hexachord)'}\n`;
+      });
+      text += `Fixed-do: ${UMT.Solfege.fixedDo(note)}\n`;
+      text += `Movable-do (${keyStr}): ${UMT.Solfege.movableDo(note, keyStr)}\n`;
+
+      // Raga
+      const raga = UMT.RAGAS[ragaId];
+      if (raga) {
+        text += `\nRaga: ${raga.name} (${raga.thaat})\n`;
+        text += `  Aroha:   ${raga.aroha.join('-')} semitones\n`;
+        text += `  Avaroha: ${raga.avaroha.join('-')} semitones\n`;
+        text += `  Vadi: ${raga.vadi}, Samvadi: ${raga.samvadi}\n`;
+        if (raga.time) text += `  Time: ${raga.time}\n`;
+        text += `  ${raga.description}\n`;
+      } else {
+        text += `\nRaga "${ragaId}" not found. Available: ${Object.keys(UMT.RAGAS).join(', ')}\n`;
+      }
+
+      // Maqam
+      const maqam = UMT.MAQAMAT[maqamId];
+      if (maqam) {
+        text += `\nMaqam: ${maqam.name}\n`;
+        text += `  Notes (QT): ${maqam.notes.join('-')}\n`;
+        text += `  Ajnas: ${maqam.ajnas.map(j => j.name).join(' + ')}\n`;
+        if (maqam.gharsa) text += `  Character: ${maqam.gharsa}\n`;
+      } else {
+        text += `\nMaqam "${maqamId}" not found. Available: ${Object.keys(UMT.MAQAMAT).join(', ')}\n`;
+      }
+
+      out('out-phase8', text);
+    } catch(e) { outErr('out-phase8', e); }
   }
   </script>
 </body>

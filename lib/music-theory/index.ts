@@ -25,3 +25,8 @@ export * from './counterpoint';
 export * from './melody';
 export * from './schenker';
 export * from './clave-patterns';
+export * from './figured-bass';
+export * from './ragas';
+export * from './maqamat';
+export * from './solfege';
+export * from './hexachord';
