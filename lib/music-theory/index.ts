@@ -24,3 +24,4 @@ export * from './twelve-tone';
 export * from './counterpoint';
 export * from './melody';
 export * from './schenker';
+export * from './clave-patterns';
