@@ -500,6 +500,18 @@ Javanese Pelog
   <pre id="out-phase4" class="out"></pre>
 </section>
 
+<section id="phase6" class="sec">
+  <h2 class="sec-title">4f. Set Theory, Serialismo, Contrapunto, Melodía (Fase 6)</h2>
+  <p class="sec-sub">Forte numbers, Tn/TnI, Z-relations, ToneRow, contrapunto de especies, análisis melódico, Schenker</p>
+  <div class="flex gap-3 flex-wrap mb-4">
+    <input id="t6-pcs"    class="inp w-44" value="0 3 7" placeholder="PCs (e.g. 0 3 7)">
+    <input id="t6-row"    class="inp w-72" value="0 11 3 4 8 7 9 6 1 2 5 10" placeholder="12-tone row (12 PCs)">
+    <input id="t6-melody" class="inp w-52" value="-5 -4 -2 0 -2 -4 -5" placeholder="Melody (steps from A4)">
+    <button onclick="runPhase6()" class="btn">Analizar</button>
+  </div>
+  <pre id="out-phase6" class="out"></pre>
+</section>
+
 <section id="phase5" class="sec">
   <h2 class="sec-title">4e. Jazz / Armonía contemporánea (Fase 5)</h2>
   <p class="sec-sub">Upper Structure Triads, análisis de slash chords, poliacordes, chord-scale completeness, reortografía enarmónica</p>
@@ -1549,6 +1561,68 @@ Werckmeister III Well Temperament
 
       out('out-phase5', text);
     } catch(e) { outErr('out-phase5', e); }
+  }
+
+  function runPhase6() {
+    try {
+      const rowStr   = document.getElementById('t6-row').value.trim();
+      const pcsStr   = document.getElementById('t6-pcs').value.trim();
+      const melStr   = document.getElementById('t6-melody').value.trim();
+      let text = '';
+
+      // Forte number + set operations
+      if (pcsStr) {
+        const pcs = pcsStr.split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+        const prime = UMT.SetTheory.primeForm(pcs);
+        const forte = UMT.SetTheory.getForteNumber(pcs);
+        const iv    = UMT.SetTheory.intervalVector(pcs);
+        const comp  = UMT.SetTheory.getComplement(pcs);
+        text += `Set: [${pcs.join(',')}]\n`;
+        text += `  Prime form: [${prime.join(',')}] (Forte: ${forte})\n`;
+        text += `  Interval vector: [${iv.join(',')}]\n`;
+        text += `  Complement: [${comp.join(',')}]\n`;
+        const t3 = UMT.SetTheory.Tn(pcs, 3);
+        text += `  T3: [${t3.join(',')}]\n`;
+        const ti = UMT.SetTheory.TnI(pcs, 0);
+        text += `  T0I: [${ti.join(',')}]\n`;
+        const zr = UMT.SetTheory.getZRelated(pcs);
+        text += `  Z-related sets: ${zr.length > 0 ? zr.map(z => '['+z.join(',')+']').join(', ') : '(none)'}\n`;
+      }
+
+      // ToneRow
+      if (rowStr) {
+        const rowPcs = rowStr.split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+        if (rowPcs.length === 12) {
+          const row = new UMT.ToneRow(rowPcs);
+          text += `\nTone Row: [${rowPcs.join(',')}]\n`;
+          text += `  P(0): [${row.P(0).join(',')}]\n`;
+          text += `  I(0): [${row.I(0).join(',')}]\n`;
+          text += `  R:    [${row.R().join(',')}]\n`;
+          text += `  RI(0):[${row.RI(0).join(',')}]\n`;
+          text += `  All-interval: ${row.isAllInterval()}\n`;
+          text += `  Combinatorial: ${row.isCombinatorial() ?? 'no'}\n`;
+          const [h1, h2] = row.getHexachords();
+          text += `  Hexachords: [${h1.join(',')}] / [${h2.join(',')}]\n`;
+        } else {
+          text += `\nToneRow requires exactly 12 pitch classes.\n`;
+        }
+      }
+
+      // Melody analysis
+      if (melStr) {
+        const steps = melStr.split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+        const melody = steps.map(s => new UMT.Note(UMT.TET12, s));
+        const contour = UMT.MelodyAnalysis.getContour(melody);
+        const reduction = UMT.MelodyAnalysis.getContourReduction(melody);
+        const motifs = UMT.MelodyAnalysis.findMotifs(melody, 2);
+        text += `\nMelody steps: [${steps.join(',')}]\n`;
+        text += `  Contour: ${contour.join('')}\n`;
+        text += `  Contour reduction: [${reduction.map(n => n.stepsFromBase).join(',')}]\n`;
+        text += `  Motifs found: ${motifs.length > 0 ? motifs.map(m => '['+m.intervals.join(',')+']×'+m.length).join(' ') : '(none)'}\n`;
+      }
+
+      out('out-phase6', text);
+    } catch(e) { outErr('out-phase6', e); }
   }
   </script>
 </body>
