@@ -500,6 +500,17 @@ Javanese Pelog
   <pre id="out-phase4" class="out"></pre>
 </section>
 
+<section id="phase7" class="sec">
+  <h2 class="sec-title">4g. Rítmica avanzada (Fase 7)</h2>
+  <p class="sec-sub">Transformaciones rítmicas, detección de clave, polymeter, modulación métrica, isorritmo</p>
+  <div class="flex gap-3 flex-wrap mb-4">
+    <input id="t7-dur"   class="inp w-40" value="1 2 1 2" placeholder="Duraciones (separadas por espacio)">
+    <input id="t7-clave" class="inp w-56" value="1 0 0 1 0 0 1 0 0 0 1 0 1 0 0 0" placeholder="Clave 16 pasos (0/1)">
+    <button onclick="runPhase7()" class="btn">Analizar</button>
+  </div>
+  <pre id="out-phase7" class="out"></pre>
+</section>
+
 <section id="phase6" class="sec">
   <h2 class="sec-title">4f. Set Theory, Serialismo, Contrapunto, Melodía (Fase 6)</h2>
   <p class="sec-sub">Forte numbers, Tn/TnI, Z-relations, ToneRow, contrapunto de especies, análisis melódico, Schenker</p>
@@ -1623,6 +1634,49 @@ Werckmeister III Well Temperament
 
       out('out-phase6', text);
     } catch(e) { outErr('out-phase6', e); }
+  }
+
+  function runPhase7() {
+    try {
+      const durStr   = document.getElementById('t7-dur').value.trim();
+      const claveStr = document.getElementById('t7-clave').value.trim();
+      let text = '';
+
+      const durations = durStr.split(/\s+/).map(Number).filter(n => !isNaN(n));
+      if (durations.length > 0) {
+        text += `Durations: [${durations.join(',')}]\n`;
+        text += `  Augmentation (×2):      [${UMT.RhythmTransform.augmentation(durations).join(',')}]\n`;
+        text += `  Diminution (÷2):        [${UMT.RhythmTransform.diminution(durations).join(',')}]\n`;
+        text += `  Retrograde:             [${UMT.RhythmTransform.retrograde(durations).join(',')}]\n`;
+        text += `  Retrograde inversion:   [${UMT.RhythmTransform.retrogradeInversion(durations).map(v => v.toFixed(2)).join(',')}]\n`;
+
+        // Isorhythm demo
+        const iso = new UMT.Isorhythm(durations, [60, 62, 64, 65, 67]);
+        const isoEvents = iso.generate(16);
+        text += `\nIsorhythm (talea=[${durations.join(',')}], color=[60,62,64,65,67]):\n`;
+        isoEvents.slice(0, 8).forEach(e => { text += `  note=${e.note} dur=${e.duration}\n`; });
+
+        // Metric modulation
+        const newTempo = UMT.MetricModulation.calculate(120, durations[0] / 8, 0.25);
+        text += `\nMetric modulation: dotted note (${durations[0]}/8) → quarter at 120 BPM = ${newTempo.toFixed(1)} BPM\n`;
+      }
+
+      if (claveStr) {
+        const clavePat = claveStr.split(/\s+/).map(Number);
+        const detected = UMT.RhythmAnalysis.detectClave(clavePat);
+        text += `\nClave pattern [${clavePat.join('')}] → ${detected}\n`;
+        const isTresillo = clavePat.length === 8 && UMT.RhythmAnalysis.detectTresillo(clavePat);
+        text += `Tresillo: ${isTresillo}\n`;
+        const ts44 = new UMT.TimeSignature([4], 4);
+        const sync = UMT.RhythmAnalysis.detectSyncopation(clavePat.map((v, i) => v ? i : -1).filter(i => i >= 0), ts44);
+        text += `Syncopation index: ${(sync * 100).toFixed(0)}%\n`;
+      }
+
+      // List clave presets
+      text += `\nClave presets: ${Object.keys(UMT.CLAVE_PATTERNS).join(', ')}\n`;
+
+      out('out-phase7', text);
+    } catch(e) { outErr('out-phase7', e); }
   }
   </script>
 </body>
