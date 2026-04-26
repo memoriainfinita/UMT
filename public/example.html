@@ -500,6 +500,19 @@ Javanese Pelog
   <pre id="out-phase4" class="out"></pre>
 </section>
 
+<section id="phase9" class="sec">
+  <h2 class="sec-title">4i. Microtonal & Espectral (Fase 9)</h2>
+  <p class="sec-sub">Messiaen, Tonnetz, MOS, Xen, temperamento, espectral, Tymoczko OPTIC</p>
+  <div class="flex gap-3 flex-wrap mb-4">
+    <input id="t9-chord" class="inp w-28" value="C7"     placeholder="Acorde">
+    <input id="t9-pcs"   class="inp w-36" value="0 4 7"  placeholder="PCs para OPTIC">
+    <input id="t9-gen"   class="inp w-20" value="7"      placeholder="Gen. MOS">
+    <input id="t9-size"  class="inp w-20" value="7"      placeholder="Notas MOS">
+    <button onclick="runPhase9()" class="btn">Analizar</button>
+  </div>
+  <pre id="out-phase9" class="out"></pre>
+</section>
+
 <section id="phase8" class="sec">
   <h2 class="sec-title">4h. Bajo cifrado, Ragas, Maqamat, Solfège (Fase 8)</h2>
   <p class="sec-sub">Bajo cifrado, modos griegos, hexacordos de Guido, ragas, maqamat, solfège fijo y móvil</p>
@@ -1750,6 +1763,68 @@ Werckmeister III Well Temperament
 
       out('out-phase8', text);
     } catch(e) { outErr('out-phase8', e); }
+  }
+
+  function runPhase9() {
+    try {
+      const chordStr = document.getElementById('t9-chord').value.trim();
+      const pcsStr   = document.getElementById('t9-pcs').value.trim();
+      const gen      = parseInt(document.getElementById('t9-gen').value) || 7;
+      const size     = parseInt(document.getElementById('t9-size').value) || 7;
+      let text = '';
+
+      // OPTIC
+      const pcs = pcsStr.split(/\s+/).map(Number).filter(n => !isNaN(n));
+      if (pcs.length > 0) {
+        const optic = UMT.OPTIC(pcs);
+        text += `OPTIC for [${pcs.join(',')}]:\n`;
+        text += `  O (pitch classes): [${optic.O.join(',')}]\n`;
+        text += `  T (transposed):    [${optic.T.join(',')}]\n`;
+        text += `  I (prime form):    [${optic.I.join(',')}]\n`;
+        text += `  C (cardinality):   ${optic.C}\n`;
+      }
+
+      // MOS
+      const mosScale = UMT.MOS.generate(gen, 12, size);
+      text += `\nMOS (gen=${gen}, period=12, size=${size}): [${mosScale.join(',')}]\n`;
+      text += `  Is MOS: ${UMT.MOS.isMOS(mosScale)}\n`;
+      const family = UMT.MOS.getMOSFamily(gen, 12, size + 2);
+      text += `  Family sizes: ${family.map(s => s.length).join(', ')}\n`;
+
+      // Tonnetz
+      const c = UMT.parseChordSymbol(chordStr);
+      const notes = c.getNotes();
+      text += `\nTonnetz positions for ${chordStr}:\n`;
+      notes.slice(0, 4).forEach(n => {
+        const pos = UMT.Tonnetz.getPosition(n);
+        text += `  ${n.getName().padEnd(6)} → (${pos.x}, ${pos.y})\n`;
+      });
+
+      // OPTIC voice-leading
+      const g7 = UMT.parseChordSymbol('G7');
+      const cMaj = UMT.parseChordSymbol('C');
+      const vl = UMT.VoiceLeadingGeometry.efficientVoiceLeading(g7, cMaj);
+      text += `\nVoice-leading G7→C: distance=${vl.totalDistance} semitones\n`;
+
+      // Spectral
+      const freqs = notes.map(n => n.frequency);
+      const roughness = UMT.Spectral.roughnessPlompLevelt(freqs);
+      const consonance = UMT.Spectral.sensoryConsonance(c);
+      text += `\nSpectral: ${chordStr}\n`;
+      text += `  Roughness: ${roughness.toFixed(4)}\n`;
+      text += `  Sensory consonance: ${(consonance * 100).toFixed(1)}%\n`;
+      const harmonics = UMT.Spectral.overtoneSeries(freqs[0], 6);
+      text += `  First 6 harmonics of ${notes[0]?.getName()}: ${harmonics.map(f => f.toFixed(1)).join(', ')} Hz\n`;
+
+      // Temperament compare
+      const table = UMT.TemperamentAnalysis.compare([UMT.TET12], [[3,2],[5,4],[6,5]]);
+      text += `\nTemperament errors in 12-TET:\n`;
+      table.entries[0].forEach(e => {
+        text += `  ${e.intervalRatio[0]}/${e.intervalRatio[1]} → ${e.errorCents.toFixed(2)} cents error\n`;
+      });
+
+      out('out-phase9', text);
+    } catch(e) { outErr('out-phase9', e); }
   }
   </script>
 </body>
