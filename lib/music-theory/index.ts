@@ -20,3 +20,7 @@ export * from './substitution';
 export * from './progressions';
 export * from './form';
 export * from './upper-structures';
+export * from './twelve-tone';
+export * from './counterpoint';
+export * from './melody';
+export * from './schenker';
