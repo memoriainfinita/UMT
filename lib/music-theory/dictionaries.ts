@@ -128,11 +128,16 @@ export const SCALE_PATTERNS: Record<string, readonly number[]> = {
   'altered':              [1, 2, 1, 2, 2, 2, 2],  // Mode 7 (Super Locrian — altered dominant)
 
   // ── Symmetric scales ─────────────────────────────────────────────────────
-  'whole tone':               [2, 2, 2, 2, 2, 2],
-  'augmented':                [3, 1, 3, 1, 3, 1],         // Hexatonic symmetric (Messiaen mode 3 related)
+  'whole tone':               [2, 2, 2, 2, 2, 2],           // Messiaen mode 1 — whole tone
+  'augmented':                [3, 1, 3, 1, 3, 1],           // Messiaen mode 3 (related)
   'chromatic':                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  'whole-half diminished':    [2, 1, 2, 1, 2, 1, 2, 1],  // Octatonic (starts W)
-  'half-whole diminished':    [1, 2, 1, 2, 1, 2, 1, 2],  // Octatonic (starts H, dominant)
+  'whole-half diminished':    [2, 1, 2, 1, 2, 1, 2, 1],    // Octatonic / Messiaen mode 2 (starts W)
+  'half-whole diminished':    [1, 2, 1, 2, 1, 2, 1, 2],    // Octatonic / Messiaen mode 2 (starts H)
+  // Messiaen modes of limited transposition (modes 4–7)
+  'messiaen-4':    [1, 1, 3, 1, 1, 1, 3, 1],               // Mode 4 — 3 transpositions
+  'messiaen-5':    [1, 4, 1, 1, 4, 1],                     // Mode 5 — 3 transpositions
+  'messiaen-6':    [2, 2, 1, 1, 2, 2, 1, 1],               // Mode 6 — 6 transpositions
+  'messiaen-7':    [1, 1, 1, 2, 1, 1, 1, 1, 2, 1],         // Mode 7 — 6 transpositions
 
   // ── Pentatonic / Hexatonic / Blues ────────────────────────────────────────
   'pentatonic major':     [2, 2, 3, 2, 3],

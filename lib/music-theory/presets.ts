@@ -115,3 +115,32 @@ export const ChromaticScale = (tuning: TuningSystem, rootStep: number) => {
   return new Scale('Chromatic/Full', tuning, rootStep, pattern);
 };
 
+// ── Harmonic / Overtone Series Scales ────────────────────────────────────────
+
+import { JustIntonation as _JI } from './tuning';
+
+/**
+ * Builds a JI scale from a segment of the harmonic series.
+ * @param rootHz - Fundamental frequency in Hz.
+ * @param fromHarmonic - First partial (e.g. 8).
+ * @param toHarmonic - Last partial (e.g. 16).
+ */
+export function HarmonicSeries(rootHz: number, fromHarmonic: number, toHarmonic: number): Scale {
+  const ratios: [number, number][] = [];
+  for (let n = fromHarmonic; n <= toHarmonic; n++) {
+    ratios.push([n, fromHarmonic]);
+  }
+  const tuning = new _JI(`Harmonic ${fromHarmonic}–${toHarmonic}`, ratios, rootHz);
+  const pattern = Array(ratios.length - 1).fill(1);
+  return new Scale(`Harmonic Series ${fromHarmonic}–${toHarmonic}`, tuning, 0, pattern);
+}
+
+/** Harmonic series partials 1–16 (full overtone scale). */
+export const Harmonics1to16 = HarmonicSeries(440, 1, 16);
+
+/** Harmonic series partials 8–16 (one-octave segment, upper harmonics). */
+export const Harmonics8to16 = HarmonicSeries(440, 8, 16);
+
+/** Harmonic series partials 16–32 (very high harmonics). */
+export const Harmonics16to32 = HarmonicSeries(440, 16, 32);
+
