@@ -126,13 +126,70 @@ export class ABCBridge {
 
   /**
    * Wraps ABC content in standard headers for rendering.
+   * @param keySymbol - UMT key symbol (e.g. 'C major', 'G major', 'D minor').
+   *   Automatically converted to ABC K: field (e.g. 'C', 'G', 'Dm').
    */
-  static wrapInHeaders(content: string, title: string = '', meter: string = '4/4', key: string = 'C'): string {
-    return `X:1
-T:${title}
-M:${meter}
-L:1/4
-K:${key}
-${content}`;
+  static wrapInHeaders(
+    content: string,
+    title = '',
+    meter = '4/4',
+    keySymbol = 'C major'
+  ): string {
+    const abcKey = umt2ABCKey(keySymbol);
+    return `X:1\nT:${title}\nM:${meter}\nL:1/4\nK:${abcKey}\n${content}`;
   }
+
+  /**
+   * Converts a MusicStream to ABC notation with optional chord symbols above the staff.
+   * @param chordNames - Optional array of chord name strings aligned to stream events.
+   */
+  static streamToABCWithChords(stream: MusicStream, chordNames?: string[]): string {
+    let abcString = '';
+    let currentMeasureBeats = 0;
+    const totalBeats = stream.timeSignature.totalBeats;
+
+    for (let i = 0; i < stream.events.length; i++) {
+      const event = stream.events[i];
+      const durationStr = beatsToABCDuration(event.duration);
+      const chordAnnotation = chordNames?.[i] ? `"${chordNames[i]}"` : '';
+
+      const abcNotes = event.notes.map((n: Note) => ABCBridge.noteToABC(n));
+      const noteStr = abcNotes.length > 1 ? `[${abcNotes.join('')}]` : (abcNotes[0] ?? 'z');
+      abcString += `${chordAnnotation}${noteStr}${durationStr} `;
+
+      currentMeasureBeats += event.duration;
+      if (currentMeasureBeats >= totalBeats) {
+        abcString += '| ';
+        currentMeasureBeats = 0;
+      }
+    }
+    return abcString.trim() + (abcString.endsWith('| ') ? ']' : ' |]');
+  }
+
+  /**
+   * Generates an ABC tuplet string.
+   * @param notes - Notes within the tuplet.
+   * @param p - How many notes in the tuplet (e.g. 3 for triplet).
+   * @param q - Normal note value they fit into (e.g. 2 for triplet).
+   * @param duration - Duration of each note in beats.
+   */
+  static tuplet(notes: Note[], p: number, q: number, duration: number): string {
+    const noteStrs = notes.map(n => ABCBridge.noteToABC(n) + beatsToABCDuration(duration));
+    return `(${p}:${q}:${notes.length} ${noteStrs.join(' ')}`;
+  }
+}
+
+/** Converts a UMT key symbol to an ABC K: field value. */
+function umt2ABCKey(keySymbol: string): string {
+  const m = keySymbol.match(/^([A-G][#b]*)\s*(.*)?$/i);
+  if (!m) return 'C';
+  const root = m[1].charAt(0).toUpperCase() + m[1].slice(1);
+  const mode = (m[2] ?? '').toLowerCase().trim();
+  if (mode === 'minor' || mode === 'aeolian' || mode === 'natural minor') return `${root}m`;
+  if (mode === 'dorian') return `${root}dor`;
+  if (mode === 'phrygian') return `${root}phr`;
+  if (mode === 'lydian') return `${root}lyd`;
+  if (mode === 'mixolydian') return `${root}mix`;
+  if (mode === 'locrian') return `${root}loc`;
+  return root; // major (default)
 }

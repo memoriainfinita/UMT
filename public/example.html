@@ -500,6 +500,23 @@ Javanese Pelog
   <pre id="out-phase4" class="out"></pre>
 </section>
 
+<section id="phase10" class="sec">
+  <h2 class="sec-title">4j. Notación y exportación (Fase 10)</h2>
+  <p class="sec-sub">MusicXML, LilyPond, ABC mejorado — chord symbols, key signatures, tuplets</p>
+  <div class="flex gap-3 flex-wrap mb-4">
+    <input id="t10-chord" class="inp w-28" value="Cmaj7"   placeholder="Acorde">
+    <input id="t10-scale" class="inp w-36" value="C major" placeholder="Escala">
+    <input id="t10-key"   class="inp w-32" value="G major" placeholder="Tonalidad (ABC)">
+    <select id="t10-format" class="inp w-28">
+      <option value="musicxml">MusicXML</option>
+      <option value="lilypond">LilyPond</option>
+      <option value="abc">ABC</option>
+    </select>
+    <button onclick="runPhase10()" class="btn">Exportar</button>
+  </div>
+  <pre id="out-phase10" class="out" style="font-size:11px; max-height:300px; overflow-y:auto"></pre>
+</section>
+
 <section id="phase9" class="sec">
   <h2 class="sec-title">4i. Microtonal & Espectral (Fase 9)</h2>
   <p class="sec-sub">Messiaen, Tonnetz, MOS, Xen, temperamento, espectral, Tymoczko OPTIC</p>
@@ -1825,6 +1842,45 @@ Werckmeister III Well Temperament
 
       out('out-phase9', text);
     } catch(e) { outErr('out-phase9', e); }
+  }
+
+  function runPhase10() {
+    try {
+      const chordStr  = document.getElementById('t10-chord').value.trim();
+      const scaleStr  = document.getElementById('t10-scale').value.trim();
+      const keyStr    = document.getElementById('t10-key').value.trim();
+      const format    = document.getElementById('t10-format').value;
+      let text = '';
+
+      const chord = UMT.parseChordSymbol(chordStr);
+      const scale = UMT.parseScaleSymbol(scaleStr);
+
+      // Build a simple stream: scale ascending
+      const stream = new UMT.MusicStream(new UMT.TimeSignature([4], 4), 120);
+      scale.getNotes(1).forEach(n => stream.addEvent([n], UMT.Duration.Quarter));
+
+      if (format === 'musicxml') {
+        text = UMT.streamToMusicXML(stream, { title: scaleStr });
+        text += '\n\n--- Chord chord ---\n' + UMT.chordToMusicXML(chord);
+      } else if (format === 'lilypond') {
+        text = UMT.streamToLilyPond(stream, { title: scaleStr });
+        text += '\n\n--- Chord ---\n' + UMT.chordToLilyPond(chord);
+        text += '\n\n--- Scale ---\n' + UMT.scaleToLilyPond(scale);
+      } else {
+        // ABC
+        const scaleABC = UMT.ABCBridge.scaleToABC(scale, 1);
+        text += UMT.ABCBridge.wrapInHeaders(scaleABC + ' |]', scaleStr, '4/4', keyStr);
+        text += '\n\n--- With chord symbols ---\n';
+        const chordNames = scale.getNotes(1).map(() => chordStr);
+        const withChords = UMT.ABCBridge.streamToABCWithChords(stream, chordNames);
+        text += UMT.ABCBridge.wrapInHeaders(withChords, `${scaleStr} + ${chordStr}`, '4/4', keyStr);
+        text += '\n\n--- Tuplet (triplet) ---\n';
+        const tripletNotes = scale.getNotes(1).slice(0, 3);
+        text += UMT.ABCBridge.tuplet(tripletNotes, 3, 2, 0.5);
+      }
+
+      out('out-phase10', text);
+    } catch(e) { outErr('out-phase10', e); }
   }
   </script>
 </body>
