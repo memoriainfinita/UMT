@@ -233,17 +233,17 @@ Decisiones clave:
 
 ## TODO
 
-- [ ] **Ejecutar `docs/plan-teoria-completa.md`** — 10 fases, ~455 tests nuevos (v2: revisión profunda incluye lagunas omitidas + huecos nuevos)
+- [x] **Ejecutar `docs/plan-teoria-completa.md`** — COMPLETO. 10 fases, 518 tests. Bump 4.0 pendiente (versión semántica).
   - [x] Fase 1: acordes diatónicos + características modales
-  - [x] Fase 2: análisis de progresión + voice leading clásico completo (doblado, 6/4, falsas relaciones, quintas ocultas)
-  - [x] Fase 3: intermodalidad universal + pivot chords + modulación + sustitución completa + Coltrane matrix (breaking: `getBorrowedChords`)
-  - [x] Fase 4: progresiones presets + secuencias + análisis formal (AABA, sonata, rondó...)
-  - [ ] Fase 5: UST + slash/polychord + chord-scale completeness + enharmonic respelling
-  - [ ] Fase 6: set theory completo (Tn/TnI, subset) + dodecafonismo + contrapunto 1-5 + canon + Schenker básico + melodía
-  - [ ] Fase 7: rítmica avanzada (hemiola, síncopa, clave patterns, polymeter, metric modulation, isorhythm)
-  - [ ] Fase 8: bajo cifrado + escalas griegas + hexacordos + musica ficta + ragas + maqamat + solfège
-  - [ ] Fase 9: Messiaen modes completos + Tonnetz + MOS + comma pumps + xen + temperament compare + espectral + Tymoczko OPTIC
-  - [ ] Fase 10: MusicXML + LilyPond + ABC mejorado
+  - [x] Fase 2: análisis de progresión + voice leading clásico completo
+  - [x] Fase 3: intermodalidad universal + pivot chords + modulación + Coltrane matrix
+  - [x] Fase 4: progresiones presets + secuencias + análisis formal
+  - [x] Fase 5: UST + slash/polychord + chord-scale completeness + enharmonic respelling
+  - [x] Fase 6: set theory completo + dodecafonismo + contrapunto + Schenker + melodía
+  - [x] Fase 7: rítmica avanzada + clave patterns + polymeter + metric modulation + isorhythm
+  - [x] Fase 8: bajo cifrado + escalas griegas + hexacordos + ragas + maqamat + solfège
+  - [x] Fase 9: Messiaen 4-7 + Tonnetz + MOS + xen + espectral + temperamento + Tymoczko OPTIC
+  - [x] Fase 10: MusicXML + LilyPond + ABC mejorado
 - [ ] Crear repo en GitHub y actualizar URL CDN en README
 - [x] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas) — librería lista para esto
 - [x] Test completo de la demo con Playwright — 32/32 pasados
@@ -253,6 +253,17 @@ Decisiones clave:
 - [x] Overhaul sistema bemoles/sostenidos — sesión 8
 
 ## History
+
+### 2026-04-26 — Fases 5-10: plan de expansión completo
+
+Commits: 54bdfed, 917d5b0, 2d5c564, 69b079e, 17f6f8f, a4920b7. 518/518 tests. Bundle: 104kb.
+
+**Fase 5** — upper-structures.ts (6 USTs), Harmony.analyzeSlash, parsePolychord, getAllContainingScales, respellChord/Note.
+**Fase 6** — set-theory.ts ampliado (Forte 208 sets, Tn/TnI, subset, Z-relations), twelve-tone.ts (ToneRow P/I/R/RI/matrix), counterpoint.ts (Counterpoint.checkSpecies 1-5, Canon), melody.ts (MelodyAnalysis), schenker.ts (Schenker).
+**Fase 7** — rhythm.ts ampliado (RhythmTransform, RhythmAnalysis, Polymeter, MetricModulation, Isorhythm), clave-patterns.ts (10 presets: son, rumba, bossa, tresillo, etc.).
+**Fase 8** — figured-bass.ts (FiguredBass.parse/realize/fromChord), dictionaries.ts +8 modos griegos, hexachord.ts (Hexachord Guido), ragas.ts (10 ragas Hindustani), maqamat.ts (8 maqamat 24-EDO), solfege.ts (Solfege fijo/móvil).
+**Fase 9** — dictionaries.ts +Messiaen 4-7, tonnetz.ts, mos.ts (MOS + CommaPump), xen.ts (Xen: otonal/utonal/neutral), spectral.ts (roughness, consonance), temperament-analysis.ts (TemperamentAnalysis + mapJItoEDO + bestEDOFor), voice-leading-geometry.ts (OPTIC + VoiceLeadingGeometry), presets.ts +HarmonicSeries.
+**Fase 10** — musicxml-bridge.ts (streamToMusicXML, chordToMusicXML, scaleToMusicXML), lilypond-bridge.ts (stream/chord/scaleToLilyPond), abc-bridge.ts mejorado (key signatures, chord annotations, tuplets).
 
 ### 2026-04-19 — Fase 4: progresiones, secuencias y análisis formal
 
