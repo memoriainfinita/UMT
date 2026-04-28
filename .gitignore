@@ -5,3 +5,22 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Build artifacts
+tsconfig.tsbuildinfo
+
+# Test artifacts
+test-results/
+
+# Internal / session files
+CLAUDE.md
+metadata.json
+
+# Internal planning docs
+docs/superpowers/
+
+# Archive (kept locally, not published)
+archive/
+
+# Source map (large, not needed for CDN usage)
+public/umt.js.map

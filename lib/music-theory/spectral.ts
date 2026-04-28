@@ -45,7 +45,7 @@ export class Spectral {
    * Estimates sensory roughness based on the Plomp-Levelt critical bandwidth model.
    * Returns a value 0 (smooth) to 1 (maximum roughness).
    *
-   * This is a simplified implementation — accurate only for simple sine-tone pairs.
+   * This is a simplified implementation - accurate only for simple sine-tone pairs.
    * For complex spectra, use `roughnessPlompLevelt`.
    */
   static consonanceCurve(intervalCents: number): number {

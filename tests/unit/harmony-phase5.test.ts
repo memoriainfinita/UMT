@@ -9,7 +9,7 @@ import { TET12, EDO } from '../../lib/music-theory/tuning';
 function chord(symbol: string): Chord { return parseChordSymbol(symbol); }
 
 // ============================================================================
-// 5.1 — Upper Structure Triads
+// 5.1 - Upper Structure Triads
 // ============================================================================
 
 describe('getUpperStructures', () => {
@@ -73,7 +73,7 @@ describe('getUpperStructures', () => {
 });
 
 // ============================================================================
-// 5.2 — Slash chord analysis
+// 5.2 - Slash chord analysis
 // ============================================================================
 
 describe('Harmony.analyzeSlash', () => {
@@ -94,7 +94,7 @@ describe('Harmony.analyzeSlash', () => {
   });
 
   it('analyzes a polychord type for foreign bass', () => {
-    // D major over C: D F# A over C — D is not a chord tone of C
+    // D major over C: D F# A over C - D is not a chord tone of C
     const d_c = chord('D/C');
     const result = Harmony.analyzeSlash(d_c);
     // D root over C bass: D(2) F#(6) A(9) vs C bass → foreign, should be polychord or upper-structure
@@ -112,7 +112,7 @@ describe('Harmony.analyzeSlash', () => {
 });
 
 // ============================================================================
-// 5.3 — parsePolychord
+// 5.3 - parsePolychord
 // ============================================================================
 
 describe('parsePolychord', () => {
@@ -148,7 +148,7 @@ describe('parsePolychord', () => {
 });
 
 // ============================================================================
-// 5.4 — getAllContainingScales
+// 5.4 - getAllContainingScales
 // ============================================================================
 
 describe('Harmony.getAllContainingScales', () => {
@@ -206,7 +206,7 @@ describe('Harmony.getAllContainingScales', () => {
 });
 
 // ============================================================================
-// 5.5 — respellNote / respellChord
+// 5.5 - respellNote / respellChord
 // ============================================================================
 
 describe('Harmony.respellNote', () => {

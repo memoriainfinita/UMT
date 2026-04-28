@@ -1,21 +1,21 @@
 /**
- * Basic Raga catalog — Western 12-TET approximations only.
+ * Basic Raga catalog - Western 12-TET approximations only.
  *
  * NOTE: Real ragas involve ornaments (gamaka), graces (meend), characteristic phrases
  * (pakad), and performance-time rules not representable in this simplified model.
- * This module provides structural information only — aroha/avaroha in semitones
+ * This module provides structural information only - aroha/avaroha in semitones
  * and theoretical metadata. Use as a reference, not as a complete performance guide.
  */
 
 export interface Raga {
   name: string;
-  /** Ascending pattern — semitone offsets from tonic (C=0 convention). */
+  /** Ascending pattern - semitone offsets from tonic (C=0 convention). */
   aroha: readonly number[];
-  /** Descending pattern — semitone offsets from tonic. */
+  /** Descending pattern - semitone offsets from tonic. */
   avaroha: readonly number[];
-  /** Primary note (vadi) — degree index in aroha (1-indexed). */
+  /** Primary note (vadi) - degree index in aroha (1-indexed). */
   vadi: number;
-  /** Secondary note (samvadi) — degree index in aroha (1-indexed). */
+  /** Secondary note (samvadi) - degree index in aroha (1-indexed). */
   samvadi: number;
   /** Parent scale family (Carnatic thaat or Hindustani equivalent). */
   thaat: string;

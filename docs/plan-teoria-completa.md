@@ -1,6 +1,6 @@
-# Plan — Expansión teórica completa de UMT
+# Plan - Expansión teórica completa de UMT
 
-**Fecha:** 2026-04-18 (v2 — incluye lagunas omitidas + huecos detectados en revisión)
+**Fecha:** 2026-04-18 (v2 - incluye lagunas omitidas + huecos detectados en revisión)
 **Objetivo:** cerrar todas las lagunas para que UMT sea una librería universal y profesional de teoría musical, cubriendo armonía, contrapunto, forma, rítmica, microtonalidad, análisis espectral, serialismo y tradiciones no-occidentales. 10 fases, breaking changes permitidos.
 
 ---
@@ -17,7 +17,7 @@
 
 ---
 
-## FASE 1 — Fundamentos ausentes (acordes diatónicos, características modales)
+## FASE 1 - Fundamentos ausentes (acordes diatónicos, características modales)
 
 ### 1.1 `Scale.getDiatonicChords(type)`
 
@@ -67,7 +67,7 @@ Mínimo **40 tests** en `tests/unit/scale-diatonic.test.ts`, `scale-modal.test.t
 
 ---
 
-## FASE 2 — Análisis de progresión + voice leading clásico completo
+## FASE 2 - Análisis de progresión + voice leading clásico completo
 
 ### 2.1 `Harmony.analyzeProgression(chords, keySymbol)`
 
@@ -110,7 +110,7 @@ Añadir a `analyzeCadence`:
 - Picarda.
 - 6/4 cadencial (I6/4 → V → I).
 
-### 2.3 Voice leading avanzado — reescritura de `checkVoiceLeading`
+### 2.3 Voice leading avanzado - reescritura de `checkVoiceLeading`
 
 Nueva firma:
 ```ts
@@ -161,7 +161,7 @@ Mínimo **50 tests**.
 
 ---
 
-## FASE 3 — Intermodalidad universal y modulación
+## FASE 3 - Intermodalidad universal y modulación
 
 ### 3.1 `getBorrowedChords` reescrito (**breaking change**)
 
@@ -250,7 +250,7 @@ Mínimo **45 tests**.
 
 ---
 
-## FASE 4 — Progresiones, secuencias y análisis formal
+## FASE 4 - Progresiones, secuencias y análisis formal
 
 ### 4.1 Dictionary `PROGRESSIONS`
 
@@ -309,7 +309,7 @@ Mínimo **40 tests**.
 
 ---
 
-## FASE 5 — Jazz / armonía contemporánea
+## FASE 5 - Jazz / armonía contemporánea
 
 ### 5.1 Upper-structure triads
 
@@ -374,15 +374,15 @@ Mínimo **30 tests**.
 
 ---
 
-## FASE 6 — Set theory, serialismo, contrapunto, análisis melódico
+## FASE 6 - Set theory, serialismo, contrapunto, análisis melódico
 
-### 6.1 Set Theory — completo
+### 6.1 Set Theory - completo
 
-- `SetTheory.getForteNumber(pcs): string` — tabla estática.
-- `SetTheory.getZRelated(pcs): number[][]` — pares con mismo interval vector.
+- `SetTheory.getForteNumber(pcs): string` - tabla estática.
+- `SetTheory.getZRelated(pcs): number[][]` - pares con mismo interval vector.
 - `SetTheory.getComplement(pcs, octave?): number[]`.
-- `SetTheory.Tn(pcs, n): number[]` — transposition operator.
-- `SetTheory.TnI(pcs, n): number[]` — transposition + inversion.
+- `SetTheory.Tn(pcs, n): number[]` - transposition operator.
+- `SetTheory.TnI(pcs, n): number[]` - transposition + inversion.
 - `SetTheory.isSubset(a, b): boolean` / `isSuperset(a, b): boolean`.
 - `SetTheory.getAllSubsets(pcs, cardinality): number[][]`.
 
@@ -452,7 +452,7 @@ Mínimo **70 tests**.
 
 ---
 
-## FASE 7 — Rítmica avanzada, forma y metros
+## FASE 7 - Rítmica avanzada, forma y metros
 
 ### 7.1 Transformaciones rítmicas
 
@@ -533,7 +533,7 @@ Mínimo **45 tests**.
 
 ---
 
-## FASE 8 — Bajo cifrado, escalas históricas, tradiciones no-occidentales
+## FASE 8 - Bajo cifrado, escalas históricas, tradiciones no-occidentales
 
 ### 8.1 Bajo cifrado / figured bass
 
@@ -626,11 +626,11 @@ Mínimo **45 tests**.
 
 ---
 
-## FASE 9 — Microtonal y espectral avanzado
+## FASE 9 - Microtonal y espectral avanzado
 
 ### 9.1 Modos de Messiaen completos
 
-`dictionaries.ts` — etiquetar explícitamente como "Messiaen modes of limited transposition":
+`dictionaries.ts` - etiquetar explícitamente como "Messiaen modes of limited transposition":
 - Mode 1: whole-tone (ya existe).
 - Mode 2: octatonic/half-whole diminished (ya existe).
 - Mode 3: augmented (ya existe, confirmar etiquetado).
@@ -691,7 +691,7 @@ static bestEDOFor(jiRatios: [number, number][], maxSize?: number): { size: numbe
 ### 9.7 Overtone scales
 
 Añadir a `presets.ts`:
-- `HarmonicSeries(rootHz, fromHarmonic, toHarmonic)` — escala de segmento de la serie armónica.
+- `HarmonicSeries(rootHz, fromHarmonic, toHarmonic)` - escala de segmento de la serie armónica.
 - `Harmonics1to16`, `Harmonics8to16`, `Harmonics16to32`.
 
 ### 9.8 Temperament comparison
@@ -737,7 +737,7 @@ Mínimo **60 tests**.
 
 ---
 
-## FASE 10 — Notación y exportación
+## FASE 10 - Notación y exportación
 
 ### 10.1 MusicXML export
 
@@ -796,7 +796,7 @@ Mínimo **30 tests**.
 
 1. `Harmony.getBorrowedChords` → devuelve `BorrowedChord[]` (fase 3).
 2. `Harmony.checkVoiceLeading` → firma ampliada con `context` y ruleset `'species'` (fase 2).
-3. Nuevos módulos exportados en `index.ts` — cada fase añade exports.
+3. Nuevos módulos exportados en `index.ts` - cada fase añade exports.
 
 Bump versión:
 - `1.x.x` → `2.0.0` al terminar fase 3 (core armonía moderna completo).
@@ -808,10 +808,10 @@ Bump versión:
 ## Orden de trabajo dentro de cada fase
 
 1. Actualizar este plan si cambia alcance.
-2. Escribir tests primero (rojo) — al menos los casos de referencia.
+2. Escribir tests primero (rojo) - al menos los casos de referencia.
 3. Implementar hasta pasar tests (verde).
 4. Revisar API, refactor si hay fricción.
-5. `npm run build:umt` — verificar bundle.
+5. `npm run build:umt` - verificar bundle.
 6. Actualizar `public/example.html` con sección demostrativa.
 7. Actualizar `state.md` con entrada en History.
 8. Commit atómico en inglés.

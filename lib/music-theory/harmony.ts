@@ -330,9 +330,9 @@ export class Harmony {
    * Voices are expected to be ordered bass → soprano in both chords.
    *
    * @param ruleset
-   *   - `'strict'`: Bach chorale-style — all standard prohibitions enforced.
-   *   - `'contemporary'`: jazz/pop — relaxes parallel 5ths/8ves and leaps.
-   *   - `'species'`: minimal — no parallels, no crossing, no overlap. Full species
+   *   - `'strict'`: Bach chorale-style - all standard prohibitions enforced.
+   *   - `'contemporary'`: jazz/pop - relaxes parallel 5ths/8ves and leaps.
+   *   - `'species'`: minimal - no parallels, no crossing, no overlap. Full species
    *      counterpoint rules live in the counterpoint module (future phase).
    * @param context Optional harmonic context enabling tendency-tone and false-relation checks.
    */
@@ -374,7 +374,7 @@ export class Harmony {
           if (is8veA && is8veB && voiceIMoved && voiceJMoved) {
             issues.push({ type: 'Parallel Octave', voices: [i, j], message: `Parallel Octaves (Voices ${i+1} and ${j+1})` });
           }
-          // Hidden/Direct 5ths and 8ves — only flag outer-voice pairs (bass + soprano) in chorale style
+          // Hidden/Direct 5ths and 8ves - only flag outer-voice pairs (bass + soprano) in chorale style
           const isOuterPair = (i === 0 && j === len - 1);
           if (ruleset === 'strict' && isOuterPair && sameDirection && voiceIMoved && voiceJMoved) {
             const isLeap = Math.abs(voiceJDelta) > ts.getStepFromStandard(2); // > major 2nd = leap in top voice
@@ -509,7 +509,7 @@ export class Harmony {
           }
         }
       } catch {
-        // Bad key symbol — skip contextual checks
+        // Bad key symbol - skip contextual checks
       }
     }
 
@@ -586,7 +586,7 @@ export class Harmony {
           }
         }
       } catch {
-        // bad key — skip
+        // bad key - skip
       }
     }
 

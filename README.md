@@ -1,197 +1,262 @@
-# Universal Music Theory (UMT)
+# Universal Music Theory Library
 
-A standalone TypeScript music theory library covering classical and jazz harmony, microtonal tuning systems, and set theory. Compiles to a single zero-dependency JS bundle usable in any browser or Node project.
+A TypeScript library for music theory computation that works across any tuning system -
+12-TET, microtonal, historical temperaments, world music traditions, and post-tonal systems.
+Zero runtime dependencies. 104 kb compiled bundle.
 
-## Features
+**[Live demo](https://memoriainfinita.github.io/UMT)** · **[Wiki / API docs](https://github.com/memoriainfinita/UMT/wiki)**
 
-- **Tuning systems**: 12-TET, 24-TET, 31-TET, Just Intonation (5-limit, Ptolemaic), Werckmeister III, Bohlen-Pierce, custom EDOs
-- **Scala file parser**: load any microtonal tuning from `.scl` files
-- **Notes and intervals**: frequency math, enharmonic names, cent and ratio distances
-- **Chords**: triads, seventh chords, extended (9, 11, 13), altered, suspended — voicings (`drop2`, `drop3`, `quartal`, `rootless`), inversions, slash chords
-- **Scales and modes**: major, minor, Greek modes, harmonic/melodic minor, jazz scales, exotic scales (Hirajoshi, Double Harmonic, Enigmatic...) — modal derivation
-- **Symbol parsers**: chord symbols (`Cmaj9/E`, `D-7b5`), scale symbols (`D dorian`), Roman numeral progressions (`ii7 - V7/ii - subV7 - Imaj7`) — all tuning-aware
-- **Harmony**: voice leading analysis, modal interchange, negative harmony, tritone substitution, cadence analysis, scale suggestions
-- **Chord detection**: identify a chord from a set of notes
-- **Neo-Riemannian theory**: P, L, R transformations on any tuning
-- **Set theory**: normal form, prime form, interval vector
-- **Circle of fifths**: key signatures, relatives, dominants
-- **Rhythm**: complex and additive meters (e.g. 3+2+2/8), tuplets, Euclidean polyrhythms
-- **ABC bridge**: export UMT objects to ABC notation for score rendering
+---
+
+## What it does
+
+Most music theory libraries are hardcoded to 12-TET. UMT is built around a universal
+`TuningSystem` abstraction - every module works in any EDO, Just Intonation, or historical
+temperament without modification.
+
+```typescript
+// Same chord, three tuning systems
+const cmaj = parseChordSymbol('C major', TET12);
+const cmaj_ji = parseChordSymbol('C major', PtolemaicJI);
+const cmaj_werck = parseChordSymbol('C major', WerckmeisterIII);
+
+// Ragas and maqamat with quarter-tone accuracy
+const bhairav = RAGAS['bhairav'];    // aroha, avaroha, vadi, samvadi
+const rast = MAQAMAT['rast'];        // 24-EDO quarter-tone intervals
+
+// Post-tonal analysis
+const row = new ToneRow([0, 11, 3, 4, 8, 7, 9, 5, 6, 1, 2, 10]);
+const matrix = row.getMatrix();      // 12x12 P/I/R/RI matrix
+
+// Set theory with Forte catalogue
+SetTheory.getForteNumber([0, 3, 6, 9]);   // "4-28"
+SetTheory.getZRelated([0, 1, 4, 6]);      // Z-related sets
+```
+
+---
 
 ## Installation
 
-**Browser — script tag (local)**
+**Browser - CDN (jsDelivr)**
 ```html
-<script src="umt.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/public/umt.js"></script>
 <script>
-  const chord = UMT.parseChordSymbol('Cmaj7');
+  const chord = UMT.parseChordSymbol('Cmaj9');
+  console.log(chord.getNotes().map(n => n.name));
 </script>
 ```
 
-**Browser — CDN (jsDelivr)**
+**Browser - local**
 ```html
-<!-- Replace YOUR_GITHUB_USER once the repo is public -->
-<script src="https://cdn.jsdelivr.net/gh/YOUR_GITHUB_USER/universal-music-theory-library@main/public/umt.js"></script>
+<script src="umt.js"></script>
 ```
 
 **TypeScript / ESM**
 ```typescript
-import { Note, parseChordSymbol, TET12, Harmony } from './lib/music-theory';
+import { parseChordSymbol, TET12, Harmony, SetTheory } from './lib/music-theory';
 ```
 
-See `public/example.html` for a complete vanilla JS usage example.
+**Build from source**
+```bash
+npm install
+npm run build:umt   # lib/music-theory/umt.ts -> public/umt.js
+```
 
-## Usage
+---
 
-### Notes and tuning systems
+## Modules
+
+### Core
+
+| Module | What it does |
+|--------|-------------|
+| `tuning.ts` | `EDO`, `JustIntonation`, `CentTuning`, `NonOctaveTuning` - the universal tuning abstraction |
+| `note.ts` | Pitch as frequency, MIDI, and enharmonic name in any tuning |
+| `interval.ts` | Interval math in cents and ratios |
+| `parser.ts` | `parseChordSymbol`, `parseScaleSymbol`, `parseNote`, `parseRomanProgression` - all tuning-aware |
+| `dictionaries.ts` | 100+ chord formulas, 80+ scale patterns |
+| `presets.ts` | Ready-to-use tuning systems, scales, chords |
+| `utils.ts` | MIDI conversion, enharmonic spelling, interval naming |
+
+### Tonal harmony
+
+| Module | What it does |
+|--------|-------------|
+| `harmony.ts` | Voice leading, chord detection, negative harmony, cadences, borrowed chords, modal interchange, Coltrane axis |
+| `chord.ts` | Voicings (drop2, drop3, quartal, rootless), inversions, tritone substitution, smooth transitions |
+| `scale.ts` | Modes, diatonic chords, brightness, avoid notes, parent scale navigation |
+| `circle.ts` | Circle of fifths - key signatures, relatives, neighbors, modal distance |
+| `substitution.ts` | Chord substitutions (tritone, sus4, deceptive, diatonic) |
+| `progressions.ts` | 16 named progressions (ii-V-I, Coltrane changes, blues 12, rhythm changes...) |
+| `form.ts` | Formal analysis - AABA, ABAB, binary, ternary, through-composed |
+| `upper-structures.ts` | Upper structure triads, slash chord analysis, chord-scale completeness |
+| `key-detection.ts` | Krumhansl-Schmuckler key detection algorithm |
+| `neo-riemannian.ts` | P, L, R transformations in any tuning |
+| `figured-bass.ts` | Figured bass parsing and realization |
+
+### Post-tonal
+
+| Module | What it does |
+|--------|-------------|
+| `set-theory.ts` | Normal/prime form, interval vector, Forte catalogue (208 sets), Z-relations, Tn/TnI |
+| `twelve-tone.ts` | Tone rows, P/I/R/RI forms, 12x12 matrix, all-interval and combinatorial detection |
+| `counterpoint.ts` | Species counterpoint checker, Canon |
+| `schenker.ts` | Basic Schenkerian reduction |
+| `melody.ts` | Contour analysis, motif detection |
+
+### World music
+
+| Module | What it does |
+|--------|-------------|
+| `ragas.ts` | 10 Hindustani ragas - aroha, avaroha, vadi, samvadi, time, description |
+| `maqamat.ts` | 8 Arabic maqamat in 24-EDO quarter-tone intervals |
+| `solfege.ts` | Fixed-do and movable-do solfege |
+| `hexachord.ts` | Guidonian hexachord system |
+
+### Rhythm
+
+| Module | What it does |
+|--------|-------------|
+| `rhythm.ts` | Euclidean rhythms, polyrhythm, metric modulation, isorhythm |
+| `clave-patterns.ts` | 10 clave presets (son, rumba, bossa nova, tresillo, habanera...) |
+
+### Microtonal / Xenharmonic
+
+| Module | What it does |
+|--------|-------------|
+| `scala.ts` | Scala `.scl` file parser |
+| `tonnetz.ts` | Tonnetz pitch space - position and navigation |
+| `mos.ts` | Moment of Symmetry scales, MOS families, comma pumps |
+| `xen.ts` | Otonal/utonal series, neutral intervals |
+| `spectral.ts` | Roughness (Plomp-Levelt), sensory consonance, overtone series |
+| `temperament-analysis.ts` | Temperament error analysis, EDO comparison, JI mapping |
+| `voice-leading-geometry.ts` | OPTIC equivalences, efficient voice leading geometry (Tymoczko) |
+
+### Notation
+
+| Module | What it does |
+|--------|-------------|
+| `abc-bridge.ts` | Export scales, chords, and streams to ABC notation |
+| `lilypond-bridge.ts` | Export scales, chords, and streams to LilyPond |
+| `musicxml-bridge.ts` | Export scales, chords, and streams to MusicXML |
+
+---
+
+## Examples
+
+### Harmony analysis
 
 ```typescript
-import { Note, TET12, FiveLimitJI, WerckmeisterIII, parseScala } from './lib/music-theory';
+import { parseChordSymbol, Harmony, getSubstitutions } from './lib/music-theory';
 
-const a4 = new Note(TET12, 0);
-console.log(a4.frequency); // 440
+const chord = parseChordSymbol('Cmaj9');
 
-const a4ji = new Note(FiveLimitJI, 0);
-const c4w = new Note(WerckmeisterIII, -9);
+// Suggested scales
+Harmony.getSuggestedScales(chord);
+// [{ scale: 'C major' }, { scale: 'C lydian' }, ...]
 
-const scl = `! pelog.scl\nJavanese Pelog\n7\n!\n120.0\n250.0\n400.0\n550.0\n700.0\n850.0\n2/1`;
-const pelog = parseScala(scl);
-const pelogNote = new Note(pelog, 2);
+// Substitutions
+getSubstitutions(chord, 'C major');
+// [{ chord: Db7, type: 'tritone' }, ...]
+
+// Cadence analysis
+Harmony.analyzeCadence(parseChordSymbol('G7'), parseChordSymbol('Cmaj7'), 'C major');
+// "Authentic (V7->I)"
+
+// Coltrane axis
+Harmony.getColtraneAxis('C major');
+// { root: 'C', axes: ['C', 'E', 'Ab'] }
 ```
 
-### Chords and voicings
+### Modal analysis
 
 ```typescript
-import { parseChordSymbol, TET31 } from './lib/music-theory';
+import { parseScaleSymbol } from './lib/music-theory';
 
-const cmaj9 = parseChordSymbol('Cmaj9/E');
-const cmaj9_31 = parseChordSymbol('Cmaj9', TET31); // intervals mapped to 31-TET
+const scale = parseScaleSymbol('D dorian');
 
-const drop2 = cmaj9.getVoicing('drop2');
-const firstInv = cmaj9.getInversion(1);
+scale.getDiatonicChords('seventh');
+// [Dm7, Em7b5, Fmaj7, G7, Am7, Bbmaj7, C7]
 
-const tritoneSub = parseChordSymbol('G7').getTritoneSubstitution(); // Db7
+const modal = scale.getModalCharacteristics();
+// { brightness: -1, avoidNotes: ['B'], characteristicIntervals: ['M6'] }
+
+scale.getParentScale();   // C major
+scale.getRelativeMode('lydian');  // A lydian
 ```
 
-### Scales and modes
+### Twelve-tone row
 
 ```typescript
-import { parseScaleSymbol, TET24 } from './lib/music-theory';
+import { ToneRow } from './lib/music-theory';
 
-const dDorian = parseScaleSymbol('D dorian');
-const neutral = parseScaleSymbol('C neutral scale', TET24);
-const dDorian2 = parseScaleSymbol('C major').getMode(2);
+const row = new ToneRow([0, 11, 3, 4, 8, 7, 9, 5, 6, 1, 2, 10]);
+
+row.P(0);   // prime form
+row.I(0);   // inversion
+row.R();    // retrograde
+row.RI(0);  // retrograde inversion
+
+row.getMatrix();        // 12x12 transformation matrix
+row.isAllInterval();    // true if all 11 intervals are distinct
+row.isCombinatorial();  // combinatoriality check
+row.getHexachords();    // [first6, last6]
 ```
 
-### Progressions and voice leading
+### World music
 
 ```typescript
-import { parseRomanProgression, Chord, Harmony } from './lib/music-theory';
+import { RAGAS, MAQAMAT, CLAVE_PATTERNS } from './lib/music-theory';
 
-const chords = parseRomanProgression('ii7 - V7/ii - subV7 - Imaj7', 'C major');
+// Hindustani raga
+const bhairav = RAGAS['bhairav'];
+bhairav.aroha;      // ascending scale in semitones
+bhairav.vadi;       // primary note
+bhairav.time;       // "morning"
 
-let currentNotes = chords[0].getNotes();
-for (const chord of chords.slice(1)) {
-  currentNotes = Chord.smoothTransition(currentNotes, chord);
-}
+// Arabic maqam (24-EDO quarter-tones)
+const rast = MAQAMAT['rast'];
+rast.notes;         // interval pattern in quarter-tones
+rast.ajnas;         // constituent tetrachords
 
-const issues = Harmony.checkVoiceLeading(chords[0].getNotes(), chords[1].getNotes());
+// Clave rhythm
+const clave = CLAVE_PATTERNS['son-3-2'];
+clave.steps;        // boolean[16] - onset pattern
 ```
 
-### Harmony
+### Notation export
 
 ```typescript
-import { Harmony, parseChordSymbol } from './lib/music-theory';
+import { parseScaleSymbol, ABCBridge, scaleToLilyPond, scaleToMusicXML } from './lib/music-theory';
 
-const g7 = parseChordSymbol('G7');
-const cmaj7 = parseChordSymbol('Cmaj7');
+const scale = parseScaleSymbol('D dorian');
 
-const neg = Harmony.getNegativeHarmony(g7, 'C major');
-const scales = Harmony.getSuggestedScales(g7, cmaj7, 'berklee');
-const borrowed = Harmony.getBorrowedChords('C major');
-const cadence = Harmony.analyzeCadence(g7, cmaj7, 'C major');
-const detected = Harmony.detectChords([noteC, noteE, noteG, noteBb]); // ["C7"]
+ABCBridge.scaleToABC(scale, 1);   // ABC notation string
+scaleToLilyPond(scale);            // LilyPond source
+scaleToMusicXML(scale);            // MusicXML document
 ```
 
-### Neo-Riemannian transformations
-
-```typescript
-import { NeoRiemannian, parseChordSymbol } from './lib/music-theory';
-
-const cMajor = parseChordSymbol('C');
-const cMinor = NeoRiemannian.P(cMajor); // Cm
-const eMinor = NeoRiemannian.L(cMajor); // Em
-const aMinor = NeoRiemannian.R(cMajor); // Am
-```
-
-### Set theory
-
-```typescript
-import { SetTheory } from './lib/music-theory';
-
-const pcs = [0, 4, 7];
-SetTheory.normalForm(pcs);     // [0, 4, 7]
-SetTheory.primeForm(pcs);      // [0, 3, 7]
-SetTheory.intervalVector(pcs); // [0, 0, 1, 1, 1, 0]
-```
+---
 
 ## Architecture
 
-All source is in `lib/music-theory/`.
+**Coordinate system:** all pitch positions are steps from A4 = 0. A4 = 440 Hz = step 0. C4 = -9 in 12-TET.
 
-| File | Responsibility |
-|------|---------------|
-| `types.ts` | Base types: `Cents`, `Hertz`, `Ratio` |
-| `interval.ts` | Interval math (cents, ratios) |
-| `tuning.ts` | `TuningSystem` abstract class + `EDO`, `JustIntonation`, `CentTuning`, `NonOctaveTuning` |
-| `note.ts` | `Note` — frequency, name, transposition |
-| `scale.ts` | `Scale` — modes, transposition |
-| `chord.ts` | `Chord` — voicings, inversions, voice leading, tritone sub |
-| `parser.ts` | `parseChordSymbol`, `parseScaleSymbol`, `parseNote`, `parseRomanProgression` |
-| `dictionaries.ts` | `CHORD_FORMULAS` and `SCALE_PATTERNS` lookup tables |
-| `presets.ts` | Ready-to-use tuning systems, scales, chords |
-| `harmony.ts` | `Harmony` — voice leading, chord detection, negative harmony, cadences |
-| `circle.ts` | `CircleOfFifths` |
-| `set-theory.ts` | `SetTheory` — normal/prime form, interval vector |
-| `neo-riemannian.ts` | `NeoRiemannian` — P, L, R transformations |
-| `key-detection.ts` | Krumhansl-Schmuckler key detection algorithm |
-| `scala.ts` | Scala `.scl` file parser |
-| `rhythm.ts` | `Duration`, `TimeSignature`, `Polyrhythm`, Euclidean rhythms |
-| `stream.ts` | `MusicStream` event container |
-| `abc-bridge.ts` | Export UMT objects to ABC notation |
-| `utils.ts` | Note naming, MIDI conversion, interval naming |
-| `index.ts` | Re-exports everything |
-| `umt.ts` | IIFE entry point — attaches `UMT` to `window` |
+**Tuning abstraction:** `parseChordSymbol`, `parseScaleSymbol`, and `parseRomanProgression` accept an optional `TuningSystem` parameter (default: `TET12`). Interval values from the dictionaries are mapped to the target tuning via `tuning.getStepFromStandard()`.
 
-### Coordinate system
+**Enharmonic spelling:** the library uses circle-of-fifths logic to choose flats vs. sharps - not a hardcoded list. `preferFlats` is stored per `Note` and propagated through all transformations. Interval-based overrides ensure m3, m7 etc. are always spelled as flat-side intervals regardless of key.
 
-All pitch positions are **steps from A4 = 0** within a `TuningSystem`. A4 = 440Hz = step 0. C4 = −9 in 12-TET.
+---
 
-### Accidental spelling
-
-The library uses circle-of-fifths logic to choose flats vs. sharps throughout — not a hardcoded list.
-
-- `parseChordSymbol('Bb7')` → notes spelled `Bb`, `D`, `F`, `Ab` (including in inversions and voicings)
-- `parseScaleSymbol('D phrygian')` → `Eb`, `Bb` etc. (parent key = Bb major → flat side)
-- `parseScaleSymbol('D mixolydian')` → `F#`, `C` etc. (parent key = G major → sharp side)
-- `KeyDetection.detect()` returns `"Bb Major"`, not `"A# Major"`
-- `NeoRiemannian.P/L/R` preserve or re-derive the correct enharmonic for the result chord
-
-The preference is stored per-`Note` as a `preferFlats` flag and propagated through all transformations (`transpose`, `getInversion`, `getVoicing`, `smoothTransition`). The flag is set by the parser based on the key signature of the root + scale/mode type.
-
-### Parser tuning parameter
-
-`parseChordSymbol`, `parseScaleSymbol`, and `parseRomanProgression` accept an optional `TuningSystem` parameter (default: `TET12`). Interval values from the dictionaries are mapped to the target tuning via `TuningSystem.getStepFromStandard()`.
-
-## Build
+## Tests
 
 ```bash
-npm install
-npm run build:umt   # compiles lib/music-theory/umt.ts → public/umt.js (~29KB minified)
+npm run test:unit    # 524 unit tests via vitest
+npx playwright test  # demo integration tests
 ```
+
+---
 
 ## License
 
-GNU General Public License v3.0 (GPL-3.0).
-
-This library was built with a 100% open source philosophy — created for people, not for corporate profit. The GPL license ensures that any software using this library must also remain free and open, protecting collective musical knowledge. See `LICENSE` for details.
+GPL-3.0. Created for people, not for corporate profit. Any software using this library must also remain free and open. See `LICENSE`.

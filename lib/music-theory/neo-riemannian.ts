@@ -43,7 +43,7 @@ export class NeoRiemannian {
     const min3 = ts.getStepFromStandard(3);
     const maj3 = ts.getStepFromStandard(4);
     const per5 = ts.getStepFromStandard(7);
-    // P keeps the same root — inherit the source chord's flat/sharp preference.
+    // P keeps the same root - inherit the source chord's flat/sharp preference.
     const pf = chord.preferFlats ?? false;
     const rootName = get12TETBaseName(type.rootStep, pf);
     const name = rootName + (type.isMajor ? 'm' : '');

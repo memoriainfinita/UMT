@@ -23,10 +23,10 @@ function prog(roman: string, key: string): Chord[] {
 }
 
 // ============================================================================
-// analyzeProgression — 2.1
+// analyzeProgression - 2.1
 // ============================================================================
 
-describe('Harmony.analyzeProgression — basic', () => {
+describe('Harmony.analyzeProgression - basic', () => {
   it('C major I-IV-V-I: all diatonic, correct roman numerals', () => {
     const chords = prog('I IV V I', 'C major');
     const { analysis } = Harmony.analyzeProgression(chords, 'C major');
@@ -118,7 +118,7 @@ describe('Harmony.analyzeProgression — basic', () => {
   });
 });
 
-describe('Harmony.analyzeProgression — modulations', () => {
+describe('Harmony.analyzeProgression - modulations', () => {
   it('no modulations for simple diatonic I-IV-V-I', () => {
     const chords = prog('I IV V I', 'C major');
     const { modulations } = Harmony.analyzeProgression(chords, 'C major');
@@ -128,7 +128,7 @@ describe('Harmony.analyzeProgression — modulations', () => {
   it('detects modulation to G major in long progression', () => {
     // C major then 3 chords diatonic to G major but not C major: B, D, G
     const cChords = prog('I IV', 'C major');
-    const gChords = prog('vii I V', 'G major'); // B, G, D — all diatonic to G
+    const gChords = prog('vii I V', 'G major'); // B, G, D - all diatonic to G
     const all = [...cChords, ...gChords];
     const { modulations } = Harmony.analyzeProgression(all, 'C major');
     expect(modulations.length).toBeGreaterThan(0);
@@ -136,10 +136,10 @@ describe('Harmony.analyzeProgression — modulations', () => {
 });
 
 // ============================================================================
-// analyzeCadence — 2.2 (new cadences)
+// analyzeCadence - 2.2 (new cadences)
 // ============================================================================
 
-describe('Harmony.analyzeCadence — existing cadences', () => {
+describe('Harmony.analyzeCadence - existing cadences', () => {
   it('V→I = Authentic', () => {
     const [v, i] = prog('V I', 'C major');
     expect(Harmony.analyzeCadence(v, i, 'C major')).toContain('Authentic');
@@ -161,7 +161,7 @@ describe('Harmony.analyzeCadence — existing cadences', () => {
   });
 });
 
-describe('Harmony.analyzeCadence — new cadences', () => {
+describe('Harmony.analyzeCadence - new cadences', () => {
   it('iv→i = Minor Plagal Cadence', () => {
     const iv = chord('Fm');
     const i = chord('Cm');
@@ -201,10 +201,10 @@ describe('Harmony.analyzeCadence — new cadences', () => {
 });
 
 // ============================================================================
-// checkVoiceLeading — 2.3 rewrite
+// checkVoiceLeading - 2.3 rewrite
 // ============================================================================
 
-describe('Harmony.checkVoiceLeading — existing behavior preserved', () => {
+describe('Harmony.checkVoiceLeading - existing behavior preserved', () => {
   it('parallel 5ths detected in strict mode', () => {
     // C-G → D-A (both move up a step with a 5th between)
     const cA = [step('C'), step('G')];
@@ -250,7 +250,7 @@ describe('Harmony.checkVoiceLeading — existing behavior preserved', () => {
   });
 });
 
-describe('Harmony.checkVoiceLeading — new issue types', () => {
+describe('Harmony.checkVoiceLeading - new issue types', () => {
   it('leading tone unresolved detected in V→IV context', () => {
     // G7 → F: B (leading tone) does not resolve to C
     const chordA = [step('G', 3), step('B', 3), step('D', 4), step('F', 4)]; // G7
@@ -276,7 +276,7 @@ describe('Harmony.checkVoiceLeading — new issue types', () => {
   it('7th unresolved detected in dom7 chord', () => {
     // G7 → C: F (7th) should resolve down by step to E
     const chordA = [step('G', 3), step('B', 3), step('D', 4), step('F', 4)]; // G7
-    const chordB = [step('C', 3), step('E', 3), step('G', 4), step('C', 5)]; // C — F→C leaps, not step down
+    const chordB = [step('C', 3), step('E', 3), step('G', 4), step('C', 5)]; // C - F→C leaps, not step down
     const issues = Harmony.checkVoiceLeading(chordA, chordB, 'strict', {
       keySymbol: 'C major',
       chordA: chord('G7'),
@@ -287,7 +287,7 @@ describe('Harmony.checkVoiceLeading — new issue types', () => {
   it('7th resolved correctly: no issue when F→E', () => {
     // Soprano carries the 7th (F4) and resolves down by step to E4
     const chordA = [step('G', 3), step('B', 3), step('D', 4), step('F', 4)]; // G7
-    const chordB = [step('C', 3), step('G', 3), step('C', 4), step('E', 4)]; // C — voice 3: F→E (−1 semitone)
+    const chordB = [step('C', 3), step('G', 3), step('C', 4), step('E', 4)]; // C - voice 3: F→E (−1 semitone)
     const issues = Harmony.checkVoiceLeading(chordA, chordB, 'strict', {
       keySymbol: 'C major',
       chordA: chord('G7'),
@@ -326,7 +326,7 @@ describe('Harmony.checkVoiceLeading — new issue types', () => {
 });
 
 // ============================================================================
-// checkDoubling — 2.4
+// checkDoubling - 2.4
 // ============================================================================
 
 describe('Harmony.checkDoubling', () => {
@@ -376,7 +376,7 @@ describe('Harmony.checkDoubling', () => {
 });
 
 // ============================================================================
-// analyzeSixFour — 2.5
+// analyzeSixFour - 2.5
 // ============================================================================
 
 describe('Harmony.analyzeSixFour', () => {
@@ -428,7 +428,7 @@ describe('Harmony.analyzeSixFour', () => {
 });
 
 // ============================================================================
-// Total count verification — plan requires ≥ 50 tests
+// Total count verification - plan requires ≥ 50 tests
 // ============================================================================
 
 describe('Meta', () => {

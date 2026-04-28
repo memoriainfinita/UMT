@@ -16,10 +16,10 @@ function prog(roman: string, key: string): Chord[] {
 }
 
 // ============================================================================
-// 3.1 — getBorrowedChords (breaking change: returns BorrowedChord[])
+// 3.1 - getBorrowedChords (breaking change: returns BorrowedChord[])
 // ============================================================================
 
-describe('Harmony.getBorrowedChords — shape', () => {
+describe('Harmony.getBorrowedChords - shape', () => {
   it('returns BorrowedChord[] objects with required fields', () => {
     const results = Harmony.getBorrowedChords('C major');
     expect(results.length).toBeGreaterThan(0);
@@ -43,7 +43,7 @@ describe('Harmony.getBorrowedChords — shape', () => {
   });
 });
 
-describe('Harmony.getBorrowedChords — C major borrowed chords', () => {
+describe('Harmony.getBorrowedChords - C major borrowed chords', () => {
   it('contains Ebmaj7 from aeolian (bIII)', () => {
     const results = Harmony.getBorrowedChords('C major');
     const names = results.map(b => b.chord.name);
@@ -102,7 +102,7 @@ describe('Harmony.getBorrowedChords — C major borrowed chords', () => {
 });
 
 // ============================================================================
-// 3.2 — findPivotChords
+// 3.2 - findPivotChords
 // ============================================================================
 
 describe('Harmony.findPivotChords', () => {
@@ -165,7 +165,7 @@ describe('Harmony.findPivotChords', () => {
     expect(pivots.length).toBe(0);
   });
 
-  it('type: seventh — returns seventh chord pivots for C→G major', () => {
+  it('type: seventh - returns seventh chord pivots for C→G major', () => {
     const pivots = Harmony.findPivotChords('C major', 'G major', 'seventh');
     const am7 = pivots.find(p => p.chord.name === 'Am7');
     expect(am7).toBeDefined();
@@ -173,7 +173,7 @@ describe('Harmony.findPivotChords', () => {
 });
 
 // ============================================================================
-// 3.3 — classifyModulation
+// 3.3 - classifyModulation
 // ============================================================================
 
 describe('Harmony.classifyModulation', () => {
@@ -207,7 +207,7 @@ describe('Harmony.classifyModulation', () => {
 });
 
 // ============================================================================
-// 3.4 — CircleOfFifths modal extension
+// 3.4 - CircleOfFifths modal extension
 // ============================================================================
 
 describe('CircleOfFifths.getModalKey', () => {
@@ -293,7 +293,7 @@ describe('CircleOfFifths.getModalNeighbors', () => {
 });
 
 // ============================================================================
-// 3.5 — getSubstitutions
+// 3.5 - getSubstitutions
 // ============================================================================
 
 describe('getSubstitutions', () => {
@@ -345,7 +345,7 @@ describe('getSubstitutions', () => {
 });
 
 // ============================================================================
-// 3.6 — getNegativeProgression
+// 3.6 - getNegativeProgression
 // ============================================================================
 
 describe('Harmony.getNegativeProgression', () => {
@@ -375,7 +375,7 @@ describe('Harmony.getNegativeProgression', () => {
 });
 
 // ============================================================================
-// 3.7 — Coltrane axis
+// 3.7 - Coltrane axis
 // ============================================================================
 
 describe('Harmony.getColtraneAxis', () => {

@@ -89,7 +89,7 @@ export class Note {
   /**
    * Returns a new note transposed by the given number of steps in the same tuning system.
    * Propagates the flat/sharp preference: derived from `_name` if set, otherwise from `_preferFlats`.
-   * The transposed note never carries an explicit `_name` — its name is always computed.
+   * The transposed note never carries an explicit `_name` - its name is always computed.
    */
   transpose(steps: number): Note {
     const pf = this._preferFlats ?? (this._name ? /[A-G]b/.test(this._name) : undefined);

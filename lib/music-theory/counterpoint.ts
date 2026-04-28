@@ -39,7 +39,7 @@ export class Counterpoint {
    * - 2nd: two notes against one. Passing tones allowed on weak beat.
    * - 3rd: four notes against one. Cambiata and neighbor patterns.
    * - 4th: syncopated (suspension) counterpoint.
-   * - 5th: florid (mixed values) — lenient check on consonances.
+   * - 5th: florid (mixed values) - lenient check on consonances.
    *
    * @param species - 1 | 2 | 3 | 4 | 5
    * @param cf - Cantus firmus notes (one per measure for species 1).
@@ -89,7 +89,7 @@ export class Counterpoint {
             issues.push({ type: label, beat: i + 1, description: `Beat ${i + 1}: ${label} detected.` });
           }
 
-          // Hidden 5ths/octaves (similar motion into a perfect consonance) — 1st species only
+          // Hidden 5ths/octaves (similar motion into a perfect consonance) - 1st species only
           if (species === 1 && (ic === 7 || ic === 0) && motion === 'similar') {
             const label = ic === 7 ? 'Hidden 5th' : 'Hidden Octave';
             issues.push({ type: label, beat: i + 1, description: `Beat ${i + 1}: ${label} (similar motion into perfect consonance).` });
@@ -110,18 +110,18 @@ export class Counterpoint {
         if (cfIdx >= cf.length) break;
         const ic = Math.abs(cf[cfIdx].stepsFromBase - counter[i].stepsFromBase) % 12;
         const isWeak = i % (species === 2 ? 2 : 4) !== 0;
-        if (isWeak) continue; // weak beats may be dissonant passing tones — skip
+        if (isWeak) continue; // weak beats may be dissonant passing tones - skip
         if (!PERFECT_CONSONANCES.has(ic) && !IMPERFECT_CONSONANCES.has(ic)) {
           issues.push({ type: 'Dissonance', beat: i + 1, description: `Beat ${i + 1}: dissonant interval ${ic} on non-passing beat.` });
         }
       }
     }
 
-    // Species 4: suspension check — CT must be prepared (same note in previous beat)
+    // Species 4: suspension check - CT must be prepared (same note in previous beat)
     if (species === 4) {
       for (let i = 1; i < counter.length; i++) {
         if (counter[i].stepsFromBase !== counter[i - 1].stepsFromBase) {
-          // Suspension should be tied — if motion is not step down, flag it
+          // Suspension should be tied - if motion is not step down, flag it
           const step = counter[i].stepsFromBase - counter[i - 1].stepsFromBase;
           if (Math.abs(step) !== 1 && Math.abs(step) !== 2) {
             issues.push({ type: 'Improper Resolution', beat: i + 1, description: `Beat ${i + 1}: suspension should resolve by step down.` });

@@ -4,7 +4,7 @@ import { EDO } from '../../lib/music-theory/tuning';
 
 const names = (chords: { name: string }[]) => chords.map(c => c.name);
 
-describe('Scale.getDiatonicChords — triads', () => {
+describe('Scale.getDiatonicChords - triads', () => {
   it('C major → C, Dm, Em, F, G, Am, Bdim', () => {
     const scale = parseScaleSymbol('C major');
     expect(names(scale.getDiatonicChords('triad'))).toEqual(['C', 'Dm', 'Em', 'F', 'G', 'Am', 'Bdim']);
@@ -64,7 +64,7 @@ describe('Scale.getDiatonicChords — triads', () => {
   });
 });
 
-describe('Scale.getDiatonicChords — sevenths', () => {
+describe('Scale.getDiatonicChords - sevenths', () => {
   it('C major → Cmaj7, Dm7, Em7, Fmaj7, G7, Am7, Bm7b5', () => {
     const scale = parseScaleSymbol('C major');
     expect(names(scale.getDiatonicChords('seventh'))).toEqual(['Cmaj7', 'Dm7', 'Em7', 'Fmaj7', 'G7', 'Am7', 'Bm7b5']);
@@ -75,19 +75,19 @@ describe('Scale.getDiatonicChords — sevenths', () => {
     expect(names(scale.getDiatonicChords('seventh'))).toEqual(['Am7', 'Bm7b5', 'Cmaj7', 'Dm7', 'Em7', 'Fmaj7', 'G7']);
   });
 
-  it('D dorian sevenths — V is m7, IV is dominant 7', () => {
+  it('D dorian sevenths - V is m7, IV is dominant 7', () => {
     const scale = parseScaleSymbol('D dorian');
     const chords = names(scale.getDiatonicChords('seventh'));
     expect(chords[0]).toBe('Dm7');
-    expect(chords[3]).toBe('G7');    // IV7 — characteristic of Dorian
+    expect(chords[3]).toBe('G7');    // IV7 - characteristic of Dorian
     expect(chords[4]).toBe('Am7');   // v m7
     expect(chords[6]).toBe('Cmaj7');
   });
 
-  it('G mixolydian sevenths — I is dominant 7', () => {
+  it('G mixolydian sevenths - I is dominant 7', () => {
     const scale = parseScaleSymbol('G mixolydian');
     const chords = names(scale.getDiatonicChords('seventh'));
-    expect(chords[0]).toBe('G7');   // I7 — characteristic of Mixolydian
+    expect(chords[0]).toBe('G7');   // I7 - characteristic of Mixolydian
     expect(chords[3]).toBe('Cmaj7');
   });
 
@@ -141,7 +141,7 @@ describe('Scale.getChordOnDegree', () => {
   });
 });
 
-describe('Scale.getDiatonicChords — non-12-TET', () => {
+describe('Scale.getDiatonicChords - non-12-TET', () => {
   it('returns Chord objects with structural intervals in 19-EDO', () => {
     const TET19 = new EDO(19);
     const scale = parseScaleSymbol('C major', TET19);

@@ -147,7 +147,7 @@ const ROMAN_VALUES: Record<string, number> = {
  * Supported syntax:
  * - Uppercase numerals = major quality: `I`, `IV`, `V`
  * - Lowercase numerals = minor quality: `ii`, `iii`, `vi`
- * - `7` suffix: degree-sensitive — `ii7` = m7, `V7` = dom7, `I7` = maj7
+ * - `7` suffix: degree-sensitive - `ii7` = m7, `V7` = dom7, `I7` = maj7
  * - Other suffixes delegate to `normalizeSuffix`: `IVmaj7`, `iiø`, etc.
  * - Chromatic accidentals: `bVII`, `#IV`
  * - Applied chords: `V7/ii`, `IV/V`
@@ -274,8 +274,8 @@ export function parseRomanProgression(progression: string, keySymbol: string, tu
  * Parses a polychord notation into two separate chords.
  *
  * Formats supported:
- * - `"Fmaj7|Gmaj7"` — upper chord | lower chord (vertical stack)
- * - `"D/C"` — if C is not a chord tone of D, treated as polychord (non-inversion slash)
+ * - `"Fmaj7|Gmaj7"` - upper chord | lower chord (vertical stack)
+ * - `"D/C"` - if C is not a chord tone of D, treated as polychord (non-inversion slash)
  *
  * @throws if the symbol cannot be parsed.
  */

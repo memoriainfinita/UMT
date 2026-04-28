@@ -70,7 +70,7 @@ export class MelodyAnalysis {
   }
 
   /**
-   * Reduces a melody using durational weight — keeps structurally important notes.
+   * Reduces a melody using durational weight - keeps structurally important notes.
    * Uses a simple approach: notes with longer durations are more likely to be kept.
    * @param notes - Melody notes.
    * @param durations - Duration of each note (arbitrary units). Must match notes length.
