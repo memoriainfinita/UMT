@@ -16,10 +16,8 @@ test-results/
 CLAUDE.md
 metadata.json
 
-# Internal planning docs
-docs/superpowers/
-
-# Archive (kept locally, not published)
+# Internal docs and archive (kept locally, not published)
+docs/
 archive/
 
 # Source map (large, not needed for CDN usage)
