@@ -11,7 +11,7 @@ import { Note } from '../../lib/music-theory/note';
 import { TET12 } from '../../lib/music-theory/tuning';
 
 // ============================================================================
-// 6.1 — SetTheory extended
+// 6.1 - SetTheory extended
 // ============================================================================
 
 describe('SetTheory.getForteNumber', () => {
@@ -126,7 +126,7 @@ describe('SetTheory.getAllSubsets', () => {
 });
 
 // ============================================================================
-// 6.2 — ToneRow
+// 6.2 - ToneRow
 // ============================================================================
 
 const BERG_ROW = [0, 11, 3, 4, 8, 7, 9, 6, 1, 2, 5, 10]; // Berg Violin Concerto row (approx)
@@ -212,7 +212,7 @@ describe('ToneRow', () => {
 });
 
 // ============================================================================
-// 6.3 — Counterpoint
+// 6.3 - Counterpoint
 // ============================================================================
 
 function notes(steps: number[]): Note[] {
@@ -295,7 +295,7 @@ describe('Canon.generateCanon', () => {
 });
 
 // ============================================================================
-// 6.4 — MelodyAnalysis
+// 6.4 - MelodyAnalysis
 // ============================================================================
 
 describe('MelodyAnalysis.getContour', () => {
@@ -376,7 +376,7 @@ describe('MelodyAnalysis.getContourReduction', () => {
 });
 
 // ============================================================================
-// 6.5 — Schenker
+// 6.5 - Schenker
 // ============================================================================
 
 describe('Schenker.findUrlinie', () => {
@@ -391,7 +391,7 @@ describe('Schenker.findUrlinie', () => {
     if (result) {
       expect(result.type).toBe('3-line');
     }
-    // Allow null — detection is approximate
+    // Allow null - detection is approximate
     expect(result === null || result.type === '3-line').toBe(true);
   });
 

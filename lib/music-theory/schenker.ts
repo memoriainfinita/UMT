@@ -1,5 +1,5 @@
 /**
- * Schenkerian analysis tools — pedagogical simplification.
+ * Schenkerian analysis tools - pedagogical simplification.
  *
  * NOTE: Authentic Schenkerian analysis requires musicological judgement.
  * This module provides algorithmic scaffolding only; results are approximate.

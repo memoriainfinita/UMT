@@ -1,5 +1,5 @@
 /**
- * CHORD_FORMULAS — intervals in 12-TET semitones from root (0 = root, 7 = P5, etc.)
+ * CHORD_FORMULAS - intervals in 12-TET semitones from root (0 = root, 7 = P5, etc.)
  * Parser maps these to any target tuning via getStepFromStandard().
  * Canonical keys are used in chord naming and detection; aliases section maps
  * common alternate notations to the same formula.
@@ -89,7 +89,7 @@ export const CHORD_FORMULAS: Record<string, readonly number[]> = {
 
 
 /**
- * SCALE_PATTERNS — step intervals in 12-TET semitones (e.g., [2,2,1,2,2,2,1] for Major).
+ * SCALE_PATTERNS - step intervals in 12-TET semitones (e.g., [2,2,1,2,2,2,1] for Major).
  * All patterns must sum to 12 (one octave). Steps are mapped to any target tuning
  * via getStepFromStandard() in parser functions.
  *
@@ -98,12 +98,12 @@ export const CHORD_FORMULAS: Record<string, readonly number[]> = {
 export const SCALE_PATTERNS: Record<string, readonly number[]> = {
 
   // ── Diatonic modes (major system) ─────────────────────────────────────────
-  'ionian':           [2, 2, 1, 2, 2, 2, 1],   // Mode 1 — Major
+  'ionian':           [2, 2, 1, 2, 2, 2, 1],   // Mode 1 - Major
   'dorian':           [2, 1, 2, 2, 2, 1, 2],   // Mode 2
   'phrygian':         [1, 2, 2, 2, 1, 2, 2],   // Mode 3
   'lydian':           [2, 2, 2, 1, 2, 2, 1],   // Mode 4
   'mixolydian':       [2, 2, 1, 2, 2, 1, 2],   // Mode 5
-  'aeolian':          [2, 1, 2, 2, 1, 2, 2],   // Mode 6 — Natural Minor
+  'aeolian':          [2, 1, 2, 2, 1, 2, 2],   // Mode 6 - Natural Minor
   'locrian':          [1, 2, 2, 1, 2, 2, 2],   // Mode 7
 
   // ── Harmonic Minor and its modes ─────────────────────────────────────────
@@ -124,20 +124,20 @@ export const SCALE_PATTERNS: Record<string, readonly number[]> = {
   'lydian augmented':     [2, 2, 2, 2, 1, 2, 1],  // Mode 3
   'lydian dominant':      [2, 2, 2, 1, 2, 1, 2],  // Mode 4 (Overtone / Acoustic)
   'mixolydian b6':        [2, 2, 1, 2, 1, 2, 2],  // Mode 5 (Hindu / Descending Melodic Minor)
-  'locrian #2':           [2, 1, 2, 1, 2, 2, 2],  // Mode 6 (Aeolian b5 — standard for m7b5)
-  'altered':              [1, 2, 1, 2, 2, 2, 2],  // Mode 7 (Super Locrian — altered dominant)
+  'locrian #2':           [2, 1, 2, 1, 2, 2, 2],  // Mode 6 (Aeolian b5 - standard for m7b5)
+  'altered':              [1, 2, 1, 2, 2, 2, 2],  // Mode 7 (Super Locrian - altered dominant)
 
   // ── Symmetric scales ─────────────────────────────────────────────────────
-  'whole tone':               [2, 2, 2, 2, 2, 2],           // Messiaen mode 1 — whole tone
+  'whole tone':               [2, 2, 2, 2, 2, 2],           // Messiaen mode 1 - whole tone
   'augmented':                [3, 1, 3, 1, 3, 1],           // Messiaen mode 3 (related)
   'chromatic':                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   'whole-half diminished':    [2, 1, 2, 1, 2, 1, 2, 1],    // Octatonic / Messiaen mode 2 (starts W)
   'half-whole diminished':    [1, 2, 1, 2, 1, 2, 1, 2],    // Octatonic / Messiaen mode 2 (starts H)
   // Messiaen modes of limited transposition (modes 4–7)
-  'messiaen-4':    [1, 1, 3, 1, 1, 1, 3, 1],               // Mode 4 — 3 transpositions
-  'messiaen-5':    [1, 4, 1, 1, 4, 1],                     // Mode 5 — 3 transpositions
-  'messiaen-6':    [2, 2, 1, 1, 2, 2, 1, 1],               // Mode 6 — 6 transpositions
-  'messiaen-7':    [1, 1, 1, 2, 1, 1, 1, 1, 2, 1],         // Mode 7 — 6 transpositions
+  'messiaen-4':    [1, 1, 3, 1, 1, 1, 3, 1],               // Mode 4 - 3 transpositions
+  'messiaen-5':    [1, 4, 1, 1, 4, 1],                     // Mode 5 - 3 transpositions
+  'messiaen-6':    [2, 2, 1, 1, 2, 2, 1, 1],               // Mode 6 - 6 transpositions
+  'messiaen-7':    [1, 1, 1, 2, 1, 1, 1, 1, 2, 1],         // Mode 7 - 6 transpositions
 
   // ── Pentatonic / Hexatonic / Blues ────────────────────────────────────────
   'pentatonic major':     [2, 2, 3, 2, 3],
@@ -200,7 +200,7 @@ export const SCALE_PATTERNS: Record<string, readonly number[]> = {
 
 
 /**
- * MODAL_DEGREE_QUALITIES — chord qualities per scale degree for each classical mode.
+ * MODAL_DEGREE_QUALITIES - chord qualities per scale degree for each classical mode.
  *
  * `triads[i]` is the triad quality on degree i+1; `sevenths[i]` is the seventh-chord
  * quality on degree i+1. Values are suffixes compatible with `CHORD_FORMULAS`
@@ -244,7 +244,7 @@ export const MODAL_DEGREE_QUALITIES: Readonly<Record<string, ModalDegreeQualitie
 
 
 /**
- * MODE_PARENT_FAMILY — for each mode, the family it belongs to and its 1-indexed
+ * MODE_PARENT_FAMILY - for each mode, the family it belongs to and its 1-indexed
  * position within that family. Enables `Scale.getParentScale()` and
  * `Scale.getRelativeMode()` navigation within classical modal systems.
  */
@@ -293,7 +293,7 @@ export const MODE_PARENT_FAMILY: Readonly<Record<string, ModeParent>> = Object.f
 
 
 /**
- * MODE_BRIGHTNESS — ordering of diatonic modes by sharpness relative to the parent major.
+ * MODE_BRIGHTNESS - ordering of diatonic modes by sharpness relative to the parent major.
  * Lydian (+1 raised degree) brightest; Locrian (5 flat degrees vs major) darkest.
  * Values are integers: positive = brighter than Ionian, negative = darker.
  */

@@ -47,7 +47,7 @@ const SEVENTH_SUFFIX_BY_PCS: Record<string, string> = {
  * A scale: a root pitch plus an ordered pattern of step intervals within a tuning system.
  *
  * `stepPattern` defines the intervals between consecutive degrees in tuning steps
- * (e.g. `[2, 2, 1, 2, 2, 2, 1]` for major in 12-TET). The pattern is relative —
+ * (e.g. `[2, 2, 1, 2, 2, 2, 1]` for major in 12-TET). The pattern is relative -
  * the same pattern at a different `rootStep` gives the same scale type in a different key.
  */
 export class Scale {
@@ -140,7 +140,7 @@ export class Scale {
 
   /**
    * Returns true if the given step (or its pitch class) belongs to this scale.
-   * Comparison is by pitch class — octave is ignored.
+   * Comparison is by pitch class - octave is ignored.
    */
   contains(step: number): boolean {
     const os = this.tuningSystem.octaveSteps;
@@ -150,7 +150,7 @@ export class Scale {
 
   /**
    * Returns the 1-indexed scale degree of the given step, or `null` if not in the scale.
-   * Comparison is by pitch class — octave is ignored.
+   * Comparison is by pitch class - octave is ignored.
    */
   getDegree(step: number): number | null {
     const os = this.tuningSystem.octaveSteps;
@@ -278,7 +278,7 @@ export class Scale {
       const scalePcs = this.getPitchClasses();
       const rootPc = scalePcs[0];
 
-      // Compare to parallel Ionian (7-note scales only — other lengths skip this comparison)
+      // Compare to parallel Ionian (7-note scales only - other lengths skip this comparison)
       if (scalePcs.length === 7) {
         const ionianIntervals = [0, 2, 4, 5, 7, 9, 11];
         for (let i = 0; i < 7; i++) {
@@ -379,7 +379,7 @@ export class Scale {
    */
   transpose(steps: number): Scale {
     const newRoot = this.rootStep + steps;
-    // Re-derive preferFlats for the new root — key signature changes with transposition.
+    // Re-derive preferFlats for the new root - key signature changes with transposition.
     // Use get12TETBaseName for 12-TET (no octave number in the name); fall back to getNoteName.
     let newRootName: string;
     let newPf: boolean;

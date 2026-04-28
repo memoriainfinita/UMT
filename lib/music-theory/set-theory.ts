@@ -1,7 +1,7 @@
 import { Note } from './note';
 
 // ============================================================================
-//  Forte number table — prime form (C=0 space) → Forte label
+//  Forte number table - prime form (C=0 space) → Forte label
 //  Covers cardinalities 2–10 (the full 208 Allen Forte set classes).
 // ============================================================================
 const FORTE_TABLE: Record<string, string> = {
@@ -32,7 +32,7 @@ const FORTE_TABLE: Record<string, string> = {
   '0,1,3,6,8': '5-29', '0,1,4,6,8': '5-30', '0,1,3,6,9': '5-31', '0,1,4,6,9': '5-32',
   '0,2,4,6,8': '5-33', '0,2,4,6,9': '5-34', '0,2,4,7,9': '5-35', '0,1,2,4,7': '5-z36',
   '0,3,4,5,8': '5-z37', '0,1,2,5,8': '5-z38',
-  // Hexachords (selected — full table has 50 entries)
+  // Hexachords (selected - full table has 50 entries)
   '0,1,2,3,4,5': '6-1', '0,1,2,3,4,6': '6-2', '0,1,2,3,5,6': '6-z3', '0,1,2,4,5,6': '6-z4',
   '0,1,2,3,6,7': '6-5', '0,1,2,5,6,7': '6-z6', '0,1,2,6,7,8': '6-7', '0,2,3,4,5,7': '6-8',
   '0,1,2,3,5,7': '6-9', '0,1,3,4,5,7': '6-z10', '0,1,2,4,5,7': '6-z11', '0,1,2,4,6,7': '6-z12',
@@ -42,7 +42,7 @@ const FORTE_TABLE: Record<string, string> = {
   '0,1,3,5,6,8': '6-z25', '0,1,3,5,7,8': '6-z26', '0,1,3,4,6,9': '6-27', '0,1,3,5,6,9': '6-z28',
   '0,1,3,6,8,9': '6-z29', '0,1,3,6,7,9': '6-30', '0,1,3,5,8,9': '6-31', '0,2,4,5,7,9': '6-32',
   '0,2,3,5,7,9': '6-33', '0,1,3,5,7,9': '6-34', '0,2,4,6,8,10': '6-35',
-  // Heptachords are complements of pentachords — handled by complement lookup
+  // Heptachords are complements of pentachords - handled by complement lookup
   '0,1,2,3,4,5,6': '7-1', '0,1,2,3,4,5,7': '7-2', '0,1,2,3,4,5,8': '7-3',
   '0,1,2,3,4,6,7': '7-4', '0,1,2,3,5,6,7': '7-5', '0,1,2,3,4,7,8': '7-6',
   '0,1,2,3,6,7,8': '7-7', '0,2,3,4,5,6,8': '7-8', '0,1,2,3,4,6,8': '7-9',
@@ -83,7 +83,7 @@ const Z_PAIRS: [string, string][] = [
 export class SetTheory {
   /**
    * Extracts unique pitch classes from an array of notes.
-   * Uses the tuning system's `octaveSteps` as the modulus — works for any EDO.
+   * Uses the tuning system's `octaveSteps` as the modulus - works for any EDO.
    * Returns integers 0 to (octaveSteps - 1) where 0 = A (the library's coordinate origin).
    */
   static getPitchClasses(notes: Note[]): number[] {
@@ -190,7 +190,7 @@ export class SetTheory {
   static getForteNumber(pcs: number[]): string {
     if (pcs.length === 0) return 'unknown';
     const prime = this.primeForm(pcs);
-    // primeForm already returns a 0-rooted sequence — use it directly as FORTE_TABLE key
+    // primeForm already returns a 0-rooted sequence - use it directly as FORTE_TABLE key
     return FORTE_TABLE[prime.join(',')] ?? 'unknown';
   }
 
@@ -229,14 +229,14 @@ export class SetTheory {
   }
 
   /**
-   * Transposition operator Tn — transposes all pitch classes by n.
+   * Transposition operator Tn - transposes all pitch classes by n.
    */
   static Tn(pcs: number[], n: number, octave = 12): number[] {
     return pcs.map(p => ((p + n) % octave + octave) % octave).sort((a, b) => a - b);
   }
 
   /**
-   * Transposition + inversion operator TnI — inverts then transposes.
+   * Transposition + inversion operator TnI - inverts then transposes.
    */
   static TnI(pcs: number[], n: number, octave = 12): number[] {
     return pcs.map(p => ((n - p) % octave + octave) % octave).sort((a, b) => a - b);

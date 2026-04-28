@@ -4,16 +4,16 @@ import { Chord } from './chord';
 
 // ── Equal Divisions of the Octave ────────────────────────────────────────────
 
-/** 19-TET — good approximation of minor thirds and meantone; used in microtonalism. */
+/** 19-TET - good approximation of minor thirds and meantone; used in microtonalism. */
 export const TET19 = new EDO(19);
 
-/** 24-TET — quarter-tone tuning; common in Arabic and Turkish maqam music. */
+/** 24-TET - quarter-tone tuning; common in Arabic and Turkish maqam music. */
 export const TET24 = new EDO(24);
 
-/** 31-TET — excellent meantone approximation; best EDO for pure major thirds. */
+/** 31-TET - excellent meantone approximation; best EDO for pure major thirds. */
 export const TET31 = new EDO(31);
 
-/** 53-TET — closest standard EDO to 5-limit just intonation; scientific reference. */
+/** 53-TET - closest standard EDO to 5-limit just intonation; scientific reference. */
 export const TET53 = new EDO(53);
 
 // ── Historical Temperaments ──────────────────────────────────────────────────
@@ -31,7 +31,7 @@ export const WerckmeisterIII = new CentTuning(
 // ── Non-Octave Tunings ───────────────────────────────────────────────────────
 
 /**
- * Bohlen-Pierce (ED3) — 13 equal steps to the tritave (ratio 3:1).
+ * Bohlen-Pierce (ED3) - 13 equal steps to the tritave (ratio 3:1).
  * Developed independently by Heinz Bohlen (1972) and John Pierce (1984).
  */
 export const BohlenPierce = new NonOctaveTuning('Bohlen-Pierce', 13, 3);
@@ -39,7 +39,7 @@ export const BohlenPierce = new NonOctaveTuning('Bohlen-Pierce', 13, 3);
 // ── Just Intonation ──────────────────────────────────────────────────────────
 
 /**
- * Ptolemaic (Ptolemy's Intense Diatonic) — 5-limit JI diatonic scale.
+ * Ptolemaic (Ptolemy's Intense Diatonic) - 5-limit JI diatonic scale.
  * The classic just intonation tuning for the 7-note major scale.
  * Ratios: 1/1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8.
  */
@@ -49,7 +49,7 @@ export const PtolemaicJI = new JustIntonation(
 );
 
 /**
- * 5-Limit Just Intonation (Chromatic) — all 12 pitch classes tuned to pure 5-limit ratios.
+ * 5-Limit Just Intonation (Chromatic) - all 12 pitch classes tuned to pure 5-limit ratios.
  * The standard JI chromatic scale as used in classical JI analysis.
  */
 export const FiveLimitJI = new JustIntonation(

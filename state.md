@@ -1,415 +1,57 @@
-# State — Universal Music Theory Library
+# State - Universal Music Theory Library
 
 ## System
 
 - Platform: Windows 10 Pro, bash via Claude Code
-- Node: 20 (required by deploy workflow)
+- Node: 20
 - Package manager: npm
 
 ## Project
 
-- Path: `C:\Users\mykl\OneDrive\Scriptorium\DOCS\CODING GIT\UNIVERSAL MUSIC LIBRARY\universal-music-theory-library`
-- Status: functional — library runs, demo page works, not deeply tested in all branches
-- Deploy target: GitHub Pages via `.github/workflows/deploy.yml`
+- Repo: https://github.com/memoriainfinita/UMT
+- Demo: https://memoriainfinita.github.io/UMT
+- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/public/umt.js
+- Status: listo para primer commit y publicación.
+- Deploy: build local (`npm run build:umt`) + commit `public/umt.js` + push. GitHub Pages sirve desde `public/`.
 
-## Services / Dependencies
+## Dependencies
 
-- abcjs ^6.6.2 — sheet music rendering in demo
-- lucide-react — icons in demo
-- esbuild — bundles `lib/music-theory/umt.ts` → `public/umt.js`
-- Next.js 15 / React 19 — demo app
+- esbuild - compila `lib/music-theory/umt.ts` → `public/umt.js` (104 kb)
+- vitest - tests unitarios (`npm run test:unit`) - 524 tests
+- playwright + http-server - tests de integración demo (`npx playwright test`)
+- Tone.js CDN - audio en demo
+- abcjs CDN - partituras en demo
+- Tailwind CDN - estilos en demo
 
 ## Patterns
 
 - [coordinate-system] Steps from A4=0. C4=-9 in 12-TET. Confirmed 2026-04.
-- [library-language] All library strings in English. Demo UI in Spanish. Confirmed 2026-04.
-- [build-umt] `npm run build:umt` must run before `next build`. Already in `build` script. Confirmed 2026-04.
-- [audio-lib] Tone.js vía CDN para audio en demos vanilla. Confirmed 2026-04.
-- [sheet-music] abcjs vía CDN + ABCBridge para partituras en demos vanilla. Confirmed 2026-04.
-
-## History
-
-### 2026-04-06 — Revisión y limpieza completa (sesión 1)
-
-Revisión desde cero del proyecto generado por Gemini. Correcciones aplicadas:
-
-**Bugs reales:**
-- `note.ts` — `transpose()` propagaba el `_name` original (nota transpuesta tenía nombre incorrecto)
-- `key-detection.ts` — `get12TETName(i)` devolvía nombres con octava ("A4 Major" en lugar de "A Major")
-- `neo-riemannian.ts` — transformaciones P/L/R generaban nombres de acorde con octava ("C4m" en lugar de "Cm")
-- `parser.ts` — sufijo `7alt` no mapeado; `V7alt` se parseaba como tríada mayor. Añadido a ambos bloques de normalización
-- `page.tsx` — ejemplo Scala Pelog sin octava; `octaveCents = 1000¢` en lugar de `1200¢`. Corregido a `2/1`
-- `page.tsx` — Set Theory tokenizaba con `.split(' ')` en lugar de `.split(/\s+/)`
-
-**Typing / código muerto en librería:**
-- `presets.ts` — `MajorTriad` y `ChromaticScale` usaban `any`. Tipados con `TuningSystem`. Eliminado acceso a `tuning.intervals` no tipado
-- `abc-bridge.ts` — `streamToABC(stream: any)` → `streamToABC(stream: MusicStream)`
-- `harmony.ts` — `'Acorde Desconocido'` → `'Unknown Chord'`
-
-**Limpieza de artefactos Gemini:**
-- `package.json` — nombre `"ai-studio-applet"` → `"universal-music-theory-library"`
-- `package.json` — eliminadas deps muertas: `@google/genai`, `@hookform/resolvers`, `motion`, `class-variance-authority`, `firebase-tools`
-- `app/layout.tsx` — metadata "My Google AI Studio App" → correcta
-- `next.config.ts` — eliminado bloque `DISABLE_HMR` (AI Studio), `picsum.photos`, `transpilePackages: ['motion']`; archivo tenía caracteres Unicode corruptos
-- `.env.example` — limpiado de credenciales Gemini
-- `metadata.json` — eliminado campo `requestFramePermissions`
-
-**Archivos eliminados:**
-- `hooks/use-mobile.ts` — nunca importado
-- `lib/utils.ts` — `cn()` nunca llamado fuera del archivo
-
-### 2026-04-06 — Refactor arquitectural (sesión 5, continuación)
-
-Commit: `c9bb3be`.
-
-- `Pitch` eliminado de `types.ts` (artefacto Gemini, nunca usado)
-- `TET12` movido a `tuning.ts` (era el único motivo por el que parser/harmony dependían de presets)
-- `parseNoteToStep12TET` movido de `parser.ts` a `utils.ts` (utilidad de coordenadas, no parser)
-- `stream.ts` absorbido en `rhythm.ts` y eliminado (83 líneas, un solo concepto)
-- La librería queda en 19 archivos con dependencias más limpias
-
-**Pendiente tras esta sesión:**
-- Ejecutar `npm install` para actualizar `package-lock.json` con las deps eliminadas
-- Probar en profundidad todas las secciones de la demo (voice leading, Neo-Riemannian, Set Theory, Scala parser)
-- Revisar si `WerckmeisterIII` y otras afinaciones históricas suenan bien en la demo
-
-## History
-
-### 2026-04-06 — Auditoría y hardening completo (sesión 2)
-
-Revisión profunda de toda la librería. Commit: `5a83a01`.
-
-**Bugs corregidos:**
-- `harmony.ts` — `'Acorde Desconocido'` → `'Unknown Chord'` en `getNegativeHarmony` (fallback nunca se ejecutaba)
-- `harmony.ts` — mensajes de voice leading traducidos al inglés
-- `abc-bridge.ts` — barlines usaban `>= 4` hardcodeado; ahora usa `stream.timeSignature.totalBeats`
-- `page.tsx` — `.split(' ')` → `.split(/\s+/)` en sección PLR
-- `page.tsx` — label `"0=C"` corregido a `"0=A"` (sistema de coordenadas A=0)
-
-**Limpieza:**
-- `parser.ts` — extraído `normalizeSuffix()` e `inferRomanSuffix()`, eliminada duplicación de shorthands
-- `rhythm.ts` — eliminada clase muerta `RhythmEvent`
-- `utils.ts` — añadido `get12TETBaseName()`, sustituye 16x `.replace(/\d+/, '')` en toda la librería
-
-**Mejoras de API:**
-- `harmony.ts` — `getSuggestedScales` devuelve `{scale: string; hint?: string}[]` con nombres parseables por `parseScaleSymbol`
-- `set-theory.ts` — añadido `getPitchClassesC0()` normalizado a C=0 (convención estándar)
-
-**Robustez teórica:**
-- `harmony.ts` — `analyzeCadence` detecta dominantes por `intervalsInSteps`, no por nombre de acorde
-- `chord.ts` — `getTritoneSubstitution` devuelve `null` fuera de 12-TET
-- `harmony.ts` — `getBorrowedChords` añade préstamo desde Dorian y amplía sección menor con más opciones
-
-## History
-
-### 2026-04-06 — Hardening universal + docs (sesión 3)
-
-Commit: `aa838b2`.
-
-**Scope redefinido:** librería standalone JS/TS. Next.js demo es temporal, a reemplazar con HTML vanilla. Deploy: build local + commit `public/umt.js` + push. Sin CI/GitHub Actions. CDN via jsDelivr cuando se cree el repo.
-
-**Fixes de universalidad:**
-- `parser.ts` — `parseChordSymbol`, `parseScaleSymbol`, `parseRomanProgression` aceptan `tuning: TuningSystem = TET12`; intervalos mapeados via `getStepFromStandard()`
-- `harmony.ts` — `% 12` → `octaveSteps` en `checkVoiceLeading`; `getSuggestedScales` usa `intervalsInSteps` en vez de regex sobre el nombre; `detectChords` guard para no-12-TET; `getNegativeHarmony` y `getBorrowedChords` con parámetro `tuning`
-- `neo-riemannian.ts` — P/L/R usan `getStepFromStandard()` para todos los intervalos
-- `note.ts`, `scale.ts` — detección de 12-TET via `instanceof EDO` en vez de comparación de string
-- `tuning.ts` — comentario clarificado en `NonOctaveTuning.octaveSteps`
-
-**Docs:**
-- README reescrito en inglés, sin slop, scope real
-- CLAUDE.md actualizado con scope, plan de deploy, Next.js marcado como temporal
-
-## History
-
-### 2026-04-06 — Repaso final librería + expansión universal (sesión 5)
-
-**Bugs corregidos:**
-- `set-theory.ts` — `getPitchClassesC0` usaba shift +3 en lugar de +9 (A=0→C=0 requiere +9)
-- `harmony.ts` — `getSuggestedScales` devolvía `dorian` con hint "Locrian #2" para m7b5; corregido a `locrian #2`
-
-**Fixes menores:**
-- `abc-bridge.ts` — `noteToABC` siempre usaba `preferFlats: true`; ahora usa `note.getName()` para respetar la preferencia de la nota. Eliminado import huérfano de `get12TETName`
-- `tuning.ts` — Añadido comentario clarificador en `CentTuning.getInterval` (octava siempre 1200, no el último valor del array)
-- `circle.ts` — JSDoc que documenta la convención de minúsculas para tonalidades menores
-- `chord.ts` — Nota en `getVoicing('quartal')` que el multiplicador 5 es específico de 12-TET
-
-**Expansión de `dictionaries.ts` (rewrite completo):**
-
-Acordes añadidos: `5` (power), `add9`, `madd9`, `add11`, `add#11`, `m6/9`, `dimM7`, `7b5`, `7#5`, `7b9#9`, `7b13`, `7#11`, `mM9`, `9sus4`, `9b5`, `9#11`, `maj7#11`, `maj9#11`, `13sus4`
-Aliases añadidos: `m(maj7)` (→mM7), `7#5` (→aug7)
-
-Escalas añadidas:
-- Modos de menor melódica completos: `dorian b2`, `lydian augmented`, `mixolydian b6`, `locrian #2`
-- Modos de menor armónica: `locrian #6`, `ionian #5`, `dorian #4`, `phrygian dominant`, `lydian #2`, `super locrian bb7`
-- `harmonic major`, `blues major`
-- Bebop: `bebop dominant`, `bebop major`, `bebop dorian`
-- Exóticas: `persian`, `prometheus`, `in`, `iwato`, `yo`
-- Aliases: `natural minor`, `jazz minor`, `acoustic`, `super locrian`, `spanish`, `flamenco`, `freygish`, `hindu`, `romanian minor`
-
-**Harmony:**
-- `detectChords` actualizado para saltar aliases `m(maj7)` y `7#5`
-- `getSuggestedScales` (modal ruleset) también devuelve `locrian #2` para m7b5
-
-### 2026-04-06 — Revisión capa base (sesión 6)
-
-Revisión sistemática archivo a archivo. Commits: f3496ca, 251d30c, 2f23bc8, 6d6f8e7.
-
-**Archivos revisados:** types.ts, interval.ts, tuning.ts, note.ts, scale.ts, chord.ts, dictionaries.ts, parser.ts, presets.ts
-
-**Cambios principales:**
-- `types.ts`: JSDoc, `MidiNote` alias
-- `interval.ts`: guard ratio inválido, `inOctave()`, `semitones`, `divide()`, `negate()`, `equals()`
-- `tuning.ts`: guards en 4 constructores, `getStepFromStandard` en todas las subclases, `EDO.getNoteName` 12-TET, JSDoc
-- `note.ts`: throw en `getIntervalTo` freq inválida, `pitchClass`, `octave`, `equals()`
-- `scale.ts`: fix bug flats en `getNotes`, `getPitchClasses()`, `contains()`, `getDegree()`, `stepPattern readonly`, `transpose` con nombre correcto
-- `chord.ts`: fix bug flats en `getNotes`/bass, `getPitchClasses()`, `contains()`, `intervalsInSteps readonly`, `transpose` con nombre correcto
-- `dictionaries.ts`: `readonly` en ambos records; acordes: augM7, 7sus2, m11b5, 13b9, 13#11, aug(maj7); escalas: augmented, pelog, kumoi, balinese, chinese, egyptian, byzantine, gypsy major/minor; fix TET12 import en presets
-- `parser.ts`: normalización mayúsculas raíz, `parseNote` preserva nombre, nuevos shorthands (M7, Δ7, +7, maj), guard en acordes aplicados, errores descriptivos
-- `presets.ts`: TET19, TET53, MinorTriad genérico, fix PtolemaicJI, `MajorTriad` usa `getStepFromStandard`, JSDoc
-
-**Pendiente (sesión 6):** harmony.ts, circle.ts, set-theory.ts, key-detection.ts, neo-riemannian.ts, scala.ts, rhythm.ts, abc-bridge.ts, utils.ts, index.ts, umt.ts
-
-### 2026-04-06 — Overhaul sistema bemoles/sostenidos (sesión 8)
-
-Commit: 421dc78. Auditoría completa + corrección de 10 bugs en 8 archivos.
-
-**Cambio arquitectural central:**
-- `Note`: añadido `_preferFlats?: boolean` separado de `_name`. `transpose()` propaga la preferencia → inversiones, voicings, drops ya no pierden el contexto de la tonalidad.
-- `Note.preferFlats` getter público, derivado de `_name` o `_preferFlats`.
-
-**`utils.ts` — `preferFlatsForKey(root, scaleType)` reemplaza `usesFlats()`:**
-- Usa círculo de quintas via tabla de offsets modales (`MAJOR_MODE_PARENT_OFFSET`)
-- D phrygian → padre Bb mayor → bemoles ✓ (antes: sostenidos)
-- D mixolydian → padre G mayor → sostenidos ✓
-- Familia menor (harmonic minor, jazz minor…) por lookup directo
-
-**Scale / Chord / Parser:**
-- Constructor recibe `preferFlats?: boolean`; `parseScaleSymbol` y `parseChordSymbol` lo calculan via `preferFlatsForKey`
-- `getNotes()` usa el valor almacenado en vez del hack de `_name`
-- `transpose()` re-deriva la preferencia para la nueva raíz (sin octava en el nombre)
-
-**Capa alta:**
-- `detectChords()`: nombrado canónico por círculo de quintas (Bb no A#)
-- `getSuggestedScales()`: raíz derivada de `chord.rootStep` no de `chord.name` (string frágil)
-- `getBorrowedChords()`: usa `note.preferFlats` de cada nota, consistente
-- `NeoRiemannian` P/L/R: P hereda preferencia de la fuente; L/R derivan del nuevo root
-- `KeyDetection.detect()`: devuelve "Bb Major" no "A# Major"
-
-**Limitación conocida pendiente:** el b7 de C7 se deletrea A# (no Bb) porque C es tonalidad de sostenidos. Requeriría lógica por tipo de intervalo, no solo por raíz. Anotado en TODO.
-
-### 2026-04-06 — Revisión capa alta + hardening arquitectural (sesión 7)
-
-Revisión sistemática + análisis arquitectural completo. Archivos tocados: harmony.ts, circle.ts, set-theory.ts, key-detection.ts, scala.ts, abc-bridge.ts, utils.ts, tuning.ts.
-
-**Bugs corregidos:**
-- `harmony.ts` — `getSuggestedScales`: `nextChord.name.includes('m')` → regex `/^[A-G][#b]*m(?!aj)/` (falso positivo con `Cmaj7`)
-- `harmony.ts` — `getSuggestedScales` berklee/isDom7: `% 12` → `% oct` (3 ocurrencias)
-- `harmony.ts` — `getBorrowedChords`: guard `if (tuning.octaveSteps !== 12) return []` (usa `get12TETBaseName` internamente)
-- `scala.ts` — `parseScala`: strip inline comments antes de parsear (`"3/2 fifth".split('/').map(Number)` → `[3, NaN]`)
-- `scala.ts` — `parseScala`: validación de `numNotes` (guard contra NaN/negativo)
-- `circle.ts` — refactor: `normalizeKey()` privado aplicado en los 4 métodos públicos (antes solo `getSignature` normalizaba enarmónicas)
-- `key-detection.ts` — perfiles `majorProfile`/`minorProfile` → `readonly`
-- `utils.ts` — `getIntervalName`: añadidos m9, A11 para compuestos ≥ 12 semitones
-
-**Mejoras arquitecturales:**
-- `set-theory.ts` — `normalForm`, `primeForm`, `intervalVector` aceptan `octave = 12`; `getPitchClasses` usa `tuningSystem.octaveSteps` automáticamente → funciona en cualquier EDO
-- `tuning.ts` — `JustIntonation.getStepFromStandard`: cambiado de aproximación proporcional a **búsqueda por proximidad en cents** (más preciso para JI no-cromático; para 12 clases sigue siendo identidad)
-- `abc-bridge.ts` — `noteToABC` lanza error descriptivo para notas no-12-TET en vez de devolver 'C' silenciosamente; `streamToABC` usa helper `beatsToABCDuration` con cobertura de duraciones estándar + puntillos + fracciones genéricas
-
-### 2026-04-06 — Diseño y plan de migración demo vanilla (sesión 4)
-
-Brainstorming completo + spec + plan de implementación para migrar la demo de Next.js a HTML vanilla.
-
-- Spec: `docs/superpowers/specs/2026-04-06-vanilla-demo-migration-design.md`
-- Plan: `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md`
-
-Decisiones clave:
-- Demo nueva (no port), adaptada al estado real de la librería
-- Un solo `public/example.html`, 11 secciones + API Reference
-- Audio via Tone.js CDN, partituras via abcjs CDN, estilos via Tailwind CDN
-- Archivado: `app/`, `components/`, `lib/audio.ts` → `archive/next-demo/`
-- `package.json` limpiado de deps Next/React
-- Implementación pendiente para sesión 5
+- [library-language] All library strings in English. Confirmed 2026-04.
+- [build-umt] `npm run build:umt` es el único paso de build. El bundle se commitea en git. Confirmed 2026-04.
+- [audio-lib] Tone.js via CDN para audio en demo vanilla. Confirmed 2026-04.
+- [sheet-music] abcjs via CDN + ABCBridge para partituras en demo vanilla. Confirmed 2026-04.
+- [spelling] m2/m3/m7 siempre usan bemol en `chord.ts:getNotes()` via `intervalPreferFlats()`. d5/A4 y m6/A5 usan contexto del acorde. Confirmed 2026-04.
 
 ## TODO
 
-- [x] **Ejecutar `docs/plan-teoria-completa.md`** — COMPLETO. 10 fases, 518 tests. Bump 4.0 pendiente (versión semántica).
-  - [x] Fase 1: acordes diatónicos + características modales
-  - [x] Fase 2: análisis de progresión + voice leading clásico completo
-  - [x] Fase 3: intermodalidad universal + pivot chords + modulación + Coltrane matrix
-  - [x] Fase 4: progresiones presets + secuencias + análisis formal
-  - [x] Fase 5: UST + slash/polychord + chord-scale completeness + enharmonic respelling
-  - [x] Fase 6: set theory completo + dodecafonismo + contrapunto + Schenker + melodía
-  - [x] Fase 7: rítmica avanzada + clave patterns + polymeter + metric modulation + isorhythm
-  - [x] Fase 8: bajo cifrado + escalas griegas + hexacordos + ragas + maqamat + solfège
-  - [x] Fase 9: Messiaen 4-7 + Tonnetz + MOS + xen + espectral + temperamento + Tymoczko OPTIC
-  - [x] Fase 10: MusicXML + LilyPond + ABC mejorado
-- [ ] Crear repo en GitHub y actualizar URL CDN en README
-- [x] Ejecutar plan `docs/superpowers/plans/2026-04-06-vanilla-demo-migration.md` (14 tareas) — librería lista para esto
-- [x] Test completo de la demo con Playwright — 32/32 pasados
-- [x] Añadir tests unitarios — vitest configurado, 42 tests en `tests/unit/circle.test.ts`
-- [ ] Revisar spelling del b7 en acordes dominantes en tonalidades de sostenidos (C7 → A# en vez de Bb — limitación de diseño conocida, requiere lógica por intervalo)
-- [x] Revisión capa alta — harmony.ts, circle.ts, set-theory.ts, key-detection.ts, neo-riemannian.ts, scala.ts, rhythm.ts, abc-bridge.ts, utils.ts, index.ts, umt.ts
-- [x] Overhaul sistema bemoles/sostenidos — sesión 8
+- [ ] Primer commit y push al repo GitHub
+- [ ] Configurar GitHub Pages (source: `public/`)
+- [ ] Probar demo en producción (https://memoriainfinita.github.io/UMT)
+- [ ] Crear Wiki en GitHub con docs de la API
 
 ## History
 
-### 2026-04-26 — Fases 5-10: plan de expansión completo
+### 2026-04-28 - Rediseño web + README + limpieza repo
 
-Commits: 54bdfed, 917d5b0, 2d5c564, 69b079e, 17f6f8f, a4920b7. 518/518 tests. Bundle: 104kb.
+- `public/index.html` - demo rediseñada: hero + 7 secciones interactivas (Harmony, Tuning, Modal, Set Theory, World Music, Rhythm, Notation). Auto-run al cargar.
+- `README.md` - reescrito: hook, instalación CDN/ESM, tabla de 41 módulos por dominio, ejemplos por área, arquitectura
+- Em dashes eliminados de 46 archivos
 
-**Fase 5** — upper-structures.ts (6 USTs), Harmony.analyzeSlash, parsePolychord, getAllContainingScales, respellChord/Note.
-**Fase 6** — set-theory.ts ampliado (Forte 208 sets, Tn/TnI, subset, Z-relations), twelve-tone.ts (ToneRow P/I/R/RI/matrix), counterpoint.ts (Counterpoint.checkSpecies 1-5, Canon), melody.ts (MelodyAnalysis), schenker.ts (Schenker).
-**Fase 7** — rhythm.ts ampliado (RhythmTransform, RhythmAnalysis, Polymeter, MetricModulation, Isorhythm), clave-patterns.ts (10 presets: son, rumba, bossa, tresillo, etc.).
-**Fase 8** — figured-bass.ts (FiguredBass.parse/realize/fromChord), dictionaries.ts +8 modos griegos, hexachord.ts (Hexachord Guido), ragas.ts (10 ragas Hindustani), maqamat.ts (8 maqamat 24-EDO), solfege.ts (Solfege fijo/móvil).
-**Fase 9** — dictionaries.ts +Messiaen 4-7, tonnetz.ts, mos.ts (MOS + CommaPump), xen.ts (Xen: otonal/utonal/neutral), spectral.ts (roughness, consonance), temperament-analysis.ts (TemperamentAnalysis + mapJItoEDO + bestEDOFor), voice-leading-geometry.ts (OPTIC + VoiceLeadingGeometry), presets.ts +HarmonicSeries.
-**Fase 10** — musicxml-bridge.ts (streamToMusicXML, chordToMusicXML, scaleToMusicXML), lilypond-bridge.ts (stream/chord/scaleToLilyPond), abc-bridge.ts mejorado (key signatures, chord annotations, tuplets).
+### 2026-04-28 - Fix spelling de notas en acordes (intervalo-aware)
 
-### 2026-04-19 — Fase 4: progresiones, secuencias y análisis formal
+`chord.ts:getNotes()` calcula `preferFlats` por nota según el intervalo desde la raíz. m2/m3/m7 siempre usan bemol. d5/A4 y m6/A5 usan contexto del acorde. 6 tests nuevos. 524/524 tests.
 
-Commit: bc3577c. 32 tests nuevos. Total: 242/242 pasando. Bundle: 65.6kb.
+### 2026-04-26 - Fases 5-10: plan de expansión completo
 
-**Nuevo módulo `progressions.ts`:**
-- `PROGRESSIONS` — 16 progresiones nombradas: ii-V-I, ii-V-i, blues-12, blues-minor, blues-jazz, rhythm-changes, coltrane-changes, andalusian, pachelbel, turnaround-jazz, backdoor-ii-V, bird-blues, giant-steps-cycle, I-V-vi-IV, I-vi-IV-V, I-IV-V.
-- `getProgression(id, keySymbol)` — realiza la progresión en cualquier tonalidad.
+Commits: 54bdfed, 917d5b0, 2d5c564, 69b079e, 17f6f8f, a4920b7. 518/518 tests. Bundle: 104kb. 41 módulos. Cubre: armonia tonal completa, dodecafonismo, contrapunto, música del mundo (ragas, maqamat, clave), ritmo avanzado, análisis espectral, Tonnetz, OPTIC/Tymoczko, exportación MusicXML/LilyPond/ABC.
 
-**Nuevo módulo `form.ts`:**
-- `FormAnalyzer.analyzeHarmonic(chords, key, barsPerSection?)` — detecta AABA, ABAB, ternary, binary, strophic, through-composed, etc. Con `confidence`.
-- `FormAnalyzer.detectReprise(chords, minLength?)` — encuentra segmentos repetidos.
-
-**Nuevos métodos en `Harmony`:**
-- `detectSequence(chords)` — detecta circle-of-fifths descending/ascending, parallel-descending/ascending, pachelbel, romanesca.
-- `retrogradeProgression(chords)` — inversión de orden.
-- `invertProgression(chords, axisNote)` — inversión armónica alrededor de un eje.
-- `voiceLeadingSmoothness(chords)` — métrica 0–1 de suavidad del voice leading.
-
-**Demo:** nueva sección `#progressions` en `public/example.html`.
-
-### 2026-04-19 — Fase 3: intermodalidad universal + modulación + sustitución + Coltrane
-
-**Breaking change:** `Harmony.getBorrowedChords` retorna `BorrowedChord[]` en lugar de `Chord[]`. El campo `chord` contiene el acorde; además: `sourceMode`, `brightness`, `function`, `characteristic`.
-
-**Nuevos métodos en `Harmony`:**
-- `getBorrowedChords(keySymbol, options?)` — reescrito. Cubre 9 modos paralelos (lydian→locrian + harmonic/melodic minor + harmonic major). Soporta opción `sources` para filtrar por modo.
-- `findPivotChords(keyA, keyB, type?)` — devuelve `PivotChord[]` con `functionInA` y `functionInB` por grado.
-- `classifyModulation(chordsA, chordsB, keyA, keyB)` — clasifica como direct/pivot/enharmonic/chromatic/common-tone.
-- `getNegativeProgression(chords, keyCenter)` — aplica negative harmony a cada acorde de la progresión.
-- `getColtraneAxis(key)` — devuelve `ColtraneAxis` con las 3 raíces por terceras mayores.
-- `getColtraneSubstitutions(chord, keySymbol)` — devuelve los 2 sustitutos Coltrane del acorde.
-
-**Nuevo módulo `substitution.ts`:**
-- `getSubstitutions(chord, keySymbol)` — devuelve `SubstitutionOption[]` cubriendo: tritone, sus4, deceptive, diatonic (I→iii/vi, IV→ii).
-
-**Nuevos métodos en `CircleOfFifths`:**
-- `getModalKey(root, mode)` — devuelve `ModalKey` con `parentMajorKey`.
-- `getModalNeighbors(modalKey, radius?)` — modos con misma raíz por adyacencia de brightness.
-- `getModalDistance(keyA, keyB)` — distancia entre parent major keys en el círculo.
-
-**Tests:** 53 en `tests/unit/harmony-phase3.test.ts`. Total: 210/210 pasando.
-**Bundle:** 59.1kb (antes 54.8kb).
-**Demo:** nueva sección `#intermodal` en `public/example.html`.
-
-### 2026-04-19 — Fase 2: análisis de progresión + voice leading clásico
-
-Fase 2 del plan `docs/plan-teoria-completa.md` ejecutada. Commit: pendiente.
-
-**Nuevos métodos en `Harmony`:**
-- `analyzeProgression(chords, keySymbol)` — devuelve `ChordAnalysis[]` con roman, degree, function (T/S/D), isDiatonic, isBorrowed/borrowedFrom, isSecondary/secondaryTarget, cadenceWithNext, substitutionCandidate. También devuelve `ModulationEvent[]` (detección básica por ventana de 3 acordes) y `harmonicRhythm` (densidad de cambios).
-- `analyzeSixFour(progression, keySymbol, index)` — clasifica un acorde en 2ª inversión: cadencial/pedal/passing/arpeggiated/none.
-- `checkDoubling(voicing, chord, keySymbol?)` — flags: Doubled Leading Tone, Missing Root/Third/Fifth, Improper Doubling (3ª duplicada en mayor).
-- `analyzeCadence` ampliado: añadidas Phrygian (♭II→I), Phrygian Half (iv→V), Minor Plagal (iv→i), Picardy Third (i→I).
-
-**`checkVoiceLeading` — breaking change de firma:**
-- Nuevo parámetro `context?: { keySymbol?, chordA?, chordB? }` para checks contextuals.
-- Ruleset añadido: `'species'` (básico; species completo en fase 6).
-- Nuevos issue types: Leading Tone Unresolved, 7th Unresolved, Forbidden Leap, Hidden Fifth/Octave, Direct Fifth/Octave, False Relation, Doubled Leading Tone.
-
-**Tests:** 53 en `tests/unit/harmony-phase2.test.ts`. Total: 157/157 pasando.
-
-**Bundle:** `public/umt.js` reconstruido a 54.8kb (antes 45.7kb).
-
-**Demo:** nueva sección `#analysis` (4b) en `public/example.html` con `analyzeProgression` interactivo.
-
-### 2026-04-19 — Fase 1: acordes diatónicos + características modales
-
-Primera fase del plan `docs/plan-teoria-completa.md` ejecutada.
-
-**Nuevos métodos en `Scale`:**
-- `getDiatonicChords(type)` — triadas o séptimas por grado, apilando terceras diatónicas. Nombres canónicos en 12-TET vía match contra `CHORD_FORMULAS`; etiqueta estructural `Root(0,3,7)` en otros tunings.
-- `getChordOnDegree(degree, type)` — 1-indexed, throw en fuera de rango.
-- `getModalCharacteristics()` — devuelve `{characteristicDegrees, characteristicIntervals, brightness, avoidNotes, parentScaleName, parentModeDegree}`. Brightness vía tabla `MODE_BRIGHTNESS`, avoid notes computados como grados a ½ tono por encima de una nota de la tríada tónica.
-- `getParentScale()` — reconstruye escala padre (p.ej. D dorian → C major) desde `MODE_PARENT_FAMILY`.
-- `getRelativeMode(name)` — rota a otro modo de la misma familia (D dorian → F lydian); null si cross-family.
-
-**Nuevas tablas en `dictionaries.ts`:**
-- `MODAL_DEGREE_QUALITIES` — triadas y séptimas por grado para los 7 modos diatónicos + modos de la familia menor armónica/melódica, frozen.
-- `MODE_PARENT_FAMILY` — mapa de modo → {family, degree, familyModes[]} para los 3 sistemas modales clásicos.
-- `MODE_BRIGHTNESS` — ordenamiento Lydian (+1) … Locrian (-5).
-
-**Tests:** 24 en `scale-diatonic.test.ts` + 38 en `scale-modal.test.ts`. Total: 104/104 pasando.
-
-**Bundle:** `public/umt.js` reconstruido a 45.7kb (antes 38.8kb).
-
-**Demo:** nueva sección `#modal` (2b) en `public/example.html` entre Scales y Chords. API reference ampliada con los 5 métodos nuevos. Playwright demo tests no re-ejecutados — verificación visual pendiente.
-
-### 2026-04-18 — Plan v2: revisión profunda
-
-Revisión del plan inicial. Detectadas 11 lagunas del diagnóstico original que se habían quedado fuera + 22 huecos nuevos (bajo cifrado, forma musical, ragas, maqamat, hexacordos, musica ficta, análisis espectral, Tymoczko OPTIC, Schenker, Messiaen modes 4-7, metric modulation, isorhythm, clave patterns, sustituciones armónicas completas, Coltrane matrix como módulo, chord-scale completeness, polychord parser, etc.). Plan reescrito: 10 fases (antes 6), ~455 tests (antes 205). Decisión: incluir todo, incluso lo previamente descartado (Schenker básico, ragas, Tymoczko). Bumps de versión escalonados: 2.0 tras fase 3, 3.0 tras fase 6, 4.0 tras fase 9.
-
-### 2026-04-18 — Análisis teórico profundo + plan global de expansión
-
-Auditoría de la cobertura de teoría armónica de la librería. Detectadas lagunas estructurales:
-
-- **Modos**: catálogo completo en `dictionaries.ts` pero sin sistema — faltan características modales, brillo, parent scale, avoid notes.
-- **Acordes diatónicos por escala**: ausentes. Laguna más grave — bloquea análisis funcional.
-- **Análisis de progresión**: `analyzeCadence` solo evalúa 2 acordes. No hay análisis de progresión completa (función T/S/D, préstamos, secundarios, modulaciones).
-- **Intercambio modal**: `getBorrowedChords` hardcoded solo mayor↔menor paralelo + Dorian. Faltan 7 modos paralelos + menor armónica/melódica + armónica mayor.
-- **Modulación**: cero lógica de pivot chord, clasificación de modulación, distancia modal.
-- **Progresiones/secuencias preset**: ausentes (ii-V-I, Coltrane changes, rhythm changes, blues 12, Pachelbel...).
-- **Jazz avanzado**: sin UST, sin análisis de slash chords.
-- **Set theory**: falta Forte names, Z-relations, complements.
-- **Dodecafonismo, contrapunto, MOS, Tonnetz, análisis melódico, MusicXML/LilyPond**: ausentes.
-
-Plan global escrito en `docs/plan-teoria-completa.md`. 6 fases, ~205 tests nuevos. Decisión: breaking changes permitidos, bump 2.0.0 al terminar fase 3. Sin implementación en esta sesión — solo diagnóstico + plan.
-
-### 2026-04-18 — CircleOfFifths expansion + vitest
-
-Spec: `docs/superpowers/specs/2026-04-18-circle-of-fifths-expansion-design.md`
-Plan: `docs/superpowers/plans/2026-04-18-circle-of-fifths-expansion.md`
-
-Añadidos 6 métodos nuevos a `circle.ts`: `getPosition`, `navigate`, `getDistance`, `getParallel`, `getNeighbors`, `getRelatedKeys`. Nuevo tipo exportado: `RelatedKey`. Vitest configurado (`npm run test:unit`), 42 tests pasando. Bundle reconstruido a 38.8kb.
-
-### 2026-04-13 — Fixes visuales y audio demo
-
-Bugs corregidos en `public/example.html`:
-
-- **Pentagrama gris:** `body` tiene `text-neutral-100` (blanco); abcjs usa `currentColor` en el SVG → notación invisible sobre fondo blanco. Fix: `color:#000` en los tres divs contenedores (`staff-scales`, `staff-chords`, `staff-abc`) + regla CSS `.abcjs-container { color: #000 }`.
-- **Rhythm audio error:** `triggerAttackRelease` en bucle con tiempos absolutos causaba "Start time must be strictly greater than previous start time". Fix: reescrito con `Tone.Part` + `Tone.Transport`, que gestiona el scheduling correctamente.
-
-### 2026-04-13 — Testing Playwright + fixes demo
-
-32/32 tests pasados. Configuración: `tests/demo.spec.js` + `playwright.config.js` con `webServer` (levanta http-server automáticamente). Comando: `npx playwright test`.
-
-Bugs encontrados y corregidos:
-
-- `example.html` — `@apply` Tailwind no se aplicaba: reemplazado con CSS nativo en `<style>`
-- `example.html` — `scale.stepsPattern` → undefined: corregido a `scale.stepPattern`
-- `scale.ts` — `getNotes()` en tunings no-12-TET llamaba `usesFlats("Step -5")` → crash: añadido guard para solo calcular `pf` en 12-TET
-- `playwright.config.js` — añadido `webServer` para levantar/parar http-server automáticamente
-
-### 2026-04-12 — Migración demo vanilla HTML
-
-Demo migrada de Next.js a un único `public/example.html`. Archivados: `app/`, `components/`, `lib/audio.ts`, configs Next.js → `archive/next-demo/`. `public/example.html` anterior → `archive/example-v0.html`. `package.json` limpiado: eliminadas deps Next/React/lucide.
-
-Secciones implementadas (11 + API Reference):
-1. Tuning Systems — selector + arpeggio Tone.js
-2. Scales & Modes — parseScaleSymbol + abcjs staff
-3. Chords & Voicings — voicings, inversiones, abcjs, Tone.js
-4. Progressions & Voice Leading — parseRomanProgression + smoothTransition
-5. Harmony & Key Analysis — detectChords, analyzeCadence, getSuggestedScales, getNegativeHarmony, Circle SVG
-6. Set Theory & Neo-Riemannian — normalForm, primeForm, intervalVector, PLR
-7. Microtonal & Scala — parseScala + presets Pelog/BP/Werck
-8. Rhythm & Meter — Polyrhythm.euclidean, MusicStream, Tone.MembraneSynth
-9. ABC Notation Export — ABCBridge + abcjs render
-10. Utilities — MIDI↔freq, enarmónicos, nombres de intervalo
-11. API Reference — tablas estáticas de todas las clases y métodos

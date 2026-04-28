@@ -3,7 +3,7 @@ import { RhythmTransform, RhythmAnalysis, Polymeter, MetricModulation, Isorhythm
 import { CLAVE_PATTERNS } from '../../lib/music-theory/clave-patterns';
 
 // ============================================================================
-// 7.1 — RhythmTransform
+// 7.1 - RhythmTransform
 // ============================================================================
 
 describe('RhythmTransform.augmentation', () => {
@@ -57,7 +57,7 @@ describe('RhythmTransform.retrogradeInversion', () => {
 });
 
 // ============================================================================
-// 7.2 — RhythmAnalysis
+// 7.2 - RhythmAnalysis
 // ============================================================================
 
 describe('RhythmAnalysis.detectSyncopation', () => {
@@ -136,7 +136,7 @@ describe('RhythmAnalysis.detectClave', () => {
 });
 
 // ============================================================================
-// 7.3 — Clave pattern presets
+// 7.3 - Clave pattern presets
 // ============================================================================
 
 describe('CLAVE_PATTERNS', () => {
@@ -173,7 +173,7 @@ describe('CLAVE_PATTERNS', () => {
 });
 
 // ============================================================================
-// 7.4 — Polymeter
+// 7.4 - Polymeter
 // ============================================================================
 
 describe('Polymeter', () => {
@@ -203,7 +203,7 @@ describe('Polymeter', () => {
 });
 
 // ============================================================================
-// 7.5 — MetricModulation
+// 7.5 - MetricModulation
 // ============================================================================
 
 describe('MetricModulation.calculate', () => {
@@ -237,7 +237,7 @@ describe('MetricModulation.equivalence', () => {
 });
 
 // ============================================================================
-// 7.6 — Isorhythm
+// 7.6 - Isorhythm
 // ============================================================================
 
 describe('Isorhythm', () => {

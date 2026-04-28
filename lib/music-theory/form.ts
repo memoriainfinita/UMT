@@ -123,7 +123,7 @@ export class FormAnalyzer {
 
   /**
    * Finds repeated sections of at least `minLength` chords.
-   * Returns array of `{ start, length }` — start index of each repeated segment.
+   * Returns array of `{ start, length }` - start index of each repeated segment.
    */
   static detectReprise(chords: Chord[], minLength = 2): { start: number; length: number }[] {
     const results: { start: number; length: number }[] = [];

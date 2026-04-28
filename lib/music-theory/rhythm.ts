@@ -203,7 +203,7 @@ export class MusicStream {
 }
 
 // ============================================================================
-//  Phase 7 — Rhythmic transformations and analysis
+//  Phase 7 - Rhythmic transformations and analysis
 // ============================================================================
 
 /**
@@ -277,7 +277,7 @@ export class RhythmAnalysis {
   }
 
   /**
-   * Detects if the pattern matches the Cinquillo (1+1+2+1+2+1+1 structure — 8 steps, 5 pulses).
+   * Detects if the pattern matches the Cinquillo (1+1+2+1+2+1+1 structure - 8 steps, 5 pulses).
    */
   static detectCinquillo(pattern: number[]): boolean {
     if (pattern.length !== 8) return false;
@@ -331,7 +331,7 @@ export class Polymeter {
 }
 
 /**
- * Metric Modulation — computing tempo relationships between related meters.
+ * Metric Modulation - computing tempo relationships between related meters.
  */
 export class MetricModulation {
   /**

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseScaleSymbol } from '../../lib/music-theory/parser';
 
-describe('Scale.getModalCharacteristics — brightness', () => {
+describe('Scale.getModalCharacteristics - brightness', () => {
   it('Lydian is brightest (+1)', () => {
     expect(parseScaleSymbol('F lydian').getModalCharacteristics().brightness).toBe(1);
   });
@@ -25,7 +25,7 @@ describe('Scale.getModalCharacteristics — brightness', () => {
   });
 });
 
-describe('Scale.getModalCharacteristics — characteristic degrees (vs parallel Ionian)', () => {
+describe('Scale.getModalCharacteristics - characteristic degrees (vs parallel Ionian)', () => {
   it('Ionian has none', () => {
     expect(parseScaleSymbol('C ionian').getModalCharacteristics().characteristicDegrees).toEqual([]);
   });
@@ -56,7 +56,7 @@ describe('Scale.getModalCharacteristics — characteristic degrees (vs parallel 
   });
 });
 
-describe('Scale.getModalCharacteristics — avoid notes', () => {
+describe('Scale.getModalCharacteristics - avoid notes', () => {
   it('Ionian: [4] (4 above 3)', () => {
     expect(parseScaleSymbol('C ionian').getModalCharacteristics().avoidNotes).toEqual([4]);
   });
@@ -80,7 +80,7 @@ describe('Scale.getModalCharacteristics — avoid notes', () => {
   });
 });
 
-describe('Scale.getModalCharacteristics — parent scale', () => {
+describe('Scale.getModalCharacteristics - parent scale', () => {
   it('D dorian → parent major, degree 2', () => {
     const c = parseScaleSymbol('D dorian').getModalCharacteristics();
     expect(c.parentScaleName).toBe('major');

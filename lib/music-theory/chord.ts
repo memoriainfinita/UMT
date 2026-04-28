@@ -2,6 +2,14 @@ import { TuningSystem, EDO } from './tuning';
 import { Note } from './note';
 import { get12TETBaseName, usesFlats, preferFlatsForKey } from './utils';
 
+// m2 (1), m3 (3), m7 (10) are always flat-side intervals in tonal context regardless of key.
+// d5/A4 (6) and m6/A5 (8) are genuinely ambiguous - defer to chord-level preference.
+function intervalPreferFlats(intervalInSteps: number, chordPf: boolean): boolean {
+  const i = ((intervalInSteps % 12) + 12) % 12;
+  if (i === 1 || i === 3 || i === 10) return true;
+  return chordPf;
+}
+
 /**
  * A chord: a root pitch plus a set of intervals defining the chord quality, within a tuning system.
  *
@@ -39,23 +47,23 @@ export class Chord {
   getNotes(): Note[] {
     // Use stored preferFlats if set (populated by parseChordSymbol / NeoRiemannian).
     // Fall back to root-name heuristic for directly constructed Chord instances.
-    let pf: boolean;
+    let chordPf: boolean;
     if (this.preferFlats !== undefined) {
-      pf = this.preferFlats;
+      chordPf = this.preferFlats;
     } else {
       const rootFlatName = new Note(this.tuningSystem, this.rootStep).getName({ preferFlats: true });
-      pf = usesFlats(rootFlatName);
+      chordPf = usesFlats(rootFlatName);
     }
 
-    const createNote = (step: number): Note => {
+    const createNote = (step: number, intervalFromRoot: number): Note => {
       if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
-        return new Note(this.tuningSystem, step, undefined, pf);
+        return new Note(this.tuningSystem, step, undefined, intervalPreferFlats(intervalFromRoot, chordPf));
       }
       return new Note(this.tuningSystem, step);
     };
 
     const notes = this.intervalsInSteps.map(interval =>
-      createNote(this.rootStep + interval)
+      createNote(this.rootStep + interval, interval)
     );
 
     if (this.bassStep !== undefined) {
@@ -63,7 +71,7 @@ export class Chord {
       while (actualBassStep >= this.rootStep) {
         actualBassStep -= this.tuningSystem.octaveSteps;
       }
-      notes.unshift(createNote(actualBassStep));
+      notes.unshift(createNote(actualBassStep, actualBassStep - this.rootStep));
     }
 
     return notes;
@@ -83,7 +91,7 @@ export class Chord {
 
   /**
    * Returns true if the given step (or its pitch class) is a tone of this chord.
-   * Comparison is by pitch class — octave is ignored.
+   * Comparison is by pitch class - octave is ignored.
    */
   contains(step: number): boolean {
     const os = this.tuningSystem.octaveSteps;
@@ -97,7 +105,7 @@ export class Chord {
    */
   transpose(steps: number): Chord {
     const newRoot = this.rootStep + steps;
-    // Re-derive preferFlats for the new root — key signature changes with transposition.
+    // Re-derive preferFlats for the new root - key signature changes with transposition.
     // Use get12TETBaseName for 12-TET (no octave number in the name); fall back to getNoteName.
     let newRootName: string;
     let newPf: boolean;
@@ -147,12 +155,12 @@ export class Chord {
 
   /**
    * Returns a specific voicing of the chord.
-   * - `close` — notes in root position, as compact as possible (default stack).
-   * - `drop2` — second note from the top dropped one octave (requires ≥ 4 voices).
-   * - `drop3` — third note from the top dropped one octave (requires ≥ 4 voices).
-   * - `rootless` — root note omitted (common in jazz piano comping).
-   * - `open` — every other upper voice raised an octave (wider spacing).
-   * - `quartal` — notes stacked by fourths (approximate; 12-TET–optimised).
+   * - `close` - notes in root position, as compact as possible (default stack).
+   * - `drop2` - second note from the top dropped one octave (requires ≥ 4 voices).
+   * - `drop3` - third note from the top dropped one octave (requires ≥ 4 voices).
+   * - `rootless` - root note omitted (common in jazz piano comping).
+   * - `open` - every other upper voice raised an octave (wider spacing).
+   * - `quartal` - notes stacked by fourths (approximate; 12-TET–optimised).
    */
   getVoicing(type: 'close' | 'drop2' | 'drop3' | 'rootless' | 'open' | 'quartal'): Note[] {
     const notes = this.getNotes();

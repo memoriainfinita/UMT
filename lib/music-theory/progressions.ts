@@ -71,7 +71,7 @@ export const PROGRESSIONS: Record<string, ProgressionEntry> = {
   'coltrane-changes': {
     name: 'coltrane-changes',
     romanNumerals: ['Imaj7', 'bIIImaj7', 'bVImaj7', 'Imaj7'],
-    description: "Coltrane changes — tonic substitution by major thirds (tritone sub cycle). Used in Giant Steps.",
+    description: "Coltrane changes - tonic substitution by major thirds (tritone sub cycle). Used in Giant Steps.",
     style: 'jazz',
   },
   'andalusian': {

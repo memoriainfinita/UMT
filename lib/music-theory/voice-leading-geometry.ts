@@ -13,15 +13,15 @@ import { Chord } from './chord';
 import { Note } from './note';
 
 export interface OPTICResult {
-  /** O: octave equivalence — pitch classes only */
+  /** O: octave equivalence - pitch classes only */
   O: number[];
   /** P: permutation-normal form (sorted) */
   P: number[];
-  /** T: transposition — zero-centred (subtract min) */
+  /** T: transposition - zero-centred (subtract min) */
   T: number[];
-  /** I: inversion equivalence — prime form */
+  /** I: inversion equivalence - prime form */
   I: number[];
-  /** C: cardinality — number of distinct pitch classes */
+  /** C: cardinality - number of distinct pitch classes */
   C: number;
 }
 
@@ -42,7 +42,7 @@ export function OPTIC(pcs: number[]): OPTICResult {
   // T: transposed so first = 0
   const T = P.map(p => (p - P[0] + oct) % oct);
 
-  // I: inversion equivalence (prime form — choose more compact of T and its inversion)
+  // I: inversion equivalence (prime form - choose more compact of T and its inversion)
   const inv = T.map(p => (oct - p) % oct).sort((a, b) => a - b);
   const invZeroed = inv.map(p => (p - inv[0] + oct) % oct);
   let I: number[] = T;

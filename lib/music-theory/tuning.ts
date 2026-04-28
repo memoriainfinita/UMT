@@ -51,7 +51,7 @@ export abstract class TuningSystem {
 }
 
 /**
- * Equal Division of the Octave — divides the octave into `divisions` equal steps.
+ * Equal Division of the Octave - divides the octave into `divisions` equal steps.
  * Examples: 12-TET (standard), 24-TET (quarter-tone), 31-TET, 53-TET.
  */
 export class EDO extends TuningSystem {
@@ -94,7 +94,7 @@ export class EDO extends TuningSystem {
 }
 
 /**
- * Just Intonation — pitch classes defined by exact frequency ratios within one octave.
+ * Just Intonation - pitch classes defined by exact frequency ratios within one octave.
  * The octave (2:1) is implied and not included in the ratios array.
  *
  * Example: 5-limit JI major scale
@@ -163,7 +163,7 @@ export class JustIntonation extends TuningSystem {
 }
 
 /**
- * Cent-based tuning — pitch classes defined by exact cent offsets within one octave.
+ * Cent-based tuning - pitch classes defined by exact cent offsets within one octave.
  * Intended for historical temperaments (Werckmeister, Kirnberger, meantone, etc.)
  * and any tuning system defined by cent deviations from equal temperament.
  *
@@ -215,7 +215,7 @@ export class CentTuning extends TuningSystem {
 }
 
 /**
- * Non-octave tuning — the period of repetition is not the octave (2:1) but an arbitrary ratio.
+ * Non-octave tuning - the period of repetition is not the octave (2:1) but an arbitrary ratio.
  * The canonical example is Bohlen-Pierce, which repeats at the tritave (3:1) with 13 equal steps.
  *
  * Example: Bohlen-Pierce
@@ -252,7 +252,7 @@ export class NonOctaveTuning extends TuningSystem {
     return this.baseFrequency * this.getInterval(steps).ratio;
   }
 
-  /** Steps per period (not an octave — the period is `periodRatio : 1`). */
+  /** Steps per period (not an octave - the period is `periodRatio : 1`). */
   get octaveSteps(): number {
     return this.stepsPerPeriod;
   }
@@ -269,5 +269,5 @@ export class NonOctaveTuning extends TuningSystem {
   }
 }
 
-/** Standard 12-TET singleton — used as the default tuning throughout the library. */
+/** Standard 12-TET singleton - used as the default tuning throughout the library. */
 export const TET12 = new EDO(12);
