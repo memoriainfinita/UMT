@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build:umt": "npx -y esbuild lib/music-theory/umt.ts --bundle --minify --sourcemap --format=iife --global-name=UMT --outfile=public/umt.js",
+    "build:umt": "npx -y esbuild lib/music-theory/umt.ts --bundle --minify --sourcemap --format=iife --global-name=UMT --outfile=docs/umt.js",
     "lint": "eslint .",
     "test:unit": "vitest run"
   },
