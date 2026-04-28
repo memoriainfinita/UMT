@@ -34,12 +34,17 @@
 
 ## TODO
 
-- [ ] Primer commit y push al repo GitHub
-- [ ] Configurar GitHub Pages (source: `public/`)
+- [x] Primer commit y push al repo GitHub
+- [ ] Configurar GitHub Pages (source: `public/`, branch: `main`)
 - [ ] Probar demo en producción (https://memoriainfinita.github.io/UMT)
 - [ ] Crear Wiki en GitHub con docs de la API
 
 ## History
+
+### 2026-04-28 - Publicación en GitHub
+
+Repo publicado en https://github.com/memoriainfinita/UMT. Rama `main`. Commits: 1604b0d, 959c990, 9484b6f, f625177, a0ff499.
+Eliminados del repo público: `archive/`, `docs/`, `.env.example`, `metadata.json`, `.eslintrc.json`, `playwright.config.js`, `tests/demo.spec.js`. Todos archivados localmente.
 
 ### 2026-04-28 - Rediseño web + README + limpieza repo
 
