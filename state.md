@@ -12,7 +12,7 @@
 - Demo: https://memoriainfinita.github.io/UMT
 - CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/public/umt.js
 - Status: listo para primer commit y publicación.
-- Deploy: build local (`npm run build:umt`) + commit `public/umt.js` + push. GitHub Pages sirve desde `public/`.
+- Deploy: build local (`npm run build:umt`) + commit `docs/umt.js` + push. GitHub Pages sirve desde `docs/` (branch `main`).
 
 ## Dependencies
 
@@ -35,8 +35,8 @@
 ## TODO
 
 - [x] Primer commit y push al repo GitHub
-- [ ] Configurar GitHub Pages (source: `public/`, branch: `main`)
-- [ ] Probar demo en producción (https://memoriainfinita.github.io/UMT)
+- [x] Configurar GitHub Pages (branch: `main`, folder: `/docs`)
+- [x] Demo en producción verificada: https://memoriainfinita.github.io/UMT
 - [ ] Crear Wiki en GitHub con docs de la API
 
 ## History
