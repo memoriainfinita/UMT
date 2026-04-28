@@ -6,8 +6,8 @@ export type Hertz = number;
 
 /**
  * A frequency ratio used to define intervals in just intonation and tuning systems.
- * - `[number, number]` — integer fraction, e.g. `[3, 2]` for a perfect fifth (3/2)
- * - `number` — decimal ratio, e.g. `1.5` for a perfect fifth
+ * - `[number, number]` - integer fraction, e.g. `[3, 2]` for a perfect fifth (3/2)
+ * - `number` - decimal ratio, e.g. `1.5` for a perfect fifth
  * Both forms are accepted by `Interval.fromRatio()`.
  */
 export type Ratio = [number, number] | number;

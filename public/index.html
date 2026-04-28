@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universal Music Theory Library</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/abcjs@6.6.2/dist/abcjs-basic-min.js"></script>
+  <script src="./umt.js"></script>
+  <style>
+    .out {
+      font-family: ui-monospace, monospace;
+      font-size: 0.8rem;
+      color: #34d399;
+      background: #0a0a0a;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #1f1f1f;
+      min-height: 5rem;
+      white-space: pre;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+    .inp {
+      background: #1c1c1c;
+      border: 1px solid #333;
+      color: #f5f5f5;
+      border-radius: 0.375rem;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.875rem;
+      width: 100%;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .inp:focus { border-color: #6366f1; }
+    .sel {
+      background: #1c1c1c;
+      border: 1px solid #333;
+      color: #f5f5f5;
+      border-radius: 0.375rem;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.875rem;
+      outline: none;
+      width: 100%;
+    }
+    .btn {
+      background: #4f46e5;
+      color: #fff;
+      padding: 0.45rem 1.1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: #6366f1; }
+    .btn-sm {
+      background: #1c1c1c;
+      color: #a3a3a3;
+      padding: 0.4rem 0.85rem;
+      border-radius: 0.375rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border: 1px solid #333;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .btn-sm:hover { background: #2a2a2a; color: #e5e5e5; }
+    .btn-tab {
+      background: transparent;
+      color: #525252;
+      padding: 0.35rem 0.85rem;
+      border-radius: 0.375rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .btn-tab.active { background: #1c1c1c; color: #e5e5e5; border-color: #333; }
+    .sec { background: #111; border: 1px solid #1f1f1f; border-radius: 0.75rem; padding: 1.5rem; }
+    .sec-api { color: #404040; font-size: 0.72rem; font-family: ui-monospace, monospace; margin-bottom: 1rem; }
+    label { color: #737373; font-size: 0.78rem; display: block; margin-bottom: 0.2rem; }
+    .abcjs-container { color: #000; }
+    .abcjs-container svg { max-width: 100%; }
+    .hidden { display: none !important; }
+    .pill { font-size: 0.68rem; background: #161616; color: #737373; border: 1px solid #222; padding: 0.2rem 0.6rem; border-radius: 9999px; }
+    .dot { color: #2a2a2a; margin: 0 0.3rem; }
+  </style>
+</head>
+<body class="bg-neutral-950 text-neutral-100 font-sans antialiased">
+
+<!-- NAV -->
+<nav class="sticky top-0 z-50 bg-neutral-950/95 backdrop-blur border-b border-neutral-900 px-6 py-3">
+  <div class="max-w-4xl mx-auto flex items-center gap-6 overflow-x-auto">
+    <span class="font-bold text-white shrink-0 text-sm tracking-tight">UMT</span>
+    <div class="flex gap-5 text-xs text-neutral-500 flex-nowrap">
+      <a href="#harmony"   class="hover:text-white transition-colors shrink-0">Harmony</a>
+      <a href="#tuning"    class="hover:text-white transition-colors shrink-0">Tuning</a>
+      <a href="#modal"     class="hover:text-white transition-colors shrink-0">Modal</a>
+      <a href="#settheory" class="hover:text-white transition-colors shrink-0">Set Theory</a>
+      <a href="#world"     class="hover:text-white transition-colors shrink-0">World Music</a>
+      <a href="#rhythm"    class="hover:text-white transition-colors shrink-0">Rhythm</a>
+      <a href="#notation"  class="hover:text-white transition-colors shrink-0">Notation</a>
+    </div>
+  </div>
+</nav>
+
+<main class="max-w-4xl mx-auto px-6 py-14 space-y-8">
+
+  <!-- HERO -->
+  <section class="pb-4">
+    <h1 class="text-4xl font-bold text-white mb-3 tracking-tight">Universal Music Theory Library</h1>
+    <p class="text-neutral-500 text-base leading-relaxed mb-5 max-w-2xl">
+      A TypeScript library for music theory computation. Works across 12-TET, microtonal tunings,
+      world music traditions, and post-tonal systems. All from a single zero-dependency bundle.
+    </p>
+    <div class="flex flex-wrap gap-2 mb-5">
+      <span class="pill">104 kb bundle</span>
+      <span class="pill">zero dependencies</span>
+      <span class="pill">40+ modules</span>
+      <span class="pill">524 tests</span>
+    </div>
+    <p class="text-neutral-700 text-xs mb-6 leading-loose">
+      12-TET <span class="dot">·</span>
+      Microtonal <span class="dot">·</span>
+      Modal Analysis <span class="dot">·</span>
+      Harmony <span class="dot">·</span>
+      Voice Leading <span class="dot">·</span>
+      Neo-Riemannian <span class="dot">·</span>
+      Set Theory <span class="dot">·</span>
+      Twelve-Tone <span class="dot">·</span>
+      Counterpoint <span class="dot">·</span>
+      World Music <span class="dot">·</span>
+      Rhythm <span class="dot">·</span>
+      Spectral <span class="dot">·</span>
+      Tonnetz <span class="dot">·</span>
+      ABC / LilyPond / MusicXML
+    </p>
+    <div class="flex gap-3">
+      <a href="https://github.com/memoriainfinita/UMT" class="btn" style="text-decoration:none">GitHub</a>
+      <a href="https://github.com/memoriainfinita/UMT/wiki" class="btn-sm" style="text-decoration:none;padding:0.45rem 1.1rem">Wiki</a>
+    </div>
+  </section>
+
+  <!-- 1. HARMONY -->
+  <section id="harmony" class="sec">
+    <h2 class="text-base font-semibold text-white mb-1">Harmony Explorer</h2>
+    <p class="sec-api">parseChordSymbol · Harmony.getSuggestedScales · getSubstitutions · getTritoneSubstitution · Harmony.analyzeCadence</p>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+      <div class="sm:col-span-2">
+        <label>Chord symbol</label>
+        <input id="h-chord" value="Cmaj9" class="inp" onchange="runHarmony()">
+      </div>
+      <div>
+        <label>Key context</label>
+        <input id="h-key" value="C major" class="inp" onchange="runHarmony()">
+      </div>
+    </div>
+    <div class="flex gap-2 mb-4">
+      <button onclick="runHarmony()" class="btn">Analyze</button>
+      <button onclick="playChordBtn('h-chord')" class="btn-sm">Play chord</button>
+    </div>
+    <pre id="out-harmony" class="out"></pre>
+  </section>
+
+  <!-- 2. TUNING -->
+  <section id="tuning" class="sec">
+    <h2 class="text-base font-semibold text-white mb-1">Universal Tuning</h2>
+    <p class="sec-api">EDO · JustIntonation · CentTuning · parseScaleSymbol(symbol, tuning) · tuning.getInterval(steps).cents</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+      <div>
+        <label>Scale</label>
+        <input id="t-scale" value="C major" class="inp" onchange="runTuning()">
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button onclick="runTuning()" class="btn">Compare tunings</button>
+      <button onclick="playTuningBtn(UMT.TET12)" class="btn-sm">Play 12-TET</button>
+      <button onclick="playTuningBtn(UMT.PtolemaicJI)" class="btn-sm">Play JI</button>
+      <button onclick="playTuningBtn(UMT.WerckmeisterIII)" class="btn-sm">Play Werckmeister</button>
+    </div>
+    <pre id="out-tuning" class="out"></pre>
+  </section>
+
+  <!-- 3. MODAL -->
+  <section id="modal" class="sec">
+    <h2 class="text-base font-semibold text-white mb-1">Scales & Modal Analysis</h2>
+    <p class="sec-api">getDiatonicChords · getModalCharacteristics · getParentScale · getRelativeMode · brightness</p>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+      <div class="sm:col-span-2">
+        <label>Scale symbol</label>
+        <input id="m-scale" value="D dorian" class="inp" onchange="runModal()">
+      </div>
+      <div>
+        <label>Chord type</label>
+        <select id="m-type" class="sel" onchange="runModal()">
+          <option value="triad">Triads</option>
+          <option value="seventh">Seventh chords</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex gap-2 mb-4">
+      <button onclick="runModal()" class="btn">Analyze</button>
+      <button onclick="playScaleBtn('m-scale')" class="btn-sm">Play scale</button>
+    </div>
+    <pre id="out-modal" class="out"></pre>
+  </section>
+
+  <!-- 4. SET THEORY & TWELVE-TONE -->
+  <section id="settheory" class="sec">
+    <h2 class="text-base font-semibold text-white mb-1">Set Theory & Twelve-Tone</h2>
+    <p class="sec-api">SetTheory.normalForm · SetTheory.getForteNumber · SetTheory.getZRelated · ToneRow · row.getMatrix()</p>
+    <div class="flex gap-1 mb-4" id="st-tabs">
+      <button class="btn-tab active" onclick="stTab('set')">Pitch Class Sets</button>
+      <button class="btn-tab"        onclick="stTab('row')">Twelve-Tone Row</button>
+    </div>
+
+    <div id="st-set">
+      <div class="mb-3">
+        <label>Pitch classes (space or comma separated, C=0, range 0-11)</label>
+        <input id="st-pcs" value="0 3 6 9" class="inp" onchange="runSetTheory()">
+      </div>
+      <div class="flex gap-2 mb-4">
+        <button onclick="runSetTheory()" class="btn">Analyze set</button>
+        <button onclick="playPCSBtn()" class="btn-sm">Play</button>
+      </div>
+      <pre id="out-set" class="out"></pre>
+    </div>
+
+    <div id="st-row" class="hidden">
+      <div class="mb-3">
+        <label>Tone row (12 pitch classes 0-11, space separated)</label>
+        <input id="st-row-in" value="0 11 3 4 8 7 9 5 6 1 2 10" class="inp" onchange="runToneRow()">
+      </div>
+      <div class="flex gap-2 mb-4">
+        <button onclick="runToneRow()" class="btn">Generate matrix</button>
+      </div>
+      <pre id="out-row" class="out" style="font-size:0.7rem;line-height:1.5"></pre>
+    </div>
+  </section>
+
+  <!-- 5. WORLD MUSIC -->
+  <section id="world" class="sec">
+    <h2 class="text-base font-semibold text-white mb-1">World Music</h2>
+    <p class="sec-api">RAGAS (10 Hindustani) · MAQAMAT (8 maqamat, 24-EDO quarter-tones) · CLAVE_PATTERNS (10 rhythmic presets)</p>
+    <div class="flex gap-1 mb-4" id="wm-tabs">
+      <button class="btn-tab active" onclick="wmTab('raga')">Ragas</button>
+      <button class="btn-tab"        onclick="wmTab('maqam')">Maqamat</button>
+      <button class="btn-tab"        onclick="wmTab('clave')">Clave</button>
+    </div>
+
+    <div id="wm-raga">
+      <div class="mb-3">
+        <label>Raga</label>
+        <select id="wm-raga-sel" class="sel" onchange="runRaga()"></select>
+      </div>
+      <div class="flex gap-2 mb-4">
+        <button onclick="runRaga()" class="btn">Info</button>
+        <button onclick="playRagaBtn()" class="btn-sm">Play aroha</button>
+      </div>
+      <pre id="out-raga" class="out"></pre>
+    </div>
+
+    <div id="wm-maqam" class="hidden">
+      <div class="mb-3">
+        <label>Maqam</label>
+        <select id="wm-maqam-sel" class="sel" onchange="runMaqam()"></select>
+      </div>
+      <div class="flex gap-2 mb-4">
+        <button onclick="runMaqam()" class="btn">Info</button>
+        <button onclick="playMaqamBtn()" class="btn-sm">Play (24-EDO)</button>
+      </div>
+      <pre id="out-maqam" class="out"></pre>
+    </div>
+
+    <div id="wm-clave" class="hidden">
+      <div class="mb-3">
+        <label>Clave pattern</label>
+        <select id="wm-clave-sel" class="sel" onchange="runClave()"></select>
+      </div>
+      <div class="flex gap-2 mb-4">
+        <button onclick="runClave()" class="btn">Show</button>
+        <button onclick="playClaveBtn()" class="btn-sm">Play</button>
+        <button onclick="stopTransport()" class="btn-sm">Stop</button>
+      </div>
+      <pre id="out-clave" class="out"></pre>
+    </div>
+  </section>
+
+  <!-- 6. RHYTHM -->
+  <section id="rhythm" class="sec">
+    <h2 class="text-base font-semibold text-white mb-1">Rhythm</h2>
+    <p class="sec-api">Polyrhythm.euclidean · RhythmAnalysis.detectClave · RhythmAnalysis.detectSyncopation · MetricModulation</p>
+    <div class="grid grid-cols-3 gap-3 mb-3">
+      <div>
+        <label>Pulses (k)</label>
+        <input id="r-k" type="number" value="5" min="1" max="24" class="inp" onchange="runRhythm()">
+      </div>
+      <div>
+        <label>Steps (n)</label>
+        <input id="r-n" type="number" value="8" min="2" max="32" class="inp" onchange="runRhythm()">
+      </div>
+      <div>
+        <label>BPM</label>
+        <input id="r-bpm" type="number" value="120" min="40" max="240" class="inp">
+      </div>
+    </div>
+    <div class="flex gap-2 mb-4">
+      <button onclick="runRhythm()" class="btn">Generate</button>
+      <button onclick="playRhythmBtn()" class="btn-sm">Play</button>
+      <button onclick="stopTransport()" class="btn-sm">Stop</button>
+    </div>
+    <pre id="out-rhythm" class="out"></pre>
+  </section>
+
+  <!-- 7. NOTATION -->
+  <section id="notation" class="sec">
+    <h2 class="text-base font-semibold text-white mb-1">Notation Export</h2>
+    <p class="sec-api">ABCBridge.scaleToABC · ABCBridge.wrapInHeaders · scaleToLilyPond · chordToLilyPond · scaleToMusicXML · chordToMusicXML</p>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+      <div class="sm:col-span-2">
+        <label>Scale or chord symbol</label>
+        <input id="n-input" value="C major" class="inp" onchange="runNotation()">
+      </div>
+      <div>
+        <label>Type</label>
+        <select id="n-type" class="sel" onchange="runNotation()">
+          <option value="scale">Scale</option>
+          <option value="chord">Chord</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="runNotation()" class="btn mb-4">Export all formats</button>
+    <div id="staff-notation" class="rounded-md p-3 mb-4" style="background:#fff;color:#000;min-height:2rem"></div>
+    <pre id="out-notation" class="out"></pre>
+  </section>
+
+</main>
+
+<footer class="border-t border-neutral-900 mt-8 py-8 text-center text-neutral-700 text-xs">
+  Universal Music Theory Library &nbsp;·&nbsp; TypeScript &nbsp;·&nbsp; MIT License &nbsp;·&nbsp;
+  <a href="https://github.com/memoriainfinita/UMT" class="hover:text-neutral-500 transition-colors">GitHub</a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/memoriainfinita/UMT/wiki" class="hover:text-neutral-500 transition-colors">Wiki</a>
+</footer>
+
+<script>
+
+const $ = id => document.getElementById(id);
+const out = (id, text) => $(id).textContent = text;
+const outErr = (id, e) => $(id).textContent = 'Error: ' + (e?.message || String(e));
+
+// ── Audio helpers ─────────────────────────────────────────────────────────────
+
+async function playFreqs(freqs, mode = 'chord') {
+  if (!freqs?.length) return;
+  await Tone.start();
+  if (mode === 'arpeggio') {
+    const synth = new Tone.Synth({
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.02, decay: 0.1, sustain: 0.5, release: 0.5 }
+    }).toDestination();
+    const dur = 0.28;
+    const now = Tone.now();
+    freqs.forEach((f, i) => synth.triggerAttackRelease(f, dur, now + i * dur));
+    setTimeout(() => synth.dispose(), (freqs.length + 2) * dur * 1000);
+  } else {
+    const poly = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.04, decay: 0.2, sustain: 0.6, release: 1.5 }
+    }).toDestination();
+    poly.triggerAttackRelease(freqs, '2n');
+    setTimeout(() => poly.dispose(), 4000);
+  }
+}
+
+async function playChordBtn(inputId) {
+  try {
+    const chord = UMT.parseChordSymbol($(inputId).value.trim());
+    await playFreqs(chord.getNotes().map(n => n.frequency), 'chord');
+  } catch(e) { console.error(e); }
+}
+
+async function playScaleBtn(inputId) {
+  try {
+    const scale = UMT.parseScaleSymbol($(inputId).value.trim());
+    await playFreqs(scale.getNotes().map(n => n.frequency), 'arpeggio');
+  } catch(e) { console.error(e); }
+}
+
+async function playTuningBtn(tuning) {
+  try {
+    const scale = UMT.parseScaleSymbol($('t-scale').value.trim(), tuning);
+    await playFreqs(scale.getNotes().map(n => n.frequency), 'arpeggio');
+  } catch(e) { console.error(e); }
+}
+
+// ── 1. Harmony ────────────────────────────────────────────────────────────────
+
+function runHarmony() {
+  try {
+    const sym = $('h-chord').value.trim();
+    const key = $('h-key').value.trim();
+    const chord = UMT.parseChordSymbol(sym);
+    const notes = chord.getNotes().map(n => n.name.replace(/\d+/, ''));
+    const scales = UMT.Harmony.getSuggestedScales(chord).slice(0, 5);
+    const subs   = UMT.getSubstitutions(chord, key);
+    const tri    = chord.getTritoneSubstitution();
+
+    let t = `${chord.name}  →  ${notes.join(' – ')}\n`;
+    t += `Intervals: [${chord.intervalsInSteps.join(', ')}] semitones\n\n`;
+
+    t += `Suggested scales:\n`;
+    scales.forEach(s => { t += `  ${s.scale}${s.hint ? `  (${s.hint})` : ''}\n`; });
+
+    if (tri) t += `\nTritone substitution: ${tri.name}\n`;
+
+    if (subs.length) {
+      t += `\nSubstitutions:\n`;
+      subs.forEach(s => { t += `  ${s.chord.name.padEnd(12)} [${s.type}]\n`; });
+    }
+
+    out('out-harmony', t);
+  } catch(e) { outErr('out-harmony', e); }
+}
+
+// ── 2. Tuning ─────────────────────────────────────────────────────────────────
+
+function runTuning() {
+  try {
+    const sym = $('t-scale').value.trim();
+    const TUNINGS = [
+      { label: '12-TET',           obj: UMT.TET12 },
+      { label: 'Ptolemaic JI',     obj: UMT.PtolemaicJI },
+      { label: 'Werckmeister III', obj: UMT.WerckmeisterIII },
+    ];
+
+    const ref      = UMT.parseScaleSymbol(sym, UMT.TET12);
+    const refNotes = ref.getNotes();
+    const refCents = refNotes.map(n => UMT.TET12.getInterval(n.stepsFromBase - ref.rootStep).cents);
+
+    const C = 9;
+    let t = `${sym} -- three tuning systems compared\n\n`;
+    t += ''.padEnd(22) + refNotes.map(n => n.name.replace(/\d+/, '').padEnd(C)).join('') + '\n';
+    t += '─'.repeat(22 + refNotes.length * C) + '\n';
+
+    TUNINGS.forEach(({ label, obj }, ti) => {
+      try {
+        const scale = UMT.parseScaleSymbol(sym, obj);
+        const notes = scale.getNotes();
+        if (ti === 0) {
+          t += `${label} (Hz)`.padEnd(22);
+          t += notes.map(n => n.frequency.toFixed(1).padEnd(C)).join('') + '\n';
+          t += `${label} (¢ from root)`.padEnd(22);
+          t += refCents.map(c => Math.round(c).toString().padEnd(C)).join('') + '\n\n';
+        } else {
+          t += `${label} (Δ¢)`.padEnd(22);
+          t += notes.map((n, i) => {
+            const cents = obj.getInterval(n.stepsFromBase - scale.rootStep).cents;
+            const dev   = cents - refCents[i];
+            return `${dev >= 0 ? '+' : ''}${dev.toFixed(1)}`.padEnd(C);
+          }).join('') + '\n';
+        }
+      } catch {
+        t += `${label.padEnd(22)} (not compatible with this scale)\n`;
+      }
+    });
+
+    t += '\n(Δ¢ = deviation in cents from equal temperament)';
+    out('out-tuning', t);
+  } catch(e) { outErr('out-tuning', e); }
+}
+
+// ── 3. Modal ──────────────────────────────────────────────────────────────────
+
+function runModal() {
+  try {
+    const sym   = $('m-scale').value.trim();
+    const type  = $('m-type').value;
+    const scale = UMT.parseScaleSymbol(sym);
+    const notes = scale.getNotes().map(n => n.name.replace(/\d+/, ''));
+    const chords = scale.getDiatonicChords(type);
+    const modal  = scale.getModalCharacteristics();
+    const parent = scale.getParentScale();
+
+    const ROMAN = ['I','II','III','IV','V','VI','VII'];
+    let t = `${scale.name}\nNotes: ${notes.join(' – ')}\n\n`;
+
+    t += `Diatonic ${type}s:\n`;
+    chords.forEach((c, i) => {
+      const mark = modal?.characteristicDegrees?.includes(i + 1) ? '  ← characteristic' : '';
+      t += `  ${ROMAN[i].padEnd(5)} ${c.name}${mark}\n`;
+    });
+
+    if (modal) {
+      const b = modal.brightness;
+      const bStr = b > 0 ? `+${b} (bright)` : b < 0 ? `${b} (dark)` : `0 (neutral)`;
+      t += `\nBrightness: ${bStr}\n`;
+      if (modal.avoidNotes?.length)           t += `Avoid notes: ${modal.avoidNotes.join(', ')}\n`;
+      if (modal.characteristicIntervals?.length) t += `Characteristic intervals: ${modal.characteristicIntervals.join(', ')}\n`;
+      if (parent)                             t += `Parent scale: ${parent.name}\n`;
+      if (modal.parentModeDegree)             t += `Degree in parent: ${modal.parentModeDegree}\n`;
+    }
+
+    out('out-modal', t);
+  } catch(e) { outErr('out-modal', e); }
+}
+
+// ── 4. Set Theory & Twelve-Tone ───────────────────────────────────────────────
+
+function stTab(tab) {
+  ['set', 'row'].forEach(t => $(`st-${t}`).classList.toggle('hidden', t !== tab));
+  document.querySelectorAll('#st-tabs .btn-tab').forEach((btn, i) => {
+    btn.classList.toggle('active', ['set', 'row'][i] === tab);
+  });
+  if (tab === 'set') runSetTheory(); else runToneRow();
+}
+
+function runSetTheory() {
+  try {
+    const pcs    = $('st-pcs').value.trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+    const normal = UMT.SetTheory.normalForm(pcs);
+    const prime  = UMT.SetTheory.primeForm(pcs);
+    const forte  = UMT.SetTheory.getForteNumber(pcs);
+    const iv     = UMT.SetTheory.intervalVector(pcs);
+    const comp   = UMT.SetTheory.getComplement(pcs);
+    const zr     = UMT.SetTheory.getZRelated(pcs);
+
+    let t = `Set: {${pcs.join(', ')}}\n\n`;
+    t += `Normal form:     [${normal.join(', ')}]\n`;
+    t += `Prime form:      [${prime.join(', ')}]\n`;
+    t += `Forte number:    ${forte || 'n/a'}\n`;
+    t += `Interval vector: <${iv.join('')}>\n`;
+    t += `Complement:      {${comp.join(', ')}}\n`;
+    t += `Z-related:       ${zr?.length ? zr.map(z => '{'+z.join(',')+'}').join(', ') : '(none)'}\n`;
+    t += `\nOperations:\n`;
+    t += `  T3:  {${UMT.SetTheory.Tn(pcs, 3).join(', ')}}\n`;
+    t += `  T0I: {${UMT.SetTheory.TnI(pcs, 0).join(', ')}}\n`;
+
+    out('out-set', t);
+  } catch(e) { outErr('out-set', e); }
+}
+
+async function playPCSBtn() {
+  try {
+    const pcs   = $('st-pcs').value.trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+    const C4    = 261.63;
+    const freqs = pcs.map(pc => C4 * Math.pow(2, pc / 12));
+    await playFreqs(freqs, 'chord');
+  } catch(e) { console.error(e); }
+}
+
+function runToneRow() {
+  try {
+    const pcs = $('st-row-in').value.trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+    if (pcs.length !== 12) { out('out-row', 'Need exactly 12 pitch classes (0–11).'); return; }
+
+    const row    = new UMT.ToneRow(pcs);
+    const matrix = row.getMatrix();
+    const NAMES  = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+    const n2s    = p => NAMES[((p % 12) + 12) % 12];
+
+    const [h1, h2] = row.getHexachords();
+    let t = `P0: ${row.P(0).map(n2s).join('  ')}\n`;
+    t += `I0: ${row.I(0).map(n2s).join('  ')}\n`;
+    t += `R:  ${row.R().map(n2s).join('  ')}\n`;
+    t += `RI: ${row.RI(0).map(n2s).join('  ')}\n\n`;
+    t += `All-interval: ${row.isAllInterval()}  ·  Combinatorial: ${row.isCombinatorial() ?? 'no'}\n`;
+    t += `Hexachords: [${h1.join(',')}] / [${h2.join(',')}]\n\n`;
+
+    // 12×12 matrix
+    t += '      ' + matrix[0].map(p => n2s(p).padEnd(4)).join('') + '\n';
+    t += '      ' + '────'.repeat(12) + '\n';
+    matrix.forEach((rowArr, i) => {
+      t += `P${String(i).padStart(2)}  ` + rowArr.map(p => n2s(p).padEnd(4)).join('') + '\n';
+    });
+
+    out('out-row', t);
+  } catch(e) { outErr('out-row', e); }
+}
+
+// ── 5. World Music ────────────────────────────────────────────────────────────
+
+function wmTab(tab) {
+  ['raga', 'maqam', 'clave'].forEach(t => $(`wm-${t}`).classList.toggle('hidden', t !== tab));
+  document.querySelectorAll('#wm-tabs .btn-tab').forEach((btn, i) => {
+    btn.classList.toggle('active', ['raga', 'maqam', 'clave'][i] === tab);
+  });
+}
+
+function initWorldMusic() {
+  Object.entries(UMT.RAGAS).forEach(([id, raga]) => {
+    const o = document.createElement('option');
+    o.value = id;
+    o.textContent = `${raga.name} (${raga.thaat} thaat)`;
+    $('wm-raga-sel').appendChild(o);
+  });
+  Object.entries(UMT.MAQAMAT).forEach(([id, maqam]) => {
+    const o = document.createElement('option');
+    o.value = id;
+    o.textContent = maqam.name;
+    $('wm-maqam-sel').appendChild(o);
+  });
+  Object.entries(UMT.CLAVE_PATTERNS).forEach(([id, pat]) => {
+    const o = document.createElement('option');
+    o.value = id;
+    o.textContent = pat.name;
+    $('wm-clave-sel').appendChild(o);
+  });
+  runRaga();
+}
+
+function runRaga() {
+  try {
+    const id   = $('wm-raga-sel').value;
+    const raga = UMT.RAGAS[id];
+    if (!raga) return;
+    let t = `${raga.name}  (${raga.thaat} thaat)\n\n`;
+    t += `Aroha (ascending):    ${raga.aroha.join(' – ')} semitones\n`;
+    t += `Avaroha (descending): ${raga.avaroha.join(' – ')} semitones\n\n`;
+    t += `Vadi (primary note):    ${raga.vadi}\n`;
+    t += `Samvadi (secondary):    ${raga.samvadi}\n`;
+    if (raga.time) t += `Time of performance:    ${raga.time}\n`;
+    t += `\n${raga.description}`;
+    out('out-raga', t);
+  } catch(e) { outErr('out-raga', e); }
+}
+
+async function playRagaBtn() {
+  try {
+    const raga = UMT.RAGAS[$('wm-raga-sel').value];
+    if (!raga) return;
+    const C4    = 261.63;
+    const freqs = raga.aroha.map(st => C4 * Math.pow(2, st / 12));
+    await playFreqs(freqs, 'arpeggio');
+  } catch(e) { console.error(e); }
+}
+
+function runMaqam() {
+  try {
+    const id    = $('wm-maqam-sel').value;
+    const maqam = UMT.MAQAMAT[id];
+    if (!maqam) return;
+    let t = `${maqam.name}\n\n`;
+    t += `Quarter-tone intervals: ${maqam.notes.join(' – ')}\n`;
+    if (maqam.ajnas?.length) {
+      t += `\nAjnas (tetrachords):\n`;
+      maqam.ajnas.forEach(j => { t += `  ${j.name}\n`; });
+    }
+    if (maqam.gharsa) t += `\nCharacter: ${maqam.gharsa}`;
+    out('out-maqam', t);
+  } catch(e) { outErr('out-maqam', e); }
+}
+
+async function playMaqamBtn() {
+  try {
+    const maqam = UMT.MAQAMAT[$('wm-maqam-sel').value];
+    if (!maqam) return;
+    const C4    = 261.63;
+    // Quarter-tone steps → 24-EDO: one quarter-tone = 50 cents = 2^(1/24)
+    const freqs = maqam.notes.map(qt => C4 * Math.pow(2, qt / 24));
+    await playFreqs(freqs, 'arpeggio');
+  } catch(e) { console.error(e); }
+}
+
+function runClave() {
+  try {
+    const id    = $('wm-clave-sel').value;
+    const clave = UMT.CLAVE_PATTERNS[id];
+    if (!clave) return;
+    const vis    = clave.steps.map(s => s ? '█' : '·').join(' ');
+    const binary = clave.steps.map(s => s ? '1' : '0').join('');
+    let t = `${clave.name}\n\n`;
+    t += `${vis}\n\n`;
+    t += `Steps: ${clave.steps.length}  ·  Pulses: ${clave.steps.filter(Boolean).length}\n`;
+    t += `Binary: ${binary}\n\n`;
+    t += clave.description;
+    out('out-clave', t);
+  } catch(e) { outErr('out-clave', e); }
+}
+
+let _rhythmPart = null, _rhythmSynths = [];
+
+async function playClaveBtn() {
+  try {
+    const clave = UMT.CLAVE_PATTERNS[$('wm-clave-sel').value];
+    if (!clave) return;
+    await Tone.start();
+    stopTransport();
+    Tone.Transport.bpm.value = 100;
+    Tone.Transport.position  = 0;
+
+    const membrane = new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 5 }).toDestination();
+    const hihat    = new Tone.MetalSynth({
+      frequency: 400, harmonicity: 5.1, modulationIndex: 32,
+      resonance: 4000, octaves: 1.5,
+      envelope: { attack: 0.001, decay: 0.04, release: 0.01 }
+    }).toDestination();
+    hihat.volume.value = -14;
+    _rhythmSynths = [membrane, hihat];
+
+    const stepDur = 60 / 100 / 4;
+    const events  = [];
+    for (let rep = 0; rep < 4; rep++) {
+      clave.steps.forEach((pulse, i) => {
+        events.push({ time: (rep * clave.steps.length + i) * stepDur, type: pulse ? 'kick' : 'hat' });
+      });
+    }
+
+    _rhythmPart = new Tone.Part((time, ev) => {
+      if (ev.type === 'kick') membrane.triggerAttackRelease('C1', '32n', time);
+      else                    hihat.triggerAttackRelease('16n', time);
+    }, events);
+    _rhythmPart.start(0);
+    Tone.Transport.start('+0.1');
+
+    setTimeout(stopTransport, (4 * clave.steps.length * stepDur + 0.6) * 1000);
+  } catch(e) { console.error(e); }
+}
+
+// ── 6. Rhythm ─────────────────────────────────────────────────────────────────
+
+function runRhythm() {
+  try {
+    const k       = parseInt($('r-k').value, 10);
+    const n       = parseInt($('r-n').value, 10);
+    const pattern = UMT.Polyrhythm.euclidean(k, n);
+    const binary  = pattern.map(p => p ? '1' : '0').join('');
+    const vis     = pattern.map(p => p ? '█' : '·').join(' ');
+
+    const NAMED = {
+      '10010010': 'Tresillo (3+3+2)',
+      '10110100': 'Son clave 3-2',
+      '10110110': 'Rumba clave 3-2',
+      '10101010': 'Habanera',
+      '10010100': 'Bossa nova clave',
+    };
+
+    let t = `E(${k}, ${n})  ${k} pulses evenly distributed in ${n} steps\n\n`;
+    t += `${vis}\n\n`;
+    t += `Binary:  ${binary}\n`;
+    t += `Density: ${(k / n * 100).toFixed(0)}%\n`;
+    if (NAMED[binary]) t += `Pattern: ${NAMED[binary]}\n`;
+
+    // Syncopation index
+    try {
+      const ts    = new UMT.TimeSignature([4], 4);
+      const onsets = pattern.map((p, i) => p ? i : -1).filter(i => i >= 0);
+      const sync  = UMT.RhythmAnalysis.detectSyncopation(onsets, ts);
+      t += `Syncopation index: ${(sync * 100).toFixed(0)}%\n`;
+    } catch {}
+
+    out('out-rhythm', t);
+  } catch(e) { outErr('out-rhythm', e); }
+}
+
+async function playRhythmBtn() {
+  try {
+    const k       = parseInt($('r-k').value, 10);
+    const n       = parseInt($('r-n').value, 10);
+    const bpm     = parseInt($('r-bpm').value, 10) || 120;
+    const pattern = UMT.Polyrhythm.euclidean(k, n);
+
+    await Tone.start();
+    stopTransport();
+    Tone.Transport.bpm.value = bpm;
+    Tone.Transport.position  = 0;
+
+    const membrane = new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 5 }).toDestination();
+    const hihat    = new Tone.MetalSynth({
+      frequency: 400, harmonicity: 5.1, modulationIndex: 32,
+      resonance: 4000, octaves: 1.5,
+      envelope: { attack: 0.001, decay: 0.04, release: 0.01 }
+    }).toDestination();
+    hihat.volume.value = -12;
+    _rhythmSynths = [membrane, hihat];
+
+    const stepDur = 60 / bpm / 4;
+    const events  = [];
+    for (let rep = 0; rep < 4; rep++) {
+      pattern.forEach((pulse, i) => {
+        events.push({ time: (rep * n + i) * stepDur, type: pulse ? 'kick' : 'hat' });
+      });
+    }
+
+    _rhythmPart = new Tone.Part((time, ev) => {
+      if (ev.type === 'kick') membrane.triggerAttackRelease('C1', '32n', time);
+      else                    hihat.triggerAttackRelease('16n', time);
+    }, events);
+    _rhythmPart.start(0);
+    Tone.Transport.start('+0.1');
+
+    setTimeout(stopTransport, (4 * n * stepDur + 0.6) * 1000);
+  } catch(e) { console.error(e); }
+}
+
+function stopTransport() {
+  Tone.Transport.stop();
+  Tone.Transport.cancel();
+  if (_rhythmPart) { try { _rhythmPart.dispose(); } catch {} _rhythmPart = null; }
+  _rhythmSynths.forEach(s => { try { s.dispose(); } catch {} });
+  _rhythmSynths = [];
+}
+
+// ── 7. Notation ───────────────────────────────────────────────────────────────
+
+function runNotation() {
+  try {
+    const input = $('n-input').value.trim();
+    const type  = $('n-type').value;
+    let abc = '', lily = '', xml = '';
+
+    if (type === 'scale') {
+      const scale   = UMT.parseScaleSymbol(input);
+      const keyNote = scale.getNotes()[0].name.replace(/\d+/, '');
+      const body    = UMT.ABCBridge.scaleToABC(scale, 1);
+      abc  = UMT.ABCBridge.wrapInHeaders(body + ' |]', input, '4/4', keyNote);
+      lily = UMT.scaleToLilyPond(scale);
+      xml  = UMT.scaleToMusicXML(scale, 1, { title: input });
+    } else {
+      const chord  = UMT.parseChordSymbol(input);
+      const body   = '[' + UMT.ABCBridge.chordToABC(chord) + ']4 |]';
+      abc  = UMT.ABCBridge.wrapInHeaders(body, input, '4/4', 'C');
+      lily = UMT.chordToLilyPond(chord);
+      xml  = UMT.chordToMusicXML(chord);
+    }
+
+    ABCJS.renderAbc('staff-notation', abc, { responsive: 'resize', add_classes: true });
+
+    let t = '─── ABC Notation ──────────────────────\n' + abc;
+    t += '\n\n─── LilyPond ──────────────────────────\n' + lily;
+    t += '\n\n─── MusicXML (excerpt) ────────────────\n' + xml.slice(0, 700) + (xml.length > 700 ? '\n…' : '');
+    out('out-notation', t);
+  } catch(e) { outErr('out-notation', e); }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+window.addEventListener('load', () => {
+  initWorldMusic();
+  runHarmony();
+  runTuning();
+  runModal();
+  runSetTheory();
+  runRhythm();
+  runNotation();
+});
+
+</script>
+</body>
+</html>

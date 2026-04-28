@@ -1,5 +1,5 @@
 /**
- * Tonnetz — the pitch-class toroidal network connecting chords via Neo-Riemannian operations.
+ * Tonnetz - the pitch-class toroidal network connecting chords via Neo-Riemannian operations.
  * Uses a 2D hexagonal grid: x-axis = perfect fifths, y-axis = major thirds.
  */
 import { Note } from './note';

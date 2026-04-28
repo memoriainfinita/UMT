@@ -1,5 +1,5 @@
 /**
- * Basic Maqamat catalog — 24-EDO (quarter-tone) approximations.
+ * Basic Maqamat catalog - 24-EDO (quarter-tone) approximations.
  *
  * NOTE: Maqam music involves subtle microtonal inflections, performance contexts,
  * modulation chains (sayr), and cultural conventions not captured here.

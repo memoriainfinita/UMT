@@ -44,7 +44,7 @@ const CANONICAL_DIATONIC_MODES = ['lydian', 'ionian', 'mixolydian', 'dorian', 'a
 /**
  * Circle of Fifths utility.
  * Convention: major keys use uppercase ('C', 'G'...), minor keys use lowercase ('a', 'e'...).
- * Methods that return keys follow this same convention — callers should use case to distinguish mode.
+ * Methods that return keys follow this same convention - callers should use case to distinguish mode.
  */
 export class CircleOfFifths {
   static readonly majorKeys = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Db', 'Ab', 'Eb', 'Bb', 'F'];
@@ -167,7 +167,7 @@ export class CircleOfFifths {
   }
 
   /**
-   * Returns the parallel key — same root, opposite mode.
+   * Returns the parallel key - same root, opposite mode.
    * 'C' → 'c', 'a' → 'A', 'F#' → 'f#'.
    */
   static getParallel(key: string): string {

@@ -12,7 +12,7 @@ export class Interval {
   static fromRatio(ratio: Ratio): Interval {
     const r = Array.isArray(ratio) ? ratio[0] / ratio[1] : ratio;
     if (!isFinite(r) || r <= 0) {
-      throw new RangeError(`Interval.fromRatio: invalid ratio ${JSON.stringify(ratio)} — must be a positive finite number.`);
+      throw new RangeError(`Interval.fromRatio: invalid ratio ${JSON.stringify(ratio)} - must be a positive finite number.`);
     }
     return new Interval(1200 * Math.log2(r));
   }

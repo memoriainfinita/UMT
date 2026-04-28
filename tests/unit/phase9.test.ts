@@ -15,7 +15,7 @@ import { HarmonicSeries, Harmonics1to16, Harmonics8to16 } from '../../lib/music-
 function chord(s: string) { return parseChordSymbol(s); }
 
 // ============================================================================
-// 9.1 — Messiaen modes
+// 9.1 - Messiaen modes
 // ============================================================================
 
 describe('Messiaen modes in SCALE_PATTERNS', () => {
@@ -52,7 +52,7 @@ describe('Messiaen modes in SCALE_PATTERNS', () => {
 });
 
 // ============================================================================
-// 9.2 — Tonnetz
+// 9.2 - Tonnetz
 // ============================================================================
 
 describe('Tonnetz.getPosition', () => {
@@ -105,7 +105,7 @@ describe('Tonnetz.pathBetween', () => {
 });
 
 // ============================================================================
-// 9.3 — MOS
+// 9.3 - MOS
 // ============================================================================
 
 describe('MOS.generate', () => {
@@ -164,7 +164,7 @@ describe('MOS.getMOSFamily', () => {
 });
 
 // ============================================================================
-// 9.4 — Xen
+// 9.4 - Xen
 // ============================================================================
 
 describe('Xen.detectNeutralTriad', () => {
@@ -184,7 +184,7 @@ describe('Xen.detectNeutralTriad', () => {
     const c = new (parseChordSymbol('C').constructor as any)(
       'C neutral', edo24, 0, [0, 7, 14]
     );
-    // The interval of 7 QT = 350 cents — should detect neutral
+    // The interval of 7 QT = 350 cents - should detect neutral
     expect(typeof Xen.detectNeutralTriad(c)).toBe('boolean');
   });
 });
@@ -206,7 +206,7 @@ describe('Xen.detectUtonal', () => {
 });
 
 // ============================================================================
-// 9.5 — Spectral
+// 9.5 - Spectral
 // ============================================================================
 
 describe('Spectral.overtoneSeries', () => {
@@ -271,7 +271,7 @@ describe('Spectral.combinationTones', () => {
 });
 
 // ============================================================================
-// 9.6 — TemperamentAnalysis
+// 9.6 - TemperamentAnalysis
 // ============================================================================
 
 describe('TemperamentAnalysis.compare', () => {
@@ -323,7 +323,7 @@ describe('bestEDOFor', () => {
 });
 
 // ============================================================================
-// 9.7 — OPTIC / VoiceLeadingGeometry
+// 9.7 - OPTIC / VoiceLeadingGeometry
 // ============================================================================
 
 describe('OPTIC', () => {
@@ -374,7 +374,7 @@ describe('VoiceLeadingGeometry.efficientVoiceLeading', () => {
 });
 
 // ============================================================================
-// 9.8 — Harmonic series presets
+// 9.8 - Harmonic series presets
 // ============================================================================
 
 describe('HarmonicSeries presets', () => {

@@ -11,7 +11,7 @@ function chord(symbol: string): Chord { return parseChordSymbol(symbol); }
 function prog(roman: string, key: string): Chord[] { return parseRomanProgression(roman, key); }
 
 // ============================================================================
-// 4.1 — PROGRESSIONS dictionary
+// 4.1 - PROGRESSIONS dictionary
 // ============================================================================
 
 describe('PROGRESSIONS dictionary', () => {
@@ -73,7 +73,7 @@ describe('getProgression()', () => {
 });
 
 // ============================================================================
-// 4.2 — Harmony.detectSequence
+// 4.2 - Harmony.detectSequence
 // ============================================================================
 
 describe('Harmony.detectSequence', () => {
@@ -114,7 +114,7 @@ describe('Harmony.detectSequence', () => {
 });
 
 // ============================================================================
-// 4.3 — FormAnalyzer
+// 4.3 - FormAnalyzer
 // ============================================================================
 
 describe('FormAnalyzer.analyzeHarmonic', () => {
@@ -128,7 +128,7 @@ describe('FormAnalyzer.analyzeHarmonic', () => {
   });
 
   it('detects AABA for repeated patterns', () => {
-    // A A B A — 4 sections of 4 chords
+    // A A B A - 4 sections of 4 chords
     const A = prog('I V IV V', 'C major');
     const B = prog('vi ii V I', 'C major');
     const chords = [...A, ...A, ...B, ...A];
@@ -186,7 +186,7 @@ describe('FormAnalyzer.detectReprise', () => {
 });
 
 // ============================================================================
-// 4.4 — Retrograde / Inversion of progressions
+// 4.4 - Retrograde / Inversion of progressions
 // ============================================================================
 
 describe('Harmony.retrogradeProgression', () => {
@@ -235,7 +235,7 @@ describe('Harmony.invertProgression', () => {
 });
 
 // ============================================================================
-// 4.5 — voiceLeadingSmoothness
+// 4.5 - voiceLeadingSmoothness
 // ============================================================================
 
 describe('Harmony.voiceLeadingSmoothness', () => {

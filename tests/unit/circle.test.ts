@@ -62,7 +62,7 @@ describe('CircleOfFifths.getDistance', () => {
   it('C to D is 2', () => {
     expect(CircleOfFifths.getDistance('C', 'D')).toBe(2);
   });
-  it('C to F# is 6 (tritone — max distance)', () => {
+  it('C to F# is 6 (tritone - max distance)', () => {
     expect(CircleOfFifths.getDistance('C', 'F#')).toBe(6);
   });
   it('is symmetric: G to C equals C to G', () => {

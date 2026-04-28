@@ -1,5 +1,5 @@
 /**
- * MOS (Moment of Symmetry) scales — generated scales with exactly two step sizes.
+ * MOS (Moment of Symmetry) scales - generated scales with exactly two step sizes.
  * Used in xenharmonic / microtonal theory to find well-formed scales in arbitrary EDOs.
  */
 
@@ -50,7 +50,7 @@ export class MOS {
   }
 
   /**
-   * Returns the MOS family — all MOS scales for a given generator and period up to maxSize.
+   * Returns the MOS family - all MOS scales for a given generator and period up to maxSize.
    * Each entry is a MOS scale (sorted step array).
    */
   static getMOSFamily(generator: number, period: number, maxSize: number): number[][] {
