@@ -1,5 +1,9 @@
 # Universal Music Theory Library
 
+[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/public/umt.js)
+[![Live demo](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://memoriainfinita.github.io/UMT)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+
 A TypeScript library for music theory computation that works across any tuning system -
 12-TET, microtonal, historical temperaments, world music traditions, and post-tonal systems.
 Zero runtime dependencies. 104 kb compiled bundle.
