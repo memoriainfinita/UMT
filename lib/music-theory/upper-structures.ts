@@ -10,8 +10,12 @@ export interface UpperStructure {
   label: string;
 }
 
-// Canonical USTs over a dominant 7th chord.
-// offset = semitones above dominant root; tensions = chord-tones of the triad expressed as dominant tensions.
+/**
+ * Canonical upper-structure triads over a dominant 7th chord.
+ * `offset` = semitones above the dominant root where the triad starts.
+ * `tensions` = chord tones of the triad expressed as dominant extensions/alterations.
+ * `label` = Roman numeral of the triad root relative to the dominant (e.g. `'bII'`).
+ */
 const UST_TABLE: { offset: number; tensions: string[]; label: string }[] = [
   { offset: 1,  tensions: ['b9', 'b13'],       label: 'bII'  }, // Ab over G7 → b9 3 b13 (altered)
   { offset: 2,  tensions: ['9', '#11', '13'],  label: 'II'   }, // A  over G7 → 9 #11 13 (Lydian dominant)

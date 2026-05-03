@@ -8,10 +8,16 @@ export interface SubstitutionOption {
   explanation: string;
 }
 
+/** Wraps `n` into [0, 11] — handles negative values correctly. */
 function pcMod(n: number): number {
   return ((n % 12) + 12) % 12;
 }
 
+/**
+ * Returns a canonical quality string for a 12-TET chord (e.g. `'maj7'`, `'m7'`, `'7'`).
+ * Returns `''` for non-12-TET tunings or unrecognized interval sets.
+ * Used internally to decide which substitutions are applicable.
+ */
 function chordQuality(chord: Chord): string {
   const oct = chord.tuningSystem.octaveSteps;
   if (oct !== 12) return '';
@@ -29,6 +35,7 @@ function chordQuality(chord: Chord): string {
   return '';
 }
 
+/** Returns the note name for pitch class `pc` (0=A), using flats or sharps. */
 function noteName(pc: number, flat: boolean): string {
   return flat ? NOTE_NAMES_12TET_FLAT[pc] : NOTE_NAMES_12TET_SHARP[pc];
 }
