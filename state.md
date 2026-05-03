@@ -35,7 +35,6 @@
 
 - [ ] Crear Wiki en GitHub con docs de la API
 - [ ] Sistema de aliases para el parser — paso de traducción previo al parser que mapea tokens alternativos a canónicos (ej. 'mayor'→'major', 'Do'→'C'). API propuesta: `{ aliases: Record<string,string> }` en parseChordSymbol/parseScaleSymbol. El usuario construye su propio diccionario por idioma o sistema. — una pagina por modulo principal (Harmony, Tuning, SetTheory...). Opciones: web editor o clonar el repo .wiki.git.
-- [ ] `lib/music-theory/note.ts`: JSDoc de `name`, `getName` y constructor `_name` actualizado (2026-05-03) — incluye octava en el nombre devuelto. Pendiente commit y push.
 - [ ] Voicing algorítmico para fretboard — dado un acorde y un tuning, generar `FretboardChord` (posiciones en trastes) para notae. Diseñar API cuando UMT esté más maduro. Coordinado con notae state.md línea 272.
 
 ## History
