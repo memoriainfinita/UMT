@@ -20,4 +20,4 @@ docs/
 archive/
 
 # Source map (large, not needed for CDN usage)
-public/umt.js.map
+dist/umt.js.map

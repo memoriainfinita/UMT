@@ -1,6 +1,6 @@
 # Universal Music Theory Library
 
-[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/public/umt.js)
+[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/dist/umt.js)
 [![Live demo](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://memoriainfinita.github.io/UMT)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
@@ -43,7 +43,7 @@ SetTheory.getZRelated([0, 1, 4, 6]);      // Z-related sets
 
 **Browser - CDN (jsDelivr)**
 ```html
-<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/public/umt.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/dist/umt.js"></script>
 <script>
   const chord = UMT.parseChordSymbol('Cmaj9');
   console.log(chord.getNotes().map(n => n.name));
@@ -63,7 +63,7 @@ import { parseChordSymbol, TET12, Harmony, SetTheory } from './lib/music-theory'
 **Build from source**
 ```bash
 npm install
-npm run build:umt   # lib/music-theory/umt.ts -> public/umt.js
+npm run build:umt   # lib/music-theory/umt.ts -> dist/umt.js
 ```
 
 ---
