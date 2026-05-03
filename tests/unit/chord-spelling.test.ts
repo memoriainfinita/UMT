@@ -31,4 +31,14 @@ describe('chord note spelling', () => {
     expect(names).toContain('Db');
     expect(names).not.toContain('C#');
   });
+  it('A#maj7: explicit # root uses sharps, root is A# not Bb', () => {
+    const names = parseChordSymbol('A#maj7').getNotes().map(n => n.name.replace(/\d/, ''));
+    expect(names[0]).toBe('A#');
+    expect(names).not.toContain('Bb');
+  });
+  it('A#m: explicit # root uses sharps (A# C# E#)', () => {
+    const names = parseChordSymbol('A#m').getNotes().map(n => n.name.replace(/\d/, ''));
+    expect(names[0]).toBe('A#');
+    expect(names).not.toContain('Bb');
+  });
 });

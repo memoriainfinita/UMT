@@ -83,7 +83,7 @@ export function parseChordSymbol(symbol: string, tuning: TuningSystem = TET12, o
     bassStep = tuning.getStepFromStandard(parseNoteToStep12TET(bassNormalized, octave));
   }
 
-  const pf = preferFlatsForKey(rootName);
+  const pf = rootName.includes('#') ? false : rootName.includes('b') ? true : preferFlatsForKey(rootName);
   return new Chord(normalizedSymbol, tuning, rootStep, intervals, bassStep, pf);
 }
 
@@ -111,7 +111,7 @@ export function parseScaleSymbol(symbol: string, tuning: TuningSystem = TET12, o
   const pattern = pattern12TET.map(s => tuning.getStepFromStandard(s));
   const rootNormalized = rootName.charAt(0).toUpperCase() + rootName.slice(1);
   const rootStep = tuning.getStepFromStandard(parseNoteToStep12TET(rootNormalized, octave));
-  const pf = preferFlatsForKey(rootNormalized, type);
+  const pf = rootNormalized.includes('#') ? false : rootNormalized.includes('b') ? true : preferFlatsForKey(rootNormalized, type);
   return new Scale(symbol, tuning, rootStep, pattern, pf);
 }
 
