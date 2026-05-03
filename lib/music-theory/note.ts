@@ -13,8 +13,9 @@ export class Note {
   /**
    * @param tuningSystem - The tuning system this note belongs to.
    * @param stepsFromBase - Steps from A4 (= 0). Can be negative (below A4) or positive (above).
-   * @param _name - Optional explicit name. When provided, overrides the computed name from
-   *   the tuning system. Used by the parser to preserve the original user notation (e.g. "Db" vs "C#").
+   * @param _name - Optional explicit name including octave (e.g. `"Db4"`). When provided,
+   *   overrides the computed name from the tuning system. Used by the parser to preserve
+   *   the original user notation (e.g. "Db4" vs "C#4").
    * @param _preferFlats - Optional flat/sharp preference for computed names. Propagated by
    *   `transpose()` and set by `Scale.getNotes()` / `Chord.getNotes()` based on key context.
    *   Ignored when `_name` is provided (the explicit name takes precedence).
@@ -27,8 +28,14 @@ export class Note {
   ) {}
 
   /**
-   * The note name. Uses the flat/sharp preference set at construction.
+   * The full note name including octave number (e.g. `"C4"`, `"Bb3"`, `"F#5"`).
+   * In 12-TET, the octave follows scientific pitch notation: C4 = middle C.
+   * Uses the flat/sharp preference set at construction.
    * For an explicit override use `getName({ preferFlats: true/false })`.
+   *
+   * @example
+   * UMT.parseChordSymbol('Cmaj7').getNotes().map(n => n.name)
+   * // → ['C4', 'E4', 'G4', 'B4']
    */
   get name(): string {
     return this.getName();
@@ -46,7 +53,8 @@ export class Note {
   }
 
   /**
-   * Returns the note name, optionally overriding the stored flat/sharp preference.
+   * Returns the full note name including octave (e.g. `"C4"`, `"Bb3"`), optionally overriding
+   * the stored flat/sharp preference.
    * If an explicit name was set at construction, it is returned as-is (no re-spelling).
    * Otherwise, uses `_preferFlats` if set, then falls back to `options.preferFlats`, then sharps.
    */
