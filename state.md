@@ -33,10 +33,14 @@
 
 ## TODO
 
-- [ ] Crear Wiki en GitHub con docs de la API
+- [ ] Crear Wiki en GitHub con docs de la API — una pagina por modulo principal (Harmony, Tuning, SetTheory...). Opciones: web editor o clonar el repo .wiki.git.
 - [ ] `lib/music-theory/note.ts`: JSDoc de `name`, `getName` y constructor `_name` actualizado (2026-05-03) — incluye octava en el nombre devuelto. Pendiente commit y push.
 
 ## History
+
+### 2026-05-03 - Fix parser: accidental explícito respetado
+
+`parseChordSymbol`/`parseScaleSymbol` ahora respetan el accidental explícito del usuario. Si root tiene `#` → `preferFlats=false`; si tiene `b` → `preferFlats=true`. `A#maj7` ya no devuelve `Bb` como root. 526 tests pasan. Commit `b32d643`.
 
 ### 2026-05-03 - Migración bundle a dist/ + limpieza
 
