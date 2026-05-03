@@ -38,9 +38,9 @@
 
 ## History
 
-### 2026-05-03 - Migración bundle a dist/
+### 2026-05-03 - Migración bundle a dist/ + limpieza
 
-Bundle movido de `docs/umt.js` a `dist/umt.js`. Demo movida de `docs/index.html` a `index.html` (raiz). GitHub Pages reconfigurado para servir desde root `/` en vez de `/docs`. CDN URL actualizada a `dist/umt.js`. README, CLAUDE.md, .gitignore, package.json actualizados en consecuencia.
+Bundle movido de `docs/umt.js` a `dist/umt.js`. Demo movida de `docs/index.html` a `index.html` (raiz). GitHub Pages reconfigurado para servir desde root `/` en vez de `/docs`. CDN URL actualizada a `dist/umt.js`. README, CLAUDE.md, .gitignore, package.json actualizados en consecuencia. Workflow de Next.js `.github/workflows/deploy.yml` eliminado (resto del scaffolding original, fallaba en cada push).
 
 
 ### 2026-04-28 - Demo en producción
