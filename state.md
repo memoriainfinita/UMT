@@ -34,10 +34,20 @@
 ## TODO
 
 - [ ] Crear Wiki en GitHub con docs de la API
-- [ ] Sistema de aliases para el parser — paso de traducción previo al parser que mapea tokens alternativos a canónicos (ej. 'mayor'→'major', 'Do'→'C'). API propuesta: `{ aliases: Record<string,string> }` en parseChordSymbol/parseScaleSymbol. El usuario construye su propio diccionario por idioma o sistema. — una pagina por modulo principal (Harmony, Tuning, SetTheory...). Opciones: web editor o clonar el repo .wiki.git.
+- [ ] Sistema de aliases para el parser — solo input: traducir raíces solfège (Do→C) y calidad básica (mayor→M). Alteraciones ya son universales. Implementar como función standalone `translateSymbol(input, aliases)` sin tocar el core.
 - [ ] Voicing algorítmico para fretboard — dado un acorde y un tuning, generar `FretboardChord` (posiciones en trastes) para notae. Diseñar API cuando UMT esté más maduro. Coordinado con notae state.md línea 272.
 
 ## History
+
+### 2026-05-03 - Parser compositivo para acordes extendidos/alterados
+
+`parseChordSymbol` ahora acepta cualquier combinación de calidad + número + alteraciones en cualquier orden. Gramática: `<quality>? <maj>? <7|9|11|13>? <b5|#5|b9|#9|#11|b13>*`. El diccionario tiene prioridad; el parser compositivo actúa como fallback. Espacios en el sufijo ignorados. JSDoc de `parseChordSymbol` actualizado. 29 tests nuevos. 555 tests pasan. Commits `a9176ef`.
+
+### 2026-05-03 - JSDoc: ScalaTuning, substitution helpers, UST_TABLE
+
+JSDoc añadido a `ScalaTuning` (clase, constructor, métodos), helpers internos de `substitution.ts` (`pcMod`, `chordQuality`, `noteName`) y `UST_TABLE` en `upper-structures.ts`. Commit `fba637d`.
+
+
 
 ### 2026-05-03 - Fix parser: accidental explícito respetado
 
