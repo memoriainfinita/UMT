@@ -6,6 +6,89 @@ import { Note } from './note';
 import { get12TETName, get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, NOTE_NAMES_12TET_FLAT } from './utils';
 
 /**
+ * Attempts to parse a chord suffix using a compositional grammar when the
+ * dictionary has no entry for it.
+ *
+ * Grammar: `<quality>? <'maj'|'M'>? <number>? <alteration>*`
+ * - quality:    `m` | `dim` | `aug` | `sus2` | `sus4`  (default: major)
+ * - maj prefix: `maj` or `M` before a digit → major 7th instead of dominant 7th
+ * - number:     `7` | `9` | `11` | `13`  (implies all lower extensions)
+ * - alteration: `b5` | `#5` | `b9` | `#9` | `#11` | `b13`  (any order)
+ *
+ * Returns a sorted interval array in 12-TET semitones, or `null` if the suffix
+ * cannot be parsed (e.g. it is a named chord like `add9` or `dim7`).
+ */
+function parseCompositionalSuffix(suffix: string): readonly number[] | null {
+  let rest = suffix.replace(/\s+/g, '');
+
+  type Quality = 'M' | 'm' | 'dim' | 'aug' | 'sus2' | 'sus4';
+  let quality: Quality = 'M';
+
+  if (rest.startsWith('sus4'))      { quality = 'sus4'; rest = rest.slice(4); }
+  else if (rest.startsWith('sus2')) { quality = 'sus2'; rest = rest.slice(4); }
+  else if (rest.startsWith('dim'))  { quality = 'dim';  rest = rest.slice(3); }
+  else if (rest.startsWith('aug'))  { quality = 'aug';  rest = rest.slice(3); }
+  else if (rest.startsWith('m') && !rest.startsWith('maj')) { quality = 'm'; rest = rest.slice(1); }
+
+  let isMaj7 = false;
+  if (rest.startsWith('maj')) {
+    isMaj7 = true; rest = rest.slice(3);
+  } else if (rest.startsWith('M') && /^\d/.test(rest[1] ?? '')) {
+    isMaj7 = true; rest = rest.slice(1);
+  }
+
+  let number: 7 | 9 | 11 | 13 | null = null;
+  if (rest.startsWith('13'))      { number = 13; rest = rest.slice(2); }
+  else if (rest.startsWith('11')) { number = 11; rest = rest.slice(2); }
+  else if (rest.startsWith('9'))  { number = 9;  rest = rest.slice(1); }
+  else if (rest.startsWith('7'))  { number = 7;  rest = rest.slice(1); }
+
+  if (number === null && !isMaj7) return null;
+
+  const ALTS = ['#11', 'b13', '#5', 'b5', '#9', 'b9'] as const;
+  type Alt = typeof ALTS[number];
+  const alterations: Alt[] = [];
+
+  while (rest.length > 0) {
+    const found = ALTS.find(a => rest.startsWith(a));
+    if (!found) return null;
+    alterations.push(found);
+    rest = rest.slice(found.length);
+  }
+
+  const iv = new Set<number>([0]);
+
+  switch (quality) {
+    case 'M':    iv.add(4); iv.add(7); break;
+    case 'm':    iv.add(3); iv.add(7); break;
+    case 'dim':  iv.add(3); iv.add(6); break;
+    case 'aug':  iv.add(4); iv.add(8); break;
+    case 'sus2': iv.add(2); iv.add(7); break;
+    case 'sus4': iv.add(5); iv.add(7); break;
+  }
+
+  if (isMaj7)        iv.add(11);
+  else if (number !== null) iv.add(10);
+
+  if (number !== null && number >= 9)  iv.add(14);
+  if (number !== null && number >= 11) iv.add(17);
+  if (number !== null && number >= 13) iv.add(21);
+
+  for (const alt of alterations) {
+    switch (alt) {
+      case 'b5':  iv.delete(7);  iv.add(6);  break;
+      case '#5':  iv.delete(7);  iv.add(8);  break;
+      case 'b9':  iv.delete(14); iv.add(13); break;
+      case '#9':  iv.delete(14); iv.add(15); break;
+      case '#11': iv.delete(17); iv.add(18); break;
+      case 'b13': iv.delete(21); iv.add(20); break;
+    }
+  }
+
+  return [...iv].sort((a, b) => a - b);
+}
+
+/**
  * Normalizes chord suffix shorthands to canonical dictionary keys.
  * Context-independent: '-7' → 'm7', 'Δ' → 'maj7', 'ø' → 'm7b5', etc.
  */
@@ -71,7 +154,7 @@ export function parseChordSymbol(symbol: string, tuning: TuningSystem = TET12, o
   const [, rootName, typeRaw] = match;
   const type = normalizeSuffix(typeRaw.trim());
 
-  const intervals12TET = CHORD_FORMULAS[type];
+  const intervals12TET = CHORD_FORMULAS[type] ?? parseCompositionalSuffix(type);
   if (!intervals12TET) throw new Error(`parseChordSymbol: unknown chord type "${typeRaw}" in "${symbol}".`);
 
   const intervals = intervals12TET.map(s => tuning.getStepFromStandard(s));
