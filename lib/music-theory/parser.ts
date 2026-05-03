@@ -133,13 +133,20 @@ function inferRomanSuffix(raw: string, isMinor: boolean, degree: number): string
  * - Altered: `C7b9`, `C7#11`, `C7alt`, `Calt`
  * - Slash chords: `C/E`, `Cmaj7/G`
  * - Shorthands: `CΔ`, `CΔ7`, `Cø`, `C-7`, `C°`, `C°7`, `C+`
+ * - Compositional (any combination): `Cm9b5`, `C13b9#11`, `CmM9`, `Cmaj13#11`
+ *   Alterations (`b5 #5 b9 #9 #11 b13`) may appear in any order.
+ *   Spaces within the suffix are ignored (`C7 b9 #11` = `C7b9#11`).
+ *
+ * Resolution order: dictionary lookup → compositional parser → error.
+ * Named chords (`dim7`, `add9`, `6/9`, `alt`, etc.) are always resolved via
+ * the dictionary regardless of whether they could be parsed compositionally.
  *
  * Root is case-insensitive (`cmaj7` = `Cmaj7`).
  *
  * @param symbol - Chord symbol string.
  * @param tuning - Target tuning system (default: 12-TET). Intervals are mapped via `getStepFromStandard`.
  * @param octave - Octave for the root note (default: 4).
- * @throws if the symbol cannot be parsed or the chord type is unknown.
+ * @throws if the symbol cannot be parsed or the chord type is neither in the dictionary nor compositionally valid.
  */
 export function parseChordSymbol(symbol: string, tuning: TuningSystem = TET12, octave: number = 4): Chord {
   // Normalize root to uppercase (e.g. "cmaj7" → "Cmaj7")
