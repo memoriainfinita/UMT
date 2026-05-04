@@ -1,3 +1,7 @@
+/**
+ * Harmonic analysis: voice leading, chord functions, modulation detection,
+ * negative harmony, Coltrane axis, and slash chord analysis.
+ */
 import { Chord } from './chord';
 import { parseScaleSymbol, parseChordSymbol } from './parser';
 import { get12TETName, get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
@@ -36,6 +40,7 @@ const MODE_CHARACTERISTIC_PC: Record<string, number[]> = {
 //  Types
 // ============================================================================
 
+/** Category of a voice-leading problem detected between two chords. */
 export type VoiceLeadingIssueType =
   | 'Parallel 5th' | 'Parallel Octave' | 'Voice Crossing' | 'Voice Overlap'
   | 'Leading Tone Unresolved' | '7th Unresolved' | 'Forbidden Leap'
@@ -44,18 +49,24 @@ export type VoiceLeadingIssueType =
   | 'Missing Third' | 'Missing Root' | 'Missing Fifth'
   | 'Improper 6/4 Usage';
 
+/** A specific voice-leading problem detected between two voices. */
 export interface VoiceLeadingIssue {
   type: VoiceLeadingIssueType;
   voices: number[];
   message: string;
 }
 
+/** A doubling or spacing problem detected in a chord voicing. */
 export interface DoublingIssue {
   type: 'Doubled Leading Tone' | 'Missing Third' | 'Missing Root' | 'Missing Fifth' | 'Improper Doubling';
   voices: number[];
   message: string;
 }
 
+/**
+ * Full harmonic analysis of a chord within a key context.
+ * Includes Roman numeral, function (T/S/D), modal borrowing, and cadence detection.
+ */
 export interface ChordAnalysis {
   chord: Chord;
   roman: string;
@@ -70,6 +81,10 @@ export interface ChordAnalysis {
   substitutionCandidate?: string;
 }
 
+/**
+ * A detected key change within a chord progression.
+ * Includes the index where modulation occurs and the type (pivot, direct, etc.).
+ */
 export interface ModulationEvent {
   atIndex: number;
   fromKey: string;
@@ -78,11 +93,19 @@ export interface ModulationEvent {
   pivotChord?: Chord;
 }
 
+/**
+ * Analysis of a second-inversion (6/4) chord.
+ * Classifies it as cadential, pedal, passing, or arpeggiated.
+ */
 export interface SixFourAnalysis {
   type: 'cadential' | 'pedal' | 'passing' | 'arpeggiated' | 'none';
   resolution?: Chord;
 }
 
+/**
+ * A chord borrowed from a parallel mode (modal mixture).
+ * Includes the source mode, brightness value, and harmonic function.
+ */
 export interface BorrowedChord {
   chord: Chord;
   sourceMode: string;
@@ -91,19 +114,32 @@ export interface BorrowedChord {
   characteristic: boolean;
 }
 
+/**
+ * A chord that functions diatonically in two different keys,
+ * used as the pivot point in a modulation.
+ */
 export interface PivotChord {
   chord: Chord;
   functionInA: { degree: number; function: 'T' | 'S' | 'D' };
   functionInB: { degree: number; function: 'T' | 'S' | 'D' };
 }
 
+/**
+ * The Coltrane substitution axis for a given root.
+ * The three major-third substitutions form a diminished seventh pattern.
+ */
 export interface ColtraneAxis {
   root: string;
   majorThirds: [string, string, string];
 }
 
+/** How a slash chord is interpreted: simple inversion, hybrid, polychord, or upper structure. */
 export type SlashType = 'inversion' | 'hybrid' | 'polychord' | 'upper-structure';
 
+/**
+ * Result of analyzing a slash chord (e.g. C/E, Fmaj7/A).
+ * Distinguishes inversions from hybrid chords, polychords, and upper structures.
+ */
 export interface SlashAnalysis {
   type: SlashType;
   upperStructure?: Chord;
@@ -112,6 +148,10 @@ export interface SlashAnalysis {
   resultingTensions?: string[];
 }
 
+/**
+ * Hints for enharmonic respelling decisions.
+ * Providing a key or functional role improves spelling accuracy.
+ */
 export interface RespellContext {
   keySymbol?: string;
   functionalRole?: 'secondary-dominant' | 'chromatic-mediant' | 'passing' | 'neighbor';
