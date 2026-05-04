@@ -1,6 +1,10 @@
+/**
+ * Circle of Fifths: key relationships, signatures, modal neighbors, and modal distance.
+ */
 import { NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 import { MODE_BRIGHTNESS } from './dictionaries';
 
+/** A key related to a reference key, with its relationship type and circle-of-fifths distance. */
 export type RelatedKey = {
   key: string;
   relationship: 'relative' | 'parallel' | 'dominant' | 'subdominant' | 'neighbor';
