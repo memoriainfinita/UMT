@@ -200,6 +200,54 @@ describe('Polymeter', () => {
     const pos = pm.getCyclePosition(0);
     expect(pos.every(p => p.positionInMeter === 0)).toBe(true);
   });
+
+  it('naturalCycle is LCM of meter lengths', () => {
+    const pm = new Polymeter([new TimeSignature([4], 4), new TimeSignature([3], 4)]);
+    expect(pm.naturalCycle).toBe(12);
+  });
+
+  it('cycleLength returns cycleBeats when set', () => {
+    const pm = new Polymeter([new TimeSignature([4], 4), new TimeSignature([3], 4)], 8);
+    expect(pm.cycleLength).toBe(8);
+  });
+
+  it('cycleLength returns naturalCycle when cycleBeats not set', () => {
+    const pm = new Polymeter([new TimeSignature([4], 4), new TimeSignature([3], 4)]);
+    expect(pm.cycleLength).toBe(12);
+  });
+
+  it('getCyclePosition wraps at cycleLength', () => {
+    const pm = new Polymeter([new TimeSignature([4], 4), new TimeSignature([3], 4)], 8);
+    const pos8  = pm.getCyclePosition(8);
+    const pos0  = pm.getCyclePosition(0);
+    expect(pos8[0].positionInMeter).toBe(pos0[0].positionInMeter);
+    expect(pos8[1].positionInMeter).toBe(pos0[1].positionInMeter);
+  });
+
+  it('generateGrid returns downbeats for each meter in one cycle', () => {
+    const pm = new Polymeter([new TimeSignature([4], 4), new TimeSignature([3], 4)]);
+    const grid = pm.generateGrid();
+    const meter0beats = grid.filter(e => e.meterIndex === 0).map(e => e.beat);
+    const meter1beats = grid.filter(e => e.meterIndex === 1).map(e => e.beat);
+    expect(meter0beats).toEqual([0, 4, 8]);
+    expect(meter1beats).toEqual([0, 3, 6, 9]);
+  });
+
+  it('generateGrid with cycleBeats cuts the cycle', () => {
+    const pm = new Polymeter([new TimeSignature([4], 4), new TimeSignature([3], 4)], 6);
+    const grid = pm.generateGrid();
+    const meter0beats = grid.filter(e => e.meterIndex === 0).map(e => e.beat);
+    const meter1beats = grid.filter(e => e.meterIndex === 1).map(e => e.beat);
+    expect(meter0beats).toEqual([0, 4]);
+    expect(meter1beats).toEqual([0, 3]);
+  });
+
+  it('generateGrid is sorted by beat', () => {
+    const pm = new Polymeter([new TimeSignature([4], 4), new TimeSignature([3], 4)]);
+    const grid = pm.generateGrid();
+    const beats = grid.map(e => e.beat);
+    expect(beats).toEqual([...beats].sort((a, b) => a - b));
+  });
 });
 
 // ============================================================================

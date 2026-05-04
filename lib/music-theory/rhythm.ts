@@ -320,18 +320,43 @@ export class RhythmAnalysis {
  */
 export class Polymeter {
   private readonly meters: TimeSignature[];
+  private readonly _cycleBeats: number | undefined;
 
-  constructor(meters: TimeSignature[], _cycleBeats?: number) {
+  constructor(meters: TimeSignature[], cycleBeats?: number) {
     this.meters = meters;
+    this._cycleBeats = cycleBeats;
   }
 
-  /** Returns the meter and position within that meter at a given absolute beat position. */
+  /** Beat at which all meters realign naturally (LCM of all meter lengths). */
+  get naturalCycle(): number {
+    const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
+    const lcm = (a: number, b: number) => (a * b) / gcd(a, b);
+    return this.meters.map(m => m.totalBeats).reduce(lcm, 1);
+  }
+
+  /** Effective cycle length: cycleBeats if set, otherwise naturalCycle. */
+  get cycleLength(): number {
+    return this._cycleBeats ?? this.naturalCycle;
+  }
+
+  /** Returns the meter and position within that meter at a given absolute beat, wrapped at cycleLength. */
   getCyclePosition(beat: number): { meter: TimeSignature; positionInMeter: number }[] {
-    return this.meters.map(meter => {
-      const beatsPerMeasure = meter.totalBeats;
-      const positionInMeter = beat % beatsPerMeasure;
-      return { meter, positionInMeter };
+    const wrapped = beat % this.cycleLength;
+    return this.meters.map(meter => ({
+      meter,
+      positionInMeter: wrapped % meter.totalBeats
+    }));
+  }
+
+  /** Returns all downbeats for each meter within one full cycle, sorted by beat. */
+  generateGrid(): { beat: number; meterIndex: number }[] {
+    const events: { beat: number; meterIndex: number }[] = [];
+    this.meters.forEach((meter, meterIndex) => {
+      for (let beat = 0; beat < this.cycleLength; beat += meter.totalBeats) {
+        events.push({ beat, meterIndex });
+      }
     });
+    return events.sort((a, b) => a.beat - b.beat || a.meterIndex - b.meterIndex);
   }
 }
 
