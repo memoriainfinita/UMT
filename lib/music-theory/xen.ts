@@ -3,7 +3,6 @@
  * Detects otonal/utonal chords, neutral triads, and essentially-just structures.
  */
 import { Chord } from './chord';
-import { Note } from './note';
 import { JustIntonation } from './tuning';
 
 /** Xenharmonic chord analysis: neutral triads, otonal/utonal detection, and essentially-just matching. */
@@ -31,7 +30,6 @@ export class Xen {
    * @param harmonicLimit - Maximum partial number to consider (default 7).
    */
   static detectOtonal(chord: Chord, harmonicLimit = 7): { isOtonal: boolean; harmonics: number[] } {
-    const ts = chord.tuningSystem;
     const notes = chord.getNotes();
     if (notes.length === 0) return { isOtonal: false, harmonics: [] };
 
@@ -68,7 +66,6 @@ export class Xen {
    * A utonal chord uses subpartials 1/n, 1/m, 1/p, ... of a common overtone.
    */
   static detectUtonal(chord: Chord, harmonicLimit = 7): { isUtonal: boolean; subharmonics: number[] } {
-    const ts = chord.tuningSystem;
     const notes = chord.getNotes().reverse(); // flip: utonal starts from highest note
     if (notes.length === 0) return { isUtonal: false, subharmonics: [] };
 

@@ -2,7 +2,6 @@ import { Note } from './note';
 import { TET12 } from './tuning';
 import { parseNoteToStep12TET } from './utils';
 
-const FIXED_DO_SYLLABLES = ['la', 'la#/sib', 'si', 'do', 'do#/reb', 're', 're#/mib', 'mi', 'fa', 'fa#/solb', 'sol', 'sol#/lab'];
 const FIXED_DO_FLAT  = ['la', 'sib', 'si', 'do', 'reb', 're', 'mib', 'mi', 'fa', 'solb', 'sol', 'lab'];
 const FIXED_DO_SHARP = ['la', 'la#', 'si', 'do', 'do#', 're', 're#', 'mi', 'fa', 'fa#', 'sol', 'sol#'];
 

@@ -1,5 +1,5 @@
 import { Note } from './note';
-import { get12TETBaseName, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
+import { preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 
 /**
  * Key Detection Module

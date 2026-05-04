@@ -4,20 +4,6 @@
  */
 import { Note } from './note';
 import { Chord } from './chord';
-import { TET12, TuningSystem } from './tuning';
-import { parseNoteToStep12TET } from './utils';
-
-// Maps figured bass numeral to interval in semitones above bass note
-const FIGURE_INTERVALS: Record<number, number> = {
-  2: 2,   // major 2nd
-  3: 3,   // minor/major 3rd (context-dependent; use minor here as default)
-  4: 5,   // perfect 4th
-  5: 7,   // perfect 5th
-  6: 9,   // major 6th (minor 3rd above 5th)
-  7: 10,  // minor 7th (dominant)
-  8: 12,  // octave
-  9: 14,  // 9th
-};
 
 // Default semitone offsets per figure numeral (when no accidental)
 const FIGURE_DEFAULT_SEMITONES: Record<number, number> = {
