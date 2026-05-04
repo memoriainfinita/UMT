@@ -7,12 +7,14 @@
  * This module provides structural scaffolding only.
  */
 
+/** A tetrachord or pentachord cell (jins) used as a building block in maqam construction. */
 export interface Jins {
   name: string;
   /** Interval pattern in quarter-tones. */
   intervals: readonly number[];
 }
 
+/** A maqam scale: its constituent ajnas, full note sequence in quarter-tones, and emotional character. */
 export interface Maqam {
   name: string;
   /** Tetrachord/pentachord building blocks. */
@@ -36,6 +38,7 @@ const AJNAS: Record<string, Jins> = {
   nawa_athar:{ name: 'Nawa Athar', intervals: [4, 2, 4]}, // placeholder
 };
 
+/** Catalog of 8 Arabic maqamat as 24-EDO (quarter-tone) approximations. */
 export const MAQAMAT: Record<string, Maqam> = Object.freeze({
   'rast': {
     name: 'Rast',
