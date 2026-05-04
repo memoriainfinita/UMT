@@ -1,8 +1,13 @@
+/**
+ * Upper-structure triads (USTs) over dominant 7th chords: the six canonical voicings
+ * and their tension labels.
+ */
 import { Chord } from './chord';
 import { Note } from './note';
 import { parseChordSymbol } from './parser';
 import { preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 
+/** An upper-structure triad voiced over a dominant chord, with its resulting tensions and label. */
 export interface UpperStructure {
   triad: Chord;
   tensions: string[];
