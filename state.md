@@ -38,13 +38,18 @@
 - [x] Crear docs de la API — TypeDoc en `api-docs/`, publicado en GitHub Pages
 - [x] Sistema de aliases para el parser — `translateSymbol(input, aliases)` + mapas predefinidos `SOLFEGE_ROOTS`, `QUALITY_ALIASES_ES/FR/IT`. 33 tests. Commit `20ee31d`.
 - [ ] Voicing algorítmico para fretboard — dado un acorde y un tuning, generar `FretboardChord` (posiciones en trastes) para notae. Diseñar API cuando UMT esté más maduro. Coordinado con notae state.md línea 272.
-- [ ] `figured-bass.ts` — `_keySymbol` (resolución de accidentales por clave) y `_voices` (voicing a 4 voces) sin implementar. Requiere diseño.
+- [x] `figured-bass.ts` — `keySymbol` implementado: resolución diatónica de numerales sin accidental explícito. Fallback si bass es cromático o clave inválida. 16 tests. Commit pendiente.
+- [ ] `figured-bass.ts` — `_voices` (voicing a 4 voces) sin implementar. Requiere diseño.
 - [ ] `counterpoint.ts` — `_mode` en `checkSpecies`: reglas modales por especie no implementadas. Requiere investigación musicológica.
 - [x] ESLint — `typescript-eslint` instalado, parser configurado con tsconfig. 4 errores corregidos. Commit `84cdafa`.
 - [x] `SetTheory.getZRelated` — implementado via búsqueda dinámica en FORTE_TABLE por interval vector. 6 tests. Commit pendiente.
 - [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit pendiente.
 
 ## History
+
+### 2026-05-05 - FiguredBass.realize: resolución diatónica por clave
+
+`keySymbol` implementado en `FiguredBass.realize()`. Numerales sin accidental explícito se resuelven diatónicamente: `getDiatonicPCs()` parsea la clave via `parseScaleSymbol`, `diatonicOffset()` cuenta grados diatónicos desde el bajo. Fallback a `FIGURE_DEFAULT_SEMITONES` si el bajo es cromático o la clave no parsea. Accidentales explícitos siempre tienen prioridad. 16 tests en `tests/unit/figured-bass.test.ts`.
 
 ### 2026-05-05 - Build y push
 
