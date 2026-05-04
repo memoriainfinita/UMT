@@ -1,7 +1,11 @@
+/**
+ * Chord substitution engine: tritone subs, diatonic substitutions, sus4, and deceptive resolutions.
+ */
 import { Chord } from './chord';
 import { parseChordSymbol, parseScaleSymbol } from './parser';
 import { get12TETBaseName, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 
+/** A possible chord substitution with its type and harmonic explanation. */
 export interface SubstitutionOption {
   chord: Chord;
   type: 'tritone' | 'diatonic' | 'deceptive' | 'chromatic-mediant' | 'sus4' | 'modal';
