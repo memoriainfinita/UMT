@@ -1,5 +1,9 @@
+/**
+ * Species counterpoint validation and canon/imitation detection.
+ */
 import { Note } from './note';
 
+/** A rule violation found during species counterpoint analysis. */
 export interface CounterpointIssue {
   type: string;
   beat?: number;
