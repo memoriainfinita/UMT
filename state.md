@@ -36,7 +36,7 @@
 ## TODO
 
 - [x] Crear docs de la API — TypeDoc en `api-docs/`, publicado en GitHub Pages
-- [ ] Sistema de aliases para el parser — solo input: traducir raíces solfège (Do→C) y calidad básica (mayor→M). Alteraciones ya son universales. Implementar como función standalone `translateSymbol(input, aliases)` sin tocar el core.
+- [x] Sistema de aliases para el parser — `translateSymbol(input, aliases)` + mapas predefinidos `SOLFEGE_ROOTS`, `QUALITY_ALIASES_ES/FR/IT`. 33 tests. Commit `20ee31d`.
 - [ ] Voicing algorítmico para fretboard — dado un acorde y un tuning, generar `FretboardChord` (posiciones en trastes) para notae. Diseñar API cuando UMT esté más maduro. Coordinado con notae state.md línea 272.
 - [ ] `figured-bass.ts` — `_keySymbol` (resolución de accidentales por clave) y `_voices` (voicing a 4 voces) sin implementar. Requiere diseño.
 - [ ] `counterpoint.ts` — `_mode` en `checkSpecies`: reglas modales por especie no implementadas. Requiere investigación musicológica.
@@ -45,6 +45,10 @@
 - [ ] `Polymeter` — el parámetro `cycleBeats` del constructor se eliminó por no usarse. Reimplementar cuando se quiera: limitar el polímetro a N beats de ciclo o calcular LCM de los metros.
 
 ## History
+
+### 2026-05-04 - Sistema de aliases para el parser
+
+`translateSymbol(input, aliases)` + mapas predefinidos `SOLFEGE_ROOTS`, `QUALITY_ALIASES_ES/FR/IT` en nuevo módulo `lib/music-theory/aliases.ts`. Greedy left-to-right, match más largo primero. 33 tests nuevos, 588 en total. Commit `20ee31d`.
 
 ### 2026-05-04 - Limpieza general: código muerto, restos Next.js, fixes menores
 
