@@ -4,12 +4,14 @@
  * true = onset, false = rest.
  */
 
+/** A named rhythmic clave or timeline pattern as a boolean onset array. */
 export interface ClavePattern {
   name: string;
   steps: readonly boolean[];
   description: string;
 }
 
+/** Collection of 10 clave and timeline patterns from Cuban, Brazilian, and West African music. */
 export const CLAVE_PATTERNS: Record<string, ClavePattern> = {
   'son-3-2': {
     name: 'Son Clave 3-2',
