@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseChordSymbol } from '../../lib/music-theory/parser';
 
-function ivs(symbol: string): number[] {
+function ivs(symbol: string): readonly number[] {
   return parseChordSymbol(symbol).intervalsInSteps;
 }
 
