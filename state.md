@@ -41,8 +41,14 @@
 - [ ] `figured-bass.ts` — `_keySymbol` (resolución de accidentales por clave) y `_voices` (voicing a 4 voces) sin implementar. Requiere diseño.
 - [ ] `counterpoint.ts` — `_mode` en `checkSpecies`: reglas modales por especie no implementadas. Requiere investigación musicológica.
 - [ ] ESLint — config arreglada (era Next.js), pero sin parser TypeScript. Si se quiere lint de tipos instalar `@typescript-eslint/parser`.
+- [ ] `SetTheory.getZRelated(primeForm)` — datos `Z_PAIRS` eliminados por no usarse, pero la feature tiene sentido: dado un prime form, devolver su set-class hermano Z con el mismo interval vector. Reimplementar con los datos cuando se haga.
+- [ ] `Polymeter` — el parámetro `cycleBeats` del constructor se eliminó por no usarse. Reimplementar cuando se quiera: limitar el polímetro a N beats de ciclo o calcular LCM de los metros.
 
 ## History
+
+### 2026-05-04 - Limpieza general: código muerto, restos Next.js, fixes menores
+
+Eliminados todos los restos de Next.js: `tsconfig.json` reescrito, `eslint.config.mjs` reescrito, `@playwright/test` y `@types/node` desinstalados, `.next/` y `test-results/` fuera del gitignore. Revisión sistemática de código muerto con `tsc --noUnusedLocals --noUnusedParameters`: eliminados 9 imports no usados, 6 variables locales huérfanas, `Z_PAIRS`, `FIXED_DO_SYLLABLES`, `intervalClass`, `cycleBeats` y código muerto en `counterpoint.ts`. Fix: `maqamat.ts` Nawa Athar corregido a `[4,2,6]`. 555 tests pasan. Commits `7e3af03`…`51fc7d7`.
 
 ### 2026-05-04 - JSDoc completo + TypeDoc API docs
 
