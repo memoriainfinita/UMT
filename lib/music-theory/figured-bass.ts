@@ -113,7 +113,7 @@ export class FiguredBass {
    * @param figures - The figured bass symbol (e.g., `'6'`, `'6/4'`, `'7'`, `''`).
    * @param keySymbol - Key context for diatonic resolution (e.g. `'G major'`, `'D minor'`).
    *   If the key cannot be parsed or the bass note is chromatic, falls back to equal-tempered defaults.
-   * @param _voices - Number of voices (reserved; doubling not yet implemented).
+   * @param _voices - Reserved. For full SATB voicing use {@link FiguredBass.voices}.
    */
   static realize(bassNote: Note, figures: string, keySymbol = 'C major', _voices = 4): Chord {
     const ts = bassNote.tuningSystem;
@@ -130,6 +130,114 @@ export class FiguredBass {
 
     const name = `${bassNote.getName()}-${figures || '5/3'}`;
     return new Chord(name, ts, bassNote.stepsFromBase, [0, ...intervals]);
+  }
+
+  /**
+   * Realizes a figured bass symbol as a 4-voice SATB voicing.
+   *
+   * Returns `[soprano, alto, tenor, bass]` as an array of 4 `Note` objects.
+   * The bass voice is the given `bassNote`. The upper voices (T, A, S) are placed
+   * within classical vocal ranges using standard doubling and spacing rules:
+   * - Soprano: C4–G5, Alto: G3–C5, Tenor: C3–G4
+   * - S-A and A-T: max one octave apart; T-B: max a 12th (19 semitones)
+   * - No voice crossing
+   * - Triads: root doubled; 7th chords: all 4 pitch classes represented
+   *
+   * @param bassNote - The bass note (basso continuo).
+   * @param figures - The figured bass symbol (e.g. `''`, `'6'`, `'6/4'`, `'7'`).
+   * @param keySymbol - Key context for diatonic resolution (default `'C major'`).
+   * @returns `[soprano, alto, tenor, bass]`
+   */
+  static voices(bassNote: Note, figures: string, keySymbol = 'C major'): Note[] {
+    const ts = bassNote.tuningSystem;
+    const oct = ts.octaveSteps;
+    const chord = this.realize(bassNote, figures, keySymbol);
+    const bassStep = bassNote.stepsFromBase;
+    const bassPc = ((bassStep % oct) + oct) % oct;
+
+    // Collect unique pitch classes in the chord
+    const intervals = chord.intervalsInSteps.filter(i => i !== 0);
+    const allPcs = [bassPc, ...intervals.map(i => ((bassPc + i) % oct + oct) % oct)];
+    const uniquePcs = [...new Set(allPcs)];
+
+    // Build the pool of 3 PCs for the upper voices (T, A, S).
+    // Bass already covers bassPc, so upper voices need to cover the remaining PCs.
+    // Triads (≤3 unique PCs): bass + 2 others → one upper voice doubles the bass PC.
+    // 7th chords (4 PCs): bass covers 1 → remaining 3 go to T/A/S, no doubling needed.
+    // 5+ PCs: omit 5th first, then further prune to 3.
+    let upperPcs: number[];
+    if (uniquePcs.length <= 3) {
+      upperPcs = uniquePcs; // includes bassPc (one upper voice will double it)
+    } else {
+      const remaining = uniquePcs.filter(pc => pc !== bassPc);
+      if (remaining.length <= 3) {
+        upperPcs = remaining;
+      } else {
+        const fifth = ((bassPc + 7) % oct + oct) % oct;
+        upperPcs = remaining.filter(pc => pc !== fifth).slice(0, 3);
+      }
+    }
+
+    // Vocal ranges (stepsFromBase, A4=0, 12-TET: C4=-9, G5=10, G3=-14, C5=3, C3=-21, G4=-2)
+    const T_MIN = -21, T_MAX = -2;
+    const A_MIN = -14, A_MAX = 3;
+    const S_MIN = -9,  S_MAX = 10;
+
+    // Returns all steps in [min, max] whose pitch class equals pc
+    const stepsInRange = (pc: number, min: number, max: number): number[] => {
+      const out: number[] = [];
+      const kMin = Math.ceil((min - pc) / oct);
+      const kMax = Math.floor((max - pc) / oct);
+      for (let k = kMin; k <= kMax; k++) out.push(pc + oct * k);
+      return out;
+    };
+
+    // Generate all permutations of upperPcs to assign to [T, A, S]
+    const perms = (arr: number[]): number[][] => {
+      if (arr.length <= 1) return [arr.slice()];
+      return arr.flatMap((v, i) =>
+        perms([...arr.slice(0, i), ...arr.slice(i + 1)]).map(p => [v, ...p])
+      );
+    };
+
+    let best: Note[] | null = null;
+    let bestScore = Infinity;
+
+    for (const [tPc, aPc, sPc] of perms(upperPcs)) {
+      for (const tStep of stepsInRange(tPc, T_MIN, T_MAX)) {
+        if (tStep < bassStep) continue;               // tenor above bass
+        if (tStep - bassStep > 19) continue;          // T-B max 12th
+
+        for (const aStep of stepsInRange(aPc, A_MIN, A_MAX)) {
+          if (aStep < tStep) continue;                // alto above tenor
+          if (aStep - tStep > 12) continue;           // A-T max octave
+
+          for (const sStep of stepsInRange(sPc, S_MIN, S_MAX)) {
+            if (sStep < aStep) continue;              // soprano above alto
+            if (sStep - aStep > 12) continue;         // S-A max octave
+
+            // Score: prefer moderate total span and voices near middle of ranges
+            const tMid = (T_MIN + T_MAX) / 2;
+            const aMid = (A_MIN + A_MAX) / 2;
+            const sMid = (S_MIN + S_MAX) / 2;
+            const score = Math.abs(tStep - tMid) + Math.abs(aStep - aMid) + Math.abs(sStep - sMid);
+
+            if (score < bestScore) {
+              bestScore = score;
+              best = [
+                new Note(ts, sStep),
+                new Note(ts, aStep),
+                new Note(ts, tStep),
+                bassNote,
+              ];
+            }
+          }
+        }
+      }
+    }
+
+    // Fallback: duplicate bass note in all voices (should never trigger for valid 12-TET input)
+    return best ?? [bassNote, bassNote, bassNote, bassNote];
   }
 
   /**

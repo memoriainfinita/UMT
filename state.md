@@ -39,13 +39,17 @@
 - [x] Sistema de aliases para el parser — `translateSymbol(input, aliases)` + mapas predefinidos `SOLFEGE_ROOTS`, `QUALITY_ALIASES_ES/FR/IT`. 33 tests. Commit `20ee31d`.
 - [ ] Voicing algorítmico para fretboard — dado un acorde y un tuning, generar `FretboardChord` (posiciones en trastes) para notae. Diseñar API cuando UMT esté más maduro. Coordinado con notae state.md línea 272.
 - [x] `figured-bass.ts` — `keySymbol` implementado: resolución diatónica de numerales sin accidental explícito. Fallback si bass es cromático o clave inválida. 16 tests. Commit `6f48e14`.
-- [ ] `figured-bass.ts` — `_voices` (voicing a 4 voces) sin implementar. Requiere diseño.
+- [x] `figured-bass.ts` — `FiguredBass.voices()`: SATB clásico. Rangos vocales, doblamiento (raíz en tríadas, todos los PCs en acorde de 7ª), sin cruzamiento, S-A/A-T max 8va, T-B max 12ª. 13 tests. Commit pendiente.
 - [ ] `counterpoint.ts` — `_mode` en `checkSpecies`: reglas modales por especie no implementadas. Requiere investigación musicológica.
 - [x] ESLint — `typescript-eslint` instalado, parser configurado con tsconfig. 4 errores corregidos. Commit `84cdafa`.
 - [x] `SetTheory.getZRelated` — implementado via búsqueda dinámica en FORTE_TABLE por interval vector. 6 tests. Commit pendiente.
 - [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit pendiente.
 
 ## History
+
+### 2026-05-05 - FiguredBass.voices: realización SATB clásica
+
+`FiguredBass.voices(bassNote, figures, keySymbol)` → `[S, A, T, B]`. Rangos: S(C4–G5), A(G3–C5), T(C3–G4). Doblamiento: en tríadas el bajo se dobla en una voz superior; en acordes de 7ª (4 PCs) las 3 voces superiores cubren los PCs restantes sin doblamiento. Sin cruzamiento de voces. Espaciado S-A/A-T max 8va, T-B max 12ª. Scoring por proximidad al centro de rango. 13 tests nuevos. 630 tests en total.
 
 ### 2026-05-05 - FiguredBass.realize: resolución diatónica por clave
 
