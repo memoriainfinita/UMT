@@ -1,0 +1,14 @@
+{
+  "entryPoints": ["lib/music-theory/index.ts"],
+  "out": "api-docs",
+  "name": "Universal Music Theory Library",
+  "readme": "README.md",
+  "excludeInternal": true,
+  "excludePrivate": true,
+  "includeVersion": true,
+  "tsconfig": "./tsconfig.typedoc.json",
+  "navigationLinks": {
+    "GitHub": "https://github.com/memoriainfinita/UMT",
+    "Demo": "https://memoriainfinita.github.io/UMT"
+  }
+}
