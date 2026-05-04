@@ -8,6 +8,7 @@ import { Note } from './note';
 import { Chord } from './chord';
 import { parseScaleSymbol } from './parser';
 
+/** The detected Urlinie (fundamental melodic line) and its type (3-, 5-, or 8-line). */
 export interface UrlinieResult {
   line: Note[];
   type: '3-line' | '5-line' | '8-line';
