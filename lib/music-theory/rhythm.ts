@@ -3,6 +3,7 @@
  * Handles standard durations, complex tuplets, additive meters, and polyrhythms.
  */
 
+/** A note duration expressed as a fraction of a whole note, with optional augmentation dots. */
 export class Duration {
   /**
    * @param value Fraction of a whole note (e.g., 0.25 for a quarter note)
@@ -38,6 +39,10 @@ export class Duration {
   static ThirtySecond = new Duration(1/32);
 }
 
+/**
+ * A time signature, supporting additive meters (e.g. 3+2+2/8) and irrational denominators.
+ * Includes presets for common signatures via static properties.
+ */
 export class TimeSignature {
   /**
    * @param numerators Array of numerators for additive meters (e.g., [3, 2, 2] for 7/8). For standard 4/4, use [4].
@@ -72,6 +77,7 @@ export class TimeSignature {
   static Balkan9 = new TimeSignature([2, 2, 2, 3], 8); // 2+2+2+3 / 8
 }
 
+/** Polyrhythm generation and Euclidean rhythm distribution. */
 export class Polyrhythm {
   /**
    * Generates a polyrhythm between multiple voices.
@@ -127,6 +133,7 @@ export class Polyrhythm {
 
 import { Note } from './note';
 
+/** A single timed event in a MusicStream: onset, duration, notes, and velocity. */
 export interface StreamEvent {
   time: number;     // Start time in beats
   duration: number; // Duration in beats
