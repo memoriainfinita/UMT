@@ -17,7 +17,7 @@
 
 ## Dependencies
 
-- esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (106 kb)
+- esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (107 kb)
 - typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
 - vitest - tests unitarios (`npm run test:unit`) - 524 tests
 - Tone.js CDN - audio en demo
@@ -38,7 +38,7 @@
 - [x] Crear docs de la API — TypeDoc en `api-docs/`, publicado en GitHub Pages
 - [x] Sistema de aliases para el parser — `translateSymbol(input, aliases)` + mapas predefinidos `SOLFEGE_ROOTS`, `QUALITY_ALIASES_ES/FR/IT`. 33 tests. Commit `20ee31d`.
 - [ ] Voicing algorítmico para fretboard — dado un acorde y un tuning, generar `FretboardChord` (posiciones en trastes) para notae. Diseñar API cuando UMT esté más maduro. Coordinado con notae state.md línea 272.
-- [x] `figured-bass.ts` — `keySymbol` implementado: resolución diatónica de numerales sin accidental explícito. Fallback si bass es cromático o clave inválida. 16 tests. Commit pendiente.
+- [x] `figured-bass.ts` — `keySymbol` implementado: resolución diatónica de numerales sin accidental explícito. Fallback si bass es cromático o clave inválida. 16 tests. Commit `6f48e14`.
 - [ ] `figured-bass.ts` — `_voices` (voicing a 4 voces) sin implementar. Requiere diseño.
 - [ ] `counterpoint.ts` — `_mode` en `checkSpecies`: reglas modales por especie no implementadas. Requiere investigación musicológica.
 - [x] ESLint — `typescript-eslint` instalado, parser configurado con tsconfig. 4 errores corregidos. Commit `84cdafa`.
