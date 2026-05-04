@@ -87,6 +87,7 @@ export class TemperamentAnalysis {
       { name: 'Diesis (diminished)', ratio: [128, 125],          cents: 41.059 },
       { name: 'Diaschisma',        ratio: [2048, 2025],          cents: 19.553 },
       { name: 'Septimal comma',    ratio: [64, 63],              cents: 27.264 },
+      // eslint-disable-next-line no-loss-of-precision
       { name: 'Mercator comma',    ratio: [19383245667680019, 19342813113834066795298816], cents: 3.615 },
     ];
   }

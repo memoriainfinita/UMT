@@ -249,7 +249,7 @@ function getRomanForChord(chord: Chord, key: KeyInfo): {
   const chordRootPc = pcMod(chord.rootStep, oct);
 
   // Try direct match against scale degrees first
-  let idx = key.scalePcs.indexOf(chordRootPc);
+  const idx = key.scalePcs.indexOf(chordRootPc);
   let accidental: '' | 'b' | '#' = '';
   let degree = idx !== -1 ? idx + 1 : -1;
 

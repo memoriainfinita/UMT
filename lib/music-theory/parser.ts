@@ -113,7 +113,7 @@ function normalizeSuffix(type: string): string {
  * then delegates shorthands to normalizeSuffix.
  */
 function inferRomanSuffix(raw: string, isMinor: boolean, degree: number): string {
-  let s = raw.trim();
+  const s = raw.trim();
   if (s === '') return isMinor ? 'm' : 'M';
   if (s === '7') {
     if (isMinor) return 'm7';
