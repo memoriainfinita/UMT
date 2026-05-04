@@ -1,3 +1,6 @@
+/**
+ * Neo-Riemannian PLR transformations: geometric voice-leading operations on major/minor triads.
+ */
 import { Chord } from './chord';
 import { get12TETBaseName, preferFlatsForKey, NOTE_NAMES_12TET_FLAT } from './utils';
 
