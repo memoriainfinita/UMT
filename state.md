@@ -10,13 +10,15 @@
 
 - Repo: https://github.com/memoriainfinita/UMT
 - Demo: https://memoriainfinita.github.io/UMT (GitHub Pages, branch `main`, root `/`)
+- API Docs: https://memoriainfinita.github.io/UMT/api-docs/ (TypeDoc, generado en `api-docs/`)
 - CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/dist/umt.js
 - Status: publicado y en producción.
-- Deploy: build local (`npm run build:umt`) + commit `dist/umt.js` + push.
+- Deploy: `npm run build:umt` + commit `dist/umt.js` + push. Para docs: `npm run docs` + commit `api-docs/` + push.
 
 ## Dependencies
 
 - esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (104 kb)
+- typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
 - vitest - tests unitarios (`npm run test:unit`) - 524 tests
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
@@ -33,11 +35,15 @@
 
 ## TODO
 
-- [ ] Crear Wiki en GitHub con docs de la API
+- [x] Crear docs de la API — TypeDoc en `api-docs/`, publicado en GitHub Pages
 - [ ] Sistema de aliases para el parser — solo input: traducir raíces solfège (Do→C) y calidad básica (mayor→M). Alteraciones ya son universales. Implementar como función standalone `translateSymbol(input, aliases)` sin tocar el core.
 - [ ] Voicing algorítmico para fretboard — dado un acorde y un tuning, generar `FretboardChord` (posiciones en trastes) para notae. Diseñar API cuando UMT esté más maduro. Coordinado con notae state.md línea 272.
 
 ## History
+
+### 2026-05-04 - JSDoc completo + TypeDoc API docs
+
+JSDoc añadido a todos los exports públicos de los 40+ módulos de `lib/music-theory/`. Incluye: módulos JSDoc, clases, interfaces, tipos, constantes y funciones. TypeDoc configurado (`typedoc.json` + `tsconfig.typedoc.json`) y `npm run docs` genera `api-docs/` (HTML completo). Docs publicadas en `https://memoriainfinita.github.io/UMT/api-docs/`. Fix de error TS preexistente en `counterpoint.ts` (uso de `.constructor` no constructable). `HexachordSyllable` y `HexachordType` exportados. Commits `b5e9c6f`…`25029f6`.
 
 ### 2026-05-03 - Parser compositivo para acordes extendidos/alterados
 
