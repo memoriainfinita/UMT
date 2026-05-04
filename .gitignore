@@ -1,5 +1,4 @@
 node_modules/
-.next/
 coverage/
 .DS_Store
 *.log
@@ -7,9 +6,6 @@ coverage/
 
 # Build artifacts
 tsconfig.tsbuildinfo
-
-# Test artifacts
-test-results/
 
 # Internal / session files
 CLAUDE.md
