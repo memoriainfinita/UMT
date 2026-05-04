@@ -8,6 +8,7 @@ import { Chord } from './chord';
 import { Scale } from './scale';
 import { MusicStream } from './rhythm';
 
+/** Optional metadata fields for LilyPond header block. */
 export interface LPMetadata {
   title?: string;
   composer?: string;
