@@ -12,6 +12,7 @@
 import { Chord } from './chord';
 import { Note } from './note';
 
+/** The five OPTIC equivalence classes of a chord: Octave, Permutation, Transposition, Inversion, Cardinality. */
 export interface OPTICResult {
   /** O: octave equivalence - pitch classes only */
   O: number[];
