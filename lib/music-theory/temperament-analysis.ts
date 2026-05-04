@@ -5,6 +5,7 @@
  */
 import { TuningSystem, JustIntonation } from './tuning';
 
+/** A single row in a temperament comparison: one tuning vs. one JI interval. */
 export interface ComparisonEntry {
   tuningName: string;
   intervalRatio: [number, number];
@@ -13,11 +14,13 @@ export interface ComparisonEntry {
   errorCents: number;
 }
 
+/** Full comparison matrix across tuning systems and JI reference intervals. */
 export interface ComparisonTable {
   intervals: [number, number][];
   entries: ComparisonEntry[][];
 }
 
+/** Static methods for comparing tuning systems against JI, detecting wolf intervals, and finding optimal EDOs. */
 export class TemperamentAnalysis {
   /**
    * Compares multiple tuning systems against JI reference intervals.
