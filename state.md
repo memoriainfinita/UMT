@@ -40,7 +40,7 @@
 - [ ] Voicing algorítmico para fretboard — dado un acorde y un tuning, generar `FretboardChord` (posiciones en trastes) para notae. Diseñar API cuando UMT esté más maduro. Coordinado con notae state.md línea 272.
 - [ ] `figured-bass.ts` — `_keySymbol` (resolución de accidentales por clave) y `_voices` (voicing a 4 voces) sin implementar. Requiere diseño.
 - [ ] `counterpoint.ts` — `_mode` en `checkSpecies`: reglas modales por especie no implementadas. Requiere investigación musicológica.
-- [ ] ESLint — config arreglada (era Next.js), pero sin parser TypeScript. Si se quiere lint de tipos instalar `@typescript-eslint/parser`.
+- [x] ESLint — `typescript-eslint` instalado, parser configurado con tsconfig. 4 errores corregidos. Commit `84cdafa`.
 - [ ] `SetTheory.getZRelated(primeForm)` — datos `Z_PAIRS` eliminados por no usarse, pero la feature tiene sentido: dado un prime form, devolver su set-class hermano Z con el mismo interval vector. Reimplementar con los datos cuando se haga.
 - [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit pendiente.
 
@@ -48,7 +48,7 @@
 
 ### 2026-05-04 - Polymeter: cycleBeats, naturalCycle, cycleLength, generateGrid
 
-`Polymeter` implementado: `naturalCycle` (LCM de metros), `cycleLength` (cycleBeats ?? naturalCycle), `getCyclePosition` wrapea en cycleLength, `generateGrid()` devuelve todos los downbeats por metro en un ciclo completo ordenados por beat. 7 tests nuevos, 595 en total.
+`Polymeter` implementado: `naturalCycle` (LCM de metros), `cycleLength` (cycleBeats ?? naturalCycle), `getCyclePosition` wrapea en cycleLength, `generateGrid()` devuelve todos los downbeats por metro en un ciclo completo ordenados por beat. 7 tests nuevos, 595 en total. Commit `549920d`.
 
 ### 2026-05-04 - Sistema de aliases para el parser
 
