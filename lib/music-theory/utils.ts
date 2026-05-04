@@ -1,6 +1,12 @@
+/**
+ * Utility functions for note naming, MIDI conversion, interval naming,
+ * and enharmonic spelling in 12-TET.
+ */
 import { Hertz, MidiNote } from './types';
 
+/** Note names in 12-TET using sharps, ordered from A (index 0 = A, index 3 = C, etc.). */
 export const NOTE_NAMES_12TET_SHARP = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
+/** Note names in 12-TET using flats, ordered from A (index 0 = A, index 3 = C, etc.). */
 export const NOTE_NAMES_12TET_FLAT = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab'];
 
 const NOTE_REGEX = /^([A-G])([#b]*)/;
@@ -23,6 +29,12 @@ export function parseNoteToStep12TET(noteName: string, octave: number = 4): numb
   return step;
 }
 
+/**
+ * Returns the full note name with octave for a step offset from A4 in 12-TET.
+ * @param stepsFromA4 - Integer semitone offset from A4 (A4 = 0, C4 = -9).
+ * @param preferFlats - If true, uses flat spelling (e.g. Bb instead of A#).
+ * @returns Note name with octave, e.g. `"C4"`, `"Bb3"`.
+ */
 export function get12TETName(stepsFromA4: number, preferFlats: boolean = false): string {
   const normalizedStep = ((stepsFromA4 % 12) + 12) % 12;
   const octave = Math.floor((stepsFromA4 + 9) / 12) + 4; // A4 is step 0. C4 is step -9.
@@ -37,6 +49,11 @@ export function get12TETBaseName(stepsFromA4: number, preferFlats: boolean = fal
   return names[normalizedStep];
 }
 
+/**
+ * Returns all enharmonic spellings of a given note name.
+ * @param noteName - Note name with optional accidental, e.g. `"C#"`, `"Db"`, `"F#4"`.
+ * @returns Array of enharmonic equivalents, e.g. `["Db"]` for `"C#"`.
+ */
 export function getEnharmonics(noteName: string): string[] {
   const enharmonicsMap: Record<string, string[]> = {
     'C#': ['Db', 'Bx'], 'Db': ['C#'],
@@ -126,6 +143,13 @@ export function usesFlats(rootName: string): boolean {
   return preferFlatsForKey(rootName);
 }
 
+/**
+ * Returns the standard interval abbreviation for a number of semitones from a root.
+ * Handles compound intervals up to the 13th.
+ * @param stepsFromRoot - Number of semitones (can exceed 12 for compound intervals).
+ * @param is12TET - If false, returns a generic `"Step N"` label.
+ * @returns Interval abbreviation, e.g. `"M3"`, `"P5"`, `"m9"`, `"A11"`.
+ */
 export function getIntervalName(stepsFromRoot: number, is12TET: boolean = true): string {
   if (!is12TET) return `Step ${stepsFromRoot}`;
   
@@ -143,6 +167,13 @@ export function getIntervalName(stepsFromRoot: number, is12TET: boolean = true):
   return name;
 }
 
+/**
+ * Returns a human-readable interval name from a cent value.
+ * Matches to the nearest 12-TET interval within ±10 cents; otherwise returns the raw cent value.
+ * Useful for microtonal tunings where exact semitone counts don't apply.
+ * @param cents - Interval size in cents (can exceed 1200 for compound intervals).
+ * @returns Interval name, e.g. `"Major 3rd (M3)"`, or `"350.00 cents"` if no match.
+ */
 export function getSemanticIntervalName(cents: number): string {
   // Try to match standard 12-TET intervals if close enough (within 10 cents)
   const standardIntervals = [
