@@ -12,8 +12,10 @@ import { Note } from './note';
 import { TET12 } from './tuning';
 import { parseNoteToStep12TET } from './utils';
 
-type HexachordSyllable = 'ut' | 're' | 'mi' | 'fa' | 'sol' | 'la';
-type HexachordType = 'naturale' | 'durum' | 'molle';
+/** A Guidonian hexachord syllable (solfège name within the hexachord). */
+export type HexachordSyllable = 'ut' | 're' | 'mi' | 'fa' | 'sol' | 'la';
+/** One of the three Guidonian hexachord species. */
+export type HexachordType = 'naturale' | 'durum' | 'molle';
 
 // Each hexachord: starting note name + scale steps in semitones (W W H W W = 2 2 1 2 2)
 const HEXACHORD_DEFS: Record<HexachordType, { start: string; notes: string[] }> = {

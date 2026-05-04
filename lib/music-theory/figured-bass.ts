@@ -71,7 +71,7 @@ export class FiguredBass {
    * @param bassNote - The bass note.
    * @param figures - The figured bass symbol (e.g., `'6'`, `'6/4'`, `'7'`, `''`).
    * @param _keySymbol - Key context (reserved for accidental resolution; not yet used).
-   * @param voices - Number of voices (currently figures are used as-is; doubling not implemented).
+   * @param _voices - Number of voices (reserved; doubling not yet implemented).
    */
   static realize(bassNote: Note, figures: string, _keySymbol = 'C major', _voices = 4): Chord {
     const ts = bassNote.tuningSystem;

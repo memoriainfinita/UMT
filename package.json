@@ -5,12 +5,14 @@
   "scripts": {
     "build:umt": "npx -y esbuild lib/music-theory/umt.ts --bundle --minify --sourcemap --format=iife --global-name=UMT --outfile=dist/umt.js",
     "lint": "eslint .",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "docs": "typedoc"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@types/node": "^20",
     "eslint": "9.39.1",
+    "typedoc": "^0.28.19",
     "typescript": "5.9.3",
     "vitest": "^4.1.4"
   }

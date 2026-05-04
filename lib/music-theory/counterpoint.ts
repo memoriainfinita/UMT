@@ -48,7 +48,7 @@ export class Counterpoint {
    * @param species - 1 | 2 | 3 | 4 | 5
    * @param cf - Cantus firmus notes (one per measure for species 1).
    * @param counter - Counterpoint notes.
-   * @param mode - Optional mode name (unused in current implementation; reserved for future modal rules).
+   * @param _mode - Optional mode name (reserved for future modal rules; not used currently).
    */
   static checkSpecies(
     species: 1 | 2 | 3 | 4 | 5,
@@ -207,11 +207,11 @@ export class Canon {
       follower = [];
       let prevOrigStep = theme[0].stepsFromBase;
       let prevFolStep = theme[0].stepsFromBase + interval;
-      follower.push(new theme[0].constructor(theme[0].tuningSystem, prevFolStep) as Note);
+      follower.push(new (theme[0].constructor as new (ts: Note['tuningSystem'], step: number) => Note)(theme[0].tuningSystem, prevFolStep));
       for (let i = 1; i < theme.length; i++) {
         const diff = theme[i].stepsFromBase - prevOrigStep;
         prevFolStep -= diff; // mirror the interval
-        follower.push(new theme[i].constructor(theme[i].tuningSystem, prevFolStep) as Note);
+        follower.push(new (theme[i].constructor as new (ts: Note['tuningSystem'], step: number) => Note)(theme[i].tuningSystem, prevFolStep));
         prevOrigStep = theme[i].stepsFromBase;
       }
     } else {
