@@ -17,7 +17,7 @@
 
 ## Dependencies
 
-- esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (104 kb)
+- esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (106 kb)
 - typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
 - vitest - tests unitarios (`npm run test:unit`) - 524 tests
 - Tone.js CDN - audio en demo
@@ -45,6 +45,10 @@
 - [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit pendiente.
 
 ## History
+
+### 2026-05-05 - Build y push
+
+Bundle reconstruido (106 kb). Incluye Polymeter completo + fixes ESLint. Push a main.
 
 ### 2026-05-04 - Polymeter: cycleBeats, naturalCycle, cycleLength, generateGrid
 
