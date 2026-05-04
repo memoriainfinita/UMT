@@ -1,3 +1,6 @@
+/**
+ * Post-tonal set theory: normal/prime form, interval vector, Forte catalogue, and Z-relations.
+ */
 import { Note } from './note';
 
 // ============================================================================
@@ -80,6 +83,7 @@ const Z_PAIRS: [string, string][] = [
   ['0,1,2,4,6,7', '0,1,2,3,5,6'],    // etc.
 ];
 
+/** Allen Forte set-class analysis for any pitch-class collection. */
 export class SetTheory {
   /**
    * Extracts unique pitch classes from an array of notes.
