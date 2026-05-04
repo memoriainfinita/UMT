@@ -8,6 +8,7 @@ import { Chord } from './chord';
 import { Scale } from './scale';
 import { MusicStream, Duration } from './rhythm';
 
+/** Optional metadata fields for MusicXML score headers. */
 export interface MusicXMLMetadata {
   title?: string;
   composer?: string;
