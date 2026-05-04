@@ -1,16 +1,23 @@
+/**
+ * Harmonic form analysis: detects AABA, binary, ternary, rondo, and other formal structures
+ * from a chord progression.
+ */
 import { Chord } from './chord';
 
+/** Recognized musical form types. `'unknown'` is returned when no pattern matches confidently. */
 export type FormType =
   | 'AABA' | 'AAB' | 'ABAB' | 'ABAC' | 'binary' | 'ternary'
   | 'rondo' | 'sonata-allegro' | 'theme-variations' | 'blues-12'
   | 'strophic' | 'through-composed' | 'unknown';
 
+/** A labeled section within a formal analysis (e.g. A, B, A'). */
 export interface FormSection {
   label: string;
   start: number;
   end: number;
 }
 
+/** Result of a harmonic form analysis: detected type, labeled sections, and confidence (0–1). */
 export interface FormAnalysis {
   type: FormType;
   sections: FormSection[];
