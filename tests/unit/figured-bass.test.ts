@@ -115,3 +115,114 @@ describe('FiguredBass.fromChord', () => {
     expect(FiguredBass.fromChord(chord, bass)).toBe('');
   });
 });
+
+// ============================================================================
+// FiguredBass.voices — SATB realization
+// ============================================================================
+
+describe('FiguredBass.voices', () => {
+  // Soprano: C4–G5 (steps -9 to 10)
+  // Alto:    G3–C5 (steps -14 to 3)
+  // Tenor:   C3–G4 (steps -21 to -2)
+  // Bass:    given (no range constraint)
+  const S_MIN = -9, S_MAX = 10;
+  const A_MIN = -14, A_MAX = 3;
+  const T_MIN = -21, T_MAX = -2;
+
+  it('returns exactly 4 notes ordered [S, A, T, B]', () => {
+    const bass = parseNote('C3');
+    const result = FiguredBass.voices(bass, '', 'C major');
+    expect(result).toHaveLength(4);
+  });
+
+  it('bass voice (index 3) matches the given bass note', () => {
+    const bass = parseNote('C3');
+    const [, , , b] = FiguredBass.voices(bass, '', 'C major');
+    expect(b.stepsFromBase).toBe(bass.stepsFromBase);
+  });
+
+  it('voices are non-crossing: S >= A >= T >= B in stepsFromBase', () => {
+    const bass = parseNote('C3');
+    const [s, a, t, b] = FiguredBass.voices(bass, '', 'C major');
+    expect(s.stepsFromBase).toBeGreaterThanOrEqual(a.stepsFromBase);
+    expect(a.stepsFromBase).toBeGreaterThanOrEqual(t.stepsFromBase);
+    expect(t.stepsFromBase).toBeGreaterThanOrEqual(b.stepsFromBase);
+  });
+
+  it('soprano is within C4–G5', () => {
+    const bass = parseNote('C3');
+    const [s] = FiguredBass.voices(bass, '', 'C major');
+    expect(s.stepsFromBase).toBeGreaterThanOrEqual(S_MIN);
+    expect(s.stepsFromBase).toBeLessThanOrEqual(S_MAX);
+  });
+
+  it('alto is within G3–C5', () => {
+    const bass = parseNote('C3');
+    const [, a] = FiguredBass.voices(bass, '', 'C major');
+    expect(a.stepsFromBase).toBeGreaterThanOrEqual(A_MIN);
+    expect(a.stepsFromBase).toBeLessThanOrEqual(A_MAX);
+  });
+
+  it('tenor is within C3–G4', () => {
+    const bass = parseNote('C3');
+    const [, , t] = FiguredBass.voices(bass, '', 'C major');
+    expect(t.stepsFromBase).toBeGreaterThanOrEqual(T_MIN);
+    expect(t.stepsFromBase).toBeLessThanOrEqual(T_MAX);
+  });
+
+  it('S-A spacing is at most one octave', () => {
+    const bass = parseNote('C3');
+    const [s, a] = FiguredBass.voices(bass, '', 'C major');
+    expect(s.stepsFromBase - a.stepsFromBase).toBeLessThanOrEqual(12);
+  });
+
+  it('A-T spacing is at most one octave', () => {
+    const bass = parseNote('C3');
+    const [, a, t] = FiguredBass.voices(bass, '', 'C major');
+    expect(a.stepsFromBase - t.stepsFromBase).toBeLessThanOrEqual(12);
+  });
+
+  it('T-B spacing is at most a 12th (19 semitones)', () => {
+    const bass = parseNote('C3');
+    const [, , t, b] = FiguredBass.voices(bass, '', 'C major');
+    expect(t.stepsFromBase - b.stepsFromBase).toBeLessThanOrEqual(19);
+  });
+
+  it('all chord pitch classes are represented across the 4 voices', () => {
+    const bass = parseNote('C3');
+    const [s, a, t, b] = FiguredBass.voices(bass, '', 'C major');
+    const pcs = new Set([s, a, t, b].map(n => ((n.stepsFromBase % 12) + 12) % 12));
+    // C major triad above C: pitch classes C=3, E=7, G=10 (in 12-TET with A=0)
+    expect(pcs.has(3)).toBe(true);  // C
+    expect(pcs.has(7)).toBe(true);  // E
+    expect(pcs.has(10)).toBe(true); // G
+  });
+
+  it('root is doubled in a root-position triad', () => {
+    const bass = parseNote('C3');
+    const [s, a, t, b] = FiguredBass.voices(bass, '', 'C major');
+    const bassPc = ((b.stepsFromBase % 12) + 12) % 12; // C = 3
+    const allPcs = [s, a, t, b].map(n => ((n.stepsFromBase % 12) + 12) % 12);
+    const rootCount = allPcs.filter(pc => pc === bassPc).length;
+    expect(rootCount).toBeGreaterThanOrEqual(2);
+  });
+
+  it('works with a 7th chord (7/5/3 figure) — all 4 PCs present', () => {
+    // G7 root position: bass=G3, figure=7/5/3 (explicit complete chord)
+    const bass = parseNote('G3');
+    const [s, a, t, b] = FiguredBass.voices(bass, '7/5/3', 'C major');
+    const pcs = new Set([s, a, t, b].map(n => ((n.stepsFromBase % 12) + 12) % 12));
+    // G7: G=10, B=2, D=5, F=8 (pitchClass from A=0)
+    expect(pcs.has(10)).toBe(true); // G
+    expect(pcs.has(2)).toBe(true);  // B
+    expect(pcs.has(5)).toBe(true);  // D
+    expect(pcs.has(8)).toBe(true);  // F
+  });
+
+  it('works with different bass notes and keys', () => {
+    const bass = parseNote('G3');
+    const [s, a, t, b] = FiguredBass.voices(bass, '', 'G major');
+    expect([s, a, t, b]).toHaveLength(4);
+    expect(t.stepsFromBase).toBeGreaterThanOrEqual(b.stepsFromBase);
+  });
+});
