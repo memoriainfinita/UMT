@@ -3,7 +3,6 @@
  * and their tension labels.
  */
 import { Chord } from './chord';
-import { Note } from './note';
 import { parseChordSymbol } from './parser';
 import { preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 

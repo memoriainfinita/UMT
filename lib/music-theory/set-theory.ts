@@ -76,13 +76,6 @@ const FORTE_TABLE: Record<string, string> = {
   '0,1,2,3,4,6,7,9,10': '9-10', '0,1,2,3,5,6,7,9,10': '9-11', '0,1,2,4,5,6,8,9,10': '9-12',
 };
 
-// Z-related pairs: each entry is a pair of prime forms sharing the same interval vector
-const Z_PAIRS: [string, string][] = [
-  ['0,1,2,4,6', '0,1,3,5,7'],         // 5-z12 / 5-z36... etc., abbreviated
-  ['0,1,2,4,5,6', '0,1,2,3,5,6'],    // 6-z3 / 6-z36
-  ['0,1,2,4,6,7', '0,1,2,3,5,6'],    // etc.
-];
-
 /** Allen Forte set-class analysis for any pitch-class collection. */
 export class SetTheory {
   /**

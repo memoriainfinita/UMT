@@ -21,11 +21,6 @@ function motionType(cf1: number, cf2: number, ct1: number, ct2: number): 'contra
   return 'similar';
 }
 
-function intervalClass(a: number, b: number): number {
-  const diff = Math.abs(a - b) % 12;
-  return Math.min(diff, 12 - diff);
-}
-
 const PERFECT_CONSONANCES = new Set([0, 7, 12]); // unison, P5, P8 (steps)
 const IMPERFECT_CONSONANCES = new Set([3, 4, 8, 9]); // m3, M3, m6, M6
 
@@ -190,18 +185,6 @@ export class Canon {
     if (theme.length === 0) return [[], []];
 
     const leader = theme;
-
-    const followerTheme = inversion
-      ? theme.map((n, i) => {
-          if (i === 0) return new (n.constructor as typeof Note)(n.tuningSystem, n.stepsFromBase + interval, undefined, n.preferFlats);
-          const prevStep = theme[i - 1].stepsFromBase;
-          const diff = n.stepsFromBase - prevStep;
-          // Each note is reflected: previous follower step - diff
-          return undefined as unknown as Note; // placeholder
-        })
-      : theme;
-
-    // Rebuild inversion properly
     let follower: Note[];
     if (inversion) {
       follower = [];

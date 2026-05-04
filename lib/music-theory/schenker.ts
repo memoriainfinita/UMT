@@ -33,13 +33,11 @@ export class Schenker {
     try { scale = parseScaleSymbol(keySymbol); } catch { return null; }
 
     const scaleDegreeSteps = scale.getNotes(1).map(n => n.stepsFromBase);
-    const tonicStep = scaleDegreeSteps[0];
     const oct = scale.tuningSystem.octaveSteps;
 
     // Compute scale degree for each melody note (1-indexed, 0 = not in scale)
     const degree = (note: Note): number => {
       const pc = ((note.stepsFromBase % oct) + oct) % oct;
-      const tonicPc = ((tonicStep % oct) + oct) % oct;
       const idx = scaleDegreeSteps.findIndex(s => ((s % oct) + oct) % oct === pc);
       return idx + 1; // 1-indexed
     };

@@ -35,7 +35,7 @@ const AJNAS: Record<string, Jins> = {
   nahawand:{ name: 'Nahawand',intervals: [4, 2, 4] },  // M2, m2, M2 → 0 4 6 10 (natural minor tetrachord)
   kurd:    { name: 'Kurd',    intervals: [2, 4, 4] },  // m2, M2, M2 → 0 2 6 10
   ajam:    { name: 'Ajam',    intervals: [4, 4, 2] },  // M2, M2, m2 → 0 4 8 10 (major tetrachord)
-  nawa_athar:{ name: 'Nawa Athar', intervals: [4, 2, 4]}, // placeholder
+  nawa_athar:{ name: 'Nawa Athar', intervals: [4, 2, 6]}, // M2, m2, A2 → 0 4 6 12
 };
 
 /** Catalog of 8 Arabic maqamat as 24-EDO (quarter-tone) approximations. */

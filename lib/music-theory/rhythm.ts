@@ -320,11 +320,9 @@ export class RhythmAnalysis {
  */
 export class Polymeter {
   private readonly meters: TimeSignature[];
-  private readonly cycleBeats: number;
 
-  constructor(meters: TimeSignature[], cycleBeats: number) {
+  constructor(meters: TimeSignature[], _cycleBeats?: number) {
     this.meters = meters;
-    this.cycleBeats = cycleBeats;
   }
 
   /** Returns the meter and position within that meter at a given absolute beat position. */

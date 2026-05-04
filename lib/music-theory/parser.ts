@@ -3,7 +3,7 @@ import { TET12, TuningSystem } from './tuning';
 import { Chord } from './chord';
 import { Scale } from './scale';
 import { Note } from './note';
-import { get12TETName, get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, NOTE_NAMES_12TET_FLAT } from './utils';
+import { get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey } from './utils';
 
 /**
  * Attempts to parse a chord suffix using a compositional grammar when the

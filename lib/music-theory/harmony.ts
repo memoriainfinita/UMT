@@ -4,11 +4,11 @@
  */
 import { Chord } from './chord';
 import { parseScaleSymbol, parseChordSymbol } from './parser';
-import { get12TETName, get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
+import { get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 import { CHORD_FORMULAS, SCALE_PATTERNS, MODE_BRIGHTNESS } from './dictionaries';
 import { Note } from './note';
 import { Scale } from './scale';
-import { TuningSystem, TET12, EDO } from './tuning';
+import { TuningSystem, TET12 } from './tuning';
 
 // ============================================================================
 //  Module constants
@@ -281,7 +281,7 @@ function getRomanForChord(chord: Chord, key: KeyInfo): {
  * Maps a (degree, quality) pair to a functional category T/S/D.
  * Conservative mapping: uses scale degree primarily; quality only disambiguates edge cases.
  */
-function getFunction(degree: number, quality: string, isMinor: boolean): 'T' | 'S' | 'D' | 'unknown' {
+function getFunction(degree: number, quality: string, _isMinor: boolean): 'T' | 'S' | 'D' | 'unknown' {
   if (degree <= 0) return 'unknown';
   // Dominants: V (any quality), vii° (leading-tone)
   if (degree === 5) return 'D';
@@ -322,7 +322,6 @@ function detectSecondaryDominant(chord: Chord, key: KeyInfo): { isSecondary: boo
 function detectBorrowedFrom(chord: Chord, key: KeyInfo): string | null {
   if (key.tuning.octaveSteps !== 12) return null;
   const chordPcs = new Set(chord.getPitchClasses());
-  const quality = chordQualityFromIntervals(chord, 12);
 
   // Try parallel modes based on whether main key is major or minor
   const parallelCandidates = key.isMinor
@@ -1106,10 +1105,8 @@ export class Harmony {
     const c1Pcs = chord1.intervalsInSteps.map(i => ((i % oct) + oct) % oct);
     const c2Pcs = chord2.intervalsInSteps.map(i => ((i % oct) + oct) % oct);
     const isC1Dominant = c1Pcs.includes(min7) && !c1Pcs.includes(maj7_step);
-    const c1IsMajor = c1Pcs.includes(maj3) && !c1Pcs.includes(min3);
     const c1IsMinor = c1Pcs.includes(min3) && !c1Pcs.includes(maj3);
     const c2IsMajor = c2Pcs.includes(maj3) && !c2Pcs.includes(min3);
-    const c2IsMinor = c2Pcs.includes(min3) && !c2Pcs.includes(maj3);
 
     const isC2Tonic = r2 === t;
     const isC1Subdominant = r1 === (t + ts.getStepFromStandard(5)) % oct; // IV

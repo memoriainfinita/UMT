@@ -1,11 +1,20 @@
 import { defineConfig } from "eslint/config";
-import next from "eslint-config-next";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import js from "@eslint/js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-export default defineConfig([{
-    extends: [...next],
-}]);
+export default defineConfig([
+  js.configs.recommended,
+  {
+    files: ["lib/**/*.ts"],
+    rules: {
+      "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+      "no-unreachable": "warn",
+      "no-constant-condition": "warn",
+    },
+    languageOptions: {
+      globals: { console: "readonly" }
+    }
+  },
+  {
+    ignores: ["node_modules/**", "archive/**", "api-docs/**", "dist/**"]
+  }
+]);
