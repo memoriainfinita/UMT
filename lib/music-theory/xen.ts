@@ -6,6 +6,7 @@ import { Chord } from './chord';
 import { Note } from './note';
 import { JustIntonation } from './tuning';
 
+/** Xenharmonic chord analysis: neutral triads, otonal/utonal detection, and essentially-just matching. */
 export class Xen {
   /**
    * Detects whether a chord contains a neutral third (≈ 350 cents, midway between m3 and M3).
