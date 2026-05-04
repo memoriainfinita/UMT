@@ -9,8 +9,6 @@
     "docs": "typedoc"
   },
   "devDependencies": {
-    "@playwright/test": "^1.59.1",
-    "@types/node": "^20",
     "eslint": "9.39.1",
     "typedoc": "^0.28.19",
     "typescript": "5.9.3",
