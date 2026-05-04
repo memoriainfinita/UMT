@@ -1,5 +1,9 @@
+/**
+ * Melodic analysis: contour, interval histograms, motif detection, and durational reduction.
+ */
 import { Note } from './note';
 
+/** A recurring interval pattern detected within a melody. */
 export interface Motif {
   start: number;
   length: number;
