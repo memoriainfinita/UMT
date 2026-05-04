@@ -38,6 +38,9 @@
 - [x] Crear docs de la API — TypeDoc en `api-docs/`, publicado en GitHub Pages
 - [ ] Sistema de aliases para el parser — solo input: traducir raíces solfège (Do→C) y calidad básica (mayor→M). Alteraciones ya son universales. Implementar como función standalone `translateSymbol(input, aliases)` sin tocar el core.
 - [ ] Voicing algorítmico para fretboard — dado un acorde y un tuning, generar `FretboardChord` (posiciones en trastes) para notae. Diseñar API cuando UMT esté más maduro. Coordinado con notae state.md línea 272.
+- [ ] `figured-bass.ts` — `_keySymbol` (resolución de accidentales por clave) y `_voices` (voicing a 4 voces) sin implementar. Requiere diseño.
+- [ ] `counterpoint.ts` — `_mode` en `checkSpecies`: reglas modales por especie no implementadas. Requiere investigación musicológica.
+- [ ] ESLint — config arreglada (era Next.js), pero sin parser TypeScript. Si se quiere lint de tipos instalar `@typescript-eslint/parser`.
 
 ## History
 
