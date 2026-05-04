@@ -8,9 +8,6 @@ coverage/
 # Build artifacts
 tsconfig.tsbuildinfo
 
-# TypeDoc generated output (rebuild with npm run docs)
-api-docs/
-
 # Test artifacts
 test-results/
 
