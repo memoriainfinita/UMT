@@ -42,9 +42,13 @@
 - [ ] `counterpoint.ts` — `_mode` en `checkSpecies`: reglas modales por especie no implementadas. Requiere investigación musicológica.
 - [ ] ESLint — config arreglada (era Next.js), pero sin parser TypeScript. Si se quiere lint de tipos instalar `@typescript-eslint/parser`.
 - [ ] `SetTheory.getZRelated(primeForm)` — datos `Z_PAIRS` eliminados por no usarse, pero la feature tiene sentido: dado un prime form, devolver su set-class hermano Z con el mismo interval vector. Reimplementar con los datos cuando se haga.
-- [ ] `Polymeter` — el parámetro `cycleBeats` del constructor se eliminó por no usarse. Reimplementar cuando se quiera: limitar el polímetro a N beats de ciclo o calcular LCM de los metros.
+- [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit pendiente.
 
 ## History
+
+### 2026-05-04 - Polymeter: cycleBeats, naturalCycle, cycleLength, generateGrid
+
+`Polymeter` implementado: `naturalCycle` (LCM de metros), `cycleLength` (cycleBeats ?? naturalCycle), `getCyclePosition` wrapea en cycleLength, `generateGrid()` devuelve todos los downbeats por metro en un ciclo completo ordenados por beat. 7 tests nuevos, 595 en total.
 
 ### 2026-05-04 - Sistema de aliases para el parser
 
