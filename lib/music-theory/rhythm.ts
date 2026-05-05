@@ -322,6 +322,12 @@ export class Polymeter {
   private readonly meters: TimeSignature[];
   private readonly _cycleBeats: number | undefined;
 
+  /**
+   * @param meters - Two or more time signatures cycling simultaneously.
+   * @param cycleBeats - Optional fixed cycle length in beats. If omitted, the cycle
+   *   ends at the LCM of all meter lengths (`naturalCycle`). Providing a shorter value
+   *   truncates the cycle before the meters naturally realign.
+   */
   constructor(meters: TimeSignature[], cycleBeats?: number) {
     this.meters = meters;
     this._cycleBeats = cycleBeats;

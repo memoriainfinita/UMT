@@ -193,7 +193,11 @@ export class SetTheory {
 
   /**
    * Returns all prime forms that share the same interval vector as `pcs` (Z-related sets).
-   * Returns an empty array if no Z-relation exists or the set is not in the table.
+   * Z-related sets have identical interval vectors but are not related by transposition or inversion.
+   * Returns an empty array if no Z-relation exists or the set is not in the Forte table.
+   *
+   * @param pcs - Pitch classes in C=0 space (0–11).
+   * @returns Array of prime forms (each an array of pitch classes in C=0 space) that are Z-related to `pcs`.
    */
   static getZRelated(pcs: number[]): number[][] {
     const targetIV = this.intervalVector(pcs);
