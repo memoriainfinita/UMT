@@ -190,6 +190,7 @@ export function getFretboardVoicings(
  * @param scale - The scale to map.
  * @param tuning - Open string steps from A4, low→high.
  * @param options - `maxFret` controls how far up the neck to scan (default 12).
+ * @returns A single result with all scale positions across the neck.
  */
 export function getFretboardScale(
   scale: Scale,
