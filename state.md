@@ -37,15 +37,23 @@
 
 - [x] Crear docs de la API — TypeDoc en `api-docs/`, publicado en GitHub Pages
 - [x] Sistema de aliases para el parser — `translateSymbol(input, aliases)` + mapas predefinidos `SOLFEGE_ROOTS`, `QUALITY_ALIASES_ES/FR/IT`. 33 tests. Commit `20ee31d`.
-- [ ] Voicing algorítmico para fretboard — dado un acorde y un tuning, generar `FretboardChord` (posiciones en trastes) para notae. Diseñar API cuando UMT esté más maduro. Coordinado con notae state.md línea 272.
+- [x] Voicing algorítmico para fretboard — `getFretboardVoicings`, `getFretboardScale`, `getFretboardScalePositions` + presets de tuning. 34 tests. Commits `9fa8316`, `572a534`.
 - [x] `figured-bass.ts` — `keySymbol` implementado: resolución diatónica de numerales sin accidental explícito. Fallback si bass es cromático o clave inválida. 16 tests. Commit `6f48e14`.
-- [x] `figured-bass.ts` — `FiguredBass.voices()`: SATB clásico. Rangos vocales, doblamiento (raíz en tríadas, todos los PCs en acorde de 7ª), sin cruzamiento, S-A/A-T max 8va, T-B max 12ª. 13 tests. Commit pendiente.
-- [x] `counterpoint.ts` — reglas modales implementadas: finalis, ambitus, tritono melódico. 13 tests. Commit pendiente.
+- [x] `figured-bass.ts` — `FiguredBass.voices()`: SATB clásico. Rangos vocales, doblamiento (raíz en tríadas, todos los PCs en acorde de 7ª), sin cruzamiento, S-A/A-T max 8va, T-B max 12ª. 13 tests. Commit `d1e7d12`.
+- [x] `counterpoint.ts` — reglas modales implementadas: finalis, ambitus, tritono melódico. 13 tests. Commit `d1e7d12`.
 - [x] ESLint — `typescript-eslint` instalado, parser configurado con tsconfig. 4 errores corregidos. Commit `84cdafa`.
-- [x] `SetTheory.getZRelated` — implementado via búsqueda dinámica en FORTE_TABLE por interval vector. 6 tests. Commit pendiente.
-- [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit pendiente.
+- [x] `SetTheory.getZRelated` — implementado via búsqueda dinámica en FORTE_TABLE por interval vector. 6 tests. Commit `d1e7d12`.
+- [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit `549920d`.
 
 ## History
+
+### 2026-05-05 - Fretboard voicing module
+
+Nuevo módulo `fretboard.ts`: `getFretboardVoicings` (backtracking, ventana de trastes, todas las posiciones), `getFretboardScale` (mapa completo del mástil), `getFretboardScalePositions` (cajas CAGED-style). Presets: `GUITAR_STANDARD`, `GUITAR_DROPPED_D`, `GUITAR_OPEN_G`, `UKULELE_STANDARD`, `BASS_STANDARD`. Output compatible con `FretboardChord` de notae. 34 tests, 677 en total. Bundle 111.2kb. Commits `9fa8316`, `572a534`.
+
+### 2026-05-05 - JSDoc: Polymeter constructor y SetTheory.getZRelated
+
+Revisión de cobertura JSDoc en lo implementado recientemente. Dos huecos encontrados y corregidos: `Polymeter` constructor (sin doc, parámetro `cycleBeats` no obvio) y `SetTheory.getZRelated` (doc sin `@param`/`@returns`). Bundle reconstruido (108.7kb). Push a main. Commit `1c5b37e`.
 
 ### 2026-05-05 - Counterpoint: reglas modales en checkSpecies
 
