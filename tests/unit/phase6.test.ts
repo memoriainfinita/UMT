@@ -292,6 +292,115 @@ describe('Counterpoint.checkSpecies', () => {
   });
 });
 
+// ============================================================================
+// Modal rules - Counterpoint.checkSpecies with mode parameter
+// ============================================================================
+
+describe('Counterpoint modal rules - finalis', () => {
+  // D4 = step -7, PC = 5 → dorian finalis
+  it('no finalis issue when CF starts and ends on dorian D', () => {
+    const cf = notes([-7, -5, -4, -2, -7]); // D E F G D
+    const ct = notes([0, 2, 3, 5, 0]);       // A B C D A (above, consonant)
+    const issues = Counterpoint.checkSpecies(1, cf, ct, 'dorian');
+    expect(issues.some(i => i.type === 'Modal Finalis')).toBe(false);
+  });
+
+  it('flags CF that does not end on dorian finalis', () => {
+    const cf = notes([-7, -5, -4, -2, 0]); // D E F G A — ends on A, not D
+    const ct = notes([0, 2, 3, 5, 7]);
+    const issues = Counterpoint.checkSpecies(1, cf, ct, 'dorian');
+    expect(issues.some(i => i.type === 'Modal Finalis')).toBe(true);
+  });
+
+  it('flags CF that does not begin on dorian finalis', () => {
+    const cf = notes([0, -2, -4, -5, -7]); // A G F E D — begins on A
+    const ct = notes([7, 5, 3, 2, 0]);
+    const issues = Counterpoint.checkSpecies(1, cf, ct, 'dorian');
+    expect(issues.some(i => i.type === 'Modal Finalis')).toBe(true);
+  });
+
+  it('no finalis issue for phrygian E (step -5, PC 7)', () => {
+    const cf = notes([-5, -4, -2, 0, -5]); // E F G A E
+    const ct = notes([2, 3, 5, 7, 2]);
+    const issues = Counterpoint.checkSpecies(1, cf, ct, 'phrygian');
+    expect(issues.some(i => i.type === 'Modal Finalis')).toBe(false);
+  });
+
+  it('no finalis issue for ionian C (step -9, PC 3)', () => {
+    const cf = notes([-9, -7, -5, -4, -9]); // C D E F C
+    const ct = notes([-2, 0, 2, 3, -2]);
+    const issues = Counterpoint.checkSpecies(1, cf, ct, 'ionian');
+    expect(issues.some(i => i.type === 'Modal Finalis')).toBe(false);
+  });
+
+  it('unknown mode name produces no modal issues', () => {
+    const cf = notes([-9, -7, -5, -9]);
+    const ct = notes([-2, 0, 2, -2]);
+    const issues = Counterpoint.checkSpecies(1, cf, ct, 'superlocrian99');
+    expect(issues.some(i => i.type === 'Modal Finalis')).toBe(false);
+    expect(issues.some(i => i.type === 'Modal Ambitus')).toBe(false);
+    expect(issues.some(i => i.type === 'Melodic Tritone')).toBe(false);
+  });
+});
+
+describe('Counterpoint modal rules - ambitus', () => {
+  // Finalis D at step -7; valid range: [-14, 8]
+  it('no ambitus issue when counterpoint stays within range', () => {
+    const cf = notes([-7, -5, -4, -7]); // D E F D
+    const ct = notes([0, 2, 3, 0]);     // A B C A — within [-14, 8]
+    const issues = Counterpoint.checkSpecies(1, cf, ct, 'dorian');
+    expect(issues.some(i => i.type === 'Modal Ambitus')).toBe(false);
+  });
+
+  it('flags counterpoint note more than 15 above the finalis', () => {
+    const cf = notes([-7, -5, -4, -7]);
+    // finalisStep = -7; -7 + 15 = 8; step 9 is out
+    const ct = notes([0, 2, 9, 0]);
+    const issues = Counterpoint.checkSpecies(1, cf, ct, 'dorian');
+    expect(issues.some(i => i.type === 'Modal Ambitus')).toBe(true);
+  });
+
+  it('flags counterpoint note more than 7 below the finalis', () => {
+    const cf = notes([-7, -5, -4, -7]);
+    // finalisStep = -7; -7 - 7 = -14; step -15 is out
+    const ct = notes([0, -15, 3, 0]);
+    const issues = Counterpoint.checkSpecies(1, cf, ct, 'dorian');
+    expect(issues.some(i => i.type === 'Modal Ambitus')).toBe(true);
+  });
+});
+
+describe('Counterpoint modal rules - melodic tritone', () => {
+  it('flags augmented 4th (6 semitones) leap in counterpoint', () => {
+    const cf = notes([-7, -5, -4, -7]);
+    // CT leaps B(2) → F(8) = 6 semitones = tritone
+    const ct = notes([2, 8, 3, 0]);
+    const issues = Counterpoint.checkSpecies(1, cf, ct, 'dorian');
+    expect(issues.some(i => i.type === 'Melodic Tritone')).toBe(true);
+  });
+
+  it('flags descending tritone leap', () => {
+    const cf = notes([-7, -5, -4, -7]);
+    // F(8) → B(2) = 6 semitones descending
+    const ct = notes([8, 2, 3, 0]);
+    const issues = Counterpoint.checkSpecies(1, cf, ct, 'dorian');
+    expect(issues.some(i => i.type === 'Melodic Tritone')).toBe(true);
+  });
+
+  it('no tritone issue for stepwise counterpoint', () => {
+    const cf = notes([-7, -5, -4, -7]);
+    const ct = notes([0, 2, 3, 0]); // stepwise, no tritone
+    const issues = Counterpoint.checkSpecies(1, cf, ct, 'dorian');
+    expect(issues.some(i => i.type === 'Melodic Tritone')).toBe(false);
+  });
+
+  it('no modal issues without mode argument', () => {
+    const cf = notes([-7, -5]);
+    const ct = notes([2, 8]); // tritone leap — only flagged when mode is passed
+    const issues = Counterpoint.checkSpecies(1, cf, ct);
+    expect(issues.some(i => i.type === 'Melodic Tritone')).toBe(false);
+  });
+});
+
 describe('Canon.detectImitation', () => {
   it('detects exact imitation at unison', () => {
     const theme = notes([-9, -7, -5, -4]); // C D E F

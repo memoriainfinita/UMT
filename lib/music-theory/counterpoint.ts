@@ -24,6 +24,39 @@ function motionType(cf1: number, cf2: number, ct1: number, ct2: number): 'contra
 const PERFECT_CONSONANCES = new Set([0, 7, 12]); // unison, P5, P8 (steps)
 const IMPERFECT_CONSONANCES = new Set([3, 4, 8, 9]); // m3, M3, m6, M6
 
+// Pitch class (mod 12, steps from A4) of each mode's finalis
+const MODE_FINALIS: Record<string, number> = {
+  dorian: 5, phrygian: 7, lydian: 8, mixolydian: 10,
+  aeolian: 0, ionian: 3, locrian: 2,
+};
+
+function modalChecks(mode: string, cf: Note[], counter: Note[], issues: CounterpointIssue[]): void {
+  const finalisPC = MODE_FINALIS[mode.toLowerCase()];
+  if (finalisPC === undefined) return;
+
+  // 1. Finalis: CF must start and end on the mode's finalis pitch class
+  const pc = (n: Note) => ((n.stepsFromBase % 12) + 12) % 12;
+  if (pc(cf[0]) !== finalisPC)
+    issues.push({ type: 'Modal Finalis', description: `CF does not begin on the ${mode} finalis.` });
+  if (pc(cf[cf.length - 1]) !== finalisPC)
+    issues.push({ type: 'Modal Finalis', description: `CF does not end on the ${mode} finalis.` });
+
+  // 2. Ambitus: counterpoint must stay within [-7, +15] semitones of the finalis note
+  // (covers authentic range up to a 10th above and plagal range down to a 5th below)
+  const finalisStep = cf[cf.length - 1].stepsFromBase;
+  for (let i = 0; i < counter.length; i++) {
+    const diff = counter[i].stepsFromBase - finalisStep;
+    if (diff < -7 || diff > 15)
+      issues.push({ type: 'Modal Ambitus', beat: i + 1, description: `Beat ${i + 1}: note outside modal ambitus for ${mode}.` });
+  }
+
+  // 3. Melodic tritone: augmented 4th (6 semitones) in counterpoint motion is forbidden
+  for (let i = 1; i < counter.length; i++) {
+    if (Math.abs(counter[i].stepsFromBase - counter[i - 1].stepsFromBase) === 6)
+      issues.push({ type: 'Melodic Tritone', beat: i + 1, description: `Beat ${i + 1}: melodic tritone (A4) in counterpoint.` });
+  }
+}
+
 /**
  * Checks counterpoint rules for a given species.
  * `cf` = cantus firmus notes; `counter` = counterpoint notes.
@@ -43,13 +76,15 @@ export class Counterpoint {
    * @param species - 1 | 2 | 3 | 4 | 5
    * @param cf - Cantus firmus notes (one per measure for species 1).
    * @param counter - Counterpoint notes.
-   * @param _mode - Optional mode name (reserved for future modal rules; not used currently).
+   * @param mode - Optional mode name (`"dorian"` | `"phrygian"` | `"lydian"` | `"mixolydian"` | `"aeolian"` | `"ionian"` | `"locrian"`).
+   *   When provided, enables modal checks: finalis (CF must start and end on the mode's finalis),
+   *   ambitus (counterpoint within [-7, +15] semitones of the finalis), and melodic tritone detection.
    */
   static checkSpecies(
     species: 1 | 2 | 3 | 4 | 5,
     cf: Note[],
     counter: Note[],
-    _mode?: string
+    mode?: string
   ): CounterpointIssue[] {
     const issues: CounterpointIssue[] = [];
     if (cf.length === 0 || counter.length === 0) return issues;
@@ -128,6 +163,8 @@ export class Counterpoint {
         }
       }
     }
+
+    if (mode) modalChecks(mode, cf, counter, issues);
 
     return issues;
   }

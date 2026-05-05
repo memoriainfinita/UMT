@@ -40,12 +40,16 @@
 - [ ] Voicing algorítmico para fretboard — dado un acorde y un tuning, generar `FretboardChord` (posiciones en trastes) para notae. Diseñar API cuando UMT esté más maduro. Coordinado con notae state.md línea 272.
 - [x] `figured-bass.ts` — `keySymbol` implementado: resolución diatónica de numerales sin accidental explícito. Fallback si bass es cromático o clave inválida. 16 tests. Commit `6f48e14`.
 - [x] `figured-bass.ts` — `FiguredBass.voices()`: SATB clásico. Rangos vocales, doblamiento (raíz en tríadas, todos los PCs en acorde de 7ª), sin cruzamiento, S-A/A-T max 8va, T-B max 12ª. 13 tests. Commit pendiente.
-- [ ] `counterpoint.ts` — `_mode` en `checkSpecies`: reglas modales por especie no implementadas. Requiere investigación musicológica.
+- [x] `counterpoint.ts` — reglas modales implementadas: finalis, ambitus, tritono melódico. 13 tests. Commit pendiente.
 - [x] ESLint — `typescript-eslint` instalado, parser configurado con tsconfig. 4 errores corregidos. Commit `84cdafa`.
 - [x] `SetTheory.getZRelated` — implementado via búsqueda dinámica en FORTE_TABLE por interval vector. 6 tests. Commit pendiente.
 - [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit pendiente.
 
 ## History
+
+### 2026-05-05 - Counterpoint: reglas modales en checkSpecies
+
+`Counterpoint.checkSpecies` ahora acepta `mode?: string` (antes `_mode`, sin implementar). Tres checks modales: **finalis** (CF debe empezar y terminar en el finalis del modo), **ambitus** (counterpoint dentro de [-7, +15] semitonos del finalis), **tritono melódico** (salto de A4 = 6 semitonos prohibido). Modos soportados: dorian, phrygian, lydian, mixolydian, aeolian, ionian, locrian. 13 tests nuevos. 643 tests en total.
 
 ### 2026-05-05 - FiguredBass.voices: realización SATB clásica
 
