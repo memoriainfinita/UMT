@@ -20,6 +20,8 @@ export const GUITAR_OPEN_G = [-31, -26, -19, -14, -10, -7] as const;
 export const UKULELE_STANDARD = [-2, -9, -5, 0] as const;
 /** Standard 4-string bass tuning: E1 A1 D2 G2 */
 export const BASS_STANDARD = [-41, -36, -31, -26] as const;
+/** 5-string banjo open G tuning (drone first): G4 D3 G3 B3 D4 */
+export const BANJO_OPEN_G = [-2, -19, -14, -10, -7] as const;
 
 // ============================================================================
 // Types
@@ -33,6 +35,15 @@ export type FretboardVoicingOptions = {
   maxStretch?: number;
   /** Fret window size for {@link getFretboardScalePositions}. Default: 4. */
   windowSize?: number;
+  /**
+   * Per-string fret offset: the physical fret number where each string's nut sits.
+   * 0 (default) for normal strings. Use 5 for the 5-string banjo drone (index 0 with
+   * `BANJO_OPEN_G`). When provided, output fret values are shifted by this amount so
+   * they match absolute fret positions on the instrument.
+   * @example
+   * getFretboardVoicings(chord, BANJO_OPEN_G, { stringOffset: [5, 0, 0, 0, 0] })
+   */
+  stringOffset?: number[];
 };
 
 /**
@@ -44,7 +55,7 @@ export type FretboardVoicingOptions = {
  * renderFretboard({ name: chord.name, ...voicings[0] });
  */
 export type FretboardVoicingResult = {
-  /** One fret per string, low→high. -1 = mute (×), 0 = open (○), N = fret N. */
+  /** One fret per string, low→high. -1 = mute (×), stringOffset[i] = open (○), N = fret N. */
   frets: number[];
   /** Absolute fret of the first displayed fret. 1 in open position or when lowest fret is 1. */
   baseFret: number;
@@ -52,6 +63,8 @@ export type FretboardVoicingResult = {
   tuning: string[];
   /** Root note name (e.g. `'C'`, `'F#'`). */
   root: string;
+  /** Per-string fret offset, echoed from options. Present only when offset was supplied. */
+  stringOffset?: number[];
 };
 
 /**
@@ -71,6 +84,8 @@ export type FretboardScaleResult = {
   tuning: string[];
   /** Root note name. */
   root: string;
+  /** Per-string fret offset, echoed from options. Present only when offset was supplied. */
+  stringOffset?: number[];
 };
 
 // ============================================================================
@@ -110,6 +125,7 @@ export function getFretboardVoicings(
 
   const maxFret    = options?.maxFret    ?? 12;
   const maxStretch = options?.maxStretch ?? 4;
+  const offset     = options?.stringOffset;
   const ts  = chord.tuningSystem;
   const oct = ts.octaveSteps;
   const chordPCs = new Set(chord.getPitchClasses());
@@ -119,6 +135,7 @@ export function getFretboardVoicings(
     .replace(/\d+$/, '');
 
   // Per string: valid fret positions (matches a chord PC) + -1 (mute)
+  // Internal frets are always string-relative (0 = open at string's own nut).
   const stringOptions: number[][] = Array.from(tuning, openStep => {
     const opts: number[] = [-1];
     for (let fret = 0; fret <= maxFret; fret++) {
@@ -132,6 +149,7 @@ export function getFretboardVoicings(
 
   // Backtrack string by string, pruning when the fret window exceeds maxStretch.
   // lo/hi track the current [min, max] of non-open frets (-1 = none yet).
+  // Stretch is measured in internal (string-relative) coordinates.
   function backtrack(si: number, current: number[], lo: number, hi: number): void {
     if (si === tuning.length) {
       // Validate: all chord PCs must be covered
@@ -144,9 +162,14 @@ export function getFretboardVoicings(
       for (const pc of chordPCs) {
         if (!covered.has(pc)) return;
       }
-      const nonOpen = current.filter(f => f > 0);
-      const baseFret = nonOpen.length > 0 ? Math.min(...nonOpen) : 1;
-      results.push({ frets: [...current], baseFret, tuning: tuningNames, root });
+      // Apply per-string offset to output frets (muted strings stay -1).
+      const absFrets = current.map((f, i) => f === -1 ? -1 : f + (offset?.[i] ?? 0));
+      // baseFret = lowest fingered fret in absolute coords (frets above the string's open position).
+      const fingered = absFrets.filter((f, i) => f !== -1 && f > (offset?.[i] ?? 0));
+      const baseFret = fingered.length > 0 ? Math.min(...fingered) : 1;
+      const result: FretboardVoicingResult = { frets: absFrets, baseFret, tuning: tuningNames, root };
+      if (offset) result.stringOffset = offset;
+      results.push(result);
       return;
     }
 
@@ -172,8 +195,9 @@ export function getFretboardVoicings(
   results.sort((a, b) => {
     const baseDiff = a.baseFret - b.baseFret;
     if (baseDiff !== 0) return baseDiff;
-    const aFrets = a.frets.filter(f => f > 0);
-    const bFrets = b.frets.filter(f => f > 0);
+    // Stretch in absolute coords, excluding open and muted strings.
+    const aFrets = a.frets.filter((f, i) => f > (offset?.[i] ?? 0));
+    const bFrets = b.frets.filter((f, i) => f > (offset?.[i] ?? 0));
     const aStr = aFrets.length > 1 ? Math.max(...aFrets) - Math.min(...aFrets) : 0;
     const bStr = bFrets.length > 1 ? Math.max(...bFrets) - Math.min(...bFrets) : 0;
     if (aStr !== bStr) return aStr - bStr;
@@ -198,6 +222,7 @@ export function getFretboardScale(
   options?: FretboardVoicingOptions
 ): FretboardScaleResult {
   const maxFret = options?.maxFret ?? 12;
+  const offset  = options?.stringOffset;
   const ts  = scale.tuningSystem;
   const oct = ts.octaveSteps;
   const scalePCs = new Set(scale.getPitchClasses());
@@ -206,16 +231,19 @@ export function getFretboardScale(
     .getName({ preferFlats: scale.preferFlats })
     .replace(/\d+$/, '');
 
-  const frets: number[][] = Array.from(tuning, openStep => {
+  const frets: number[][] = Array.from(tuning, (openStep, i) => {
+    const off = offset?.[i] ?? 0;
     const positions: number[] = [];
     for (let fret = 0; fret <= maxFret; fret++) {
       const pc = ((openStep + fret) % oct + oct) % oct;
-      if (scalePCs.has(pc)) positions.push(fret);
+      if (scalePCs.has(pc)) positions.push(fret + off);
     }
     return positions;
   });
 
-  return { frets, baseFret: 1, tuning: tuningNames, root };
+  const result: FretboardScaleResult = { frets, baseFret: 1, tuning: tuningNames, root };
+  if (offset) result.stringOffset = offset;
+  return result;
 }
 
 /**
@@ -235,6 +263,7 @@ export function getFretboardScalePositions(
 ): FretboardScaleResult[] {
   const maxFret    = options?.maxFret    ?? 12;
   const windowSize = options?.windowSize ?? 4;
+  const offset     = options?.stringOffset;
   const ts  = scale.tuningSystem;
   const oct = ts.octaveSteps;
   const scalePCs = new Set(scale.getPitchClasses());
@@ -246,15 +275,16 @@ export function getFretboardScalePositions(
   const boxes: FretboardScaleResult[] = [];
 
   for (let pos = 1; pos <= maxFret - windowSize + 1; pos++) {
-    const frets: number[][] = Array.from(tuning, openStep => {
+    const frets: number[][] = Array.from(tuning, (openStep, i) => {
+      const off = offset?.[i] ?? 0;
       const positions: number[] = [];
-      // Open string: include if its PC is in the scale
+      // Open position: internal fret 0, output fret = off (may be >0 for offset strings)
       const openPc = ((openStep % oct) + oct) % oct;
-      if (scalePCs.has(openPc)) positions.push(0);
-      // Frets within this window
+      if (scalePCs.has(openPc)) positions.push(off);
+      // Frets within this window (internal coords), output shifted by off
       for (let fret = pos; fret <= pos + windowSize - 1; fret++) {
         const pc = ((openStep + fret) % oct + oct) % oct;
-        if (scalePCs.has(pc)) positions.push(fret);
+        if (scalePCs.has(pc)) positions.push(fret + off);
       }
       return positions;
     });
@@ -262,7 +292,9 @@ export function getFretboardScalePositions(
     const total = frets.reduce((n, s) => n + s.length, 0);
     if (total === 0) continue;
 
-    boxes.push({ frets, baseFret: pos, tuning: tuningNames, root });
+    const box: FretboardScaleResult = { frets, baseFret: pos, tuning: tuningNames, root };
+    if (offset) box.stringOffset = offset;
+    boxes.push(box);
   }
 
   return boxes;
