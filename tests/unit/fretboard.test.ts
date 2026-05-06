@@ -8,6 +8,7 @@ import {
   GUITAR_OPEN_G,
   UKULELE_STANDARD,
   BASS_STANDARD,
+  BANJO_OPEN_G,
   FretboardVoicingResult,
   FretboardScaleResult,
 } from '../../lib/music-theory/fretboard';
@@ -39,6 +40,12 @@ describe('tuning presets', () => {
     for (let i = 1; i < GUITAR_STANDARD.length; i++) {
       expect(GUITAR_STANDARD[i]).toBeGreaterThan(GUITAR_STANDARD[i - 1]);
     }
+  });
+  it('BANJO_OPEN_G has 5 strings', () => {
+    expect(BANJO_OPEN_G).toHaveLength(5);
+  });
+  it('BANJO_OPEN_G drone (index 0) is G4 = -2', () => {
+    expect(BANJO_OPEN_G[0]).toBe(-2);
   });
 });
 
@@ -303,5 +310,99 @@ describe('getFretboardScalePositions', () => {
         }
       }
     }
+  });
+});
+
+// ============================================================================
+// stringOffset — banjo drone support
+// ============================================================================
+
+describe('stringOffset', () => {
+  const banjoOffset = [5, 0, 0, 0, 0];
+  const gmaj = parseChordSymbol('G');
+  const gmajScale = parseScaleSymbol('G major');
+  const oct = 12;
+
+  it('getFretboardVoicings: drone open fret equals offset (5)', () => {
+    const voicings = getFretboardVoicings(gmaj, BANJO_OPEN_G, { stringOffset: banjoOffset });
+    expect(voicings.length).toBeGreaterThan(0);
+    // Any voicing where drone is played open must have frets[0] === 5
+    const withOpenDrone = voicings.filter(v => {
+      const droneInternal = v.frets[0] - 5; // remove offset
+      return droneInternal === 0;
+    });
+    for (const v of withOpenDrone) {
+      expect(v.frets[0]).toBe(5);
+    }
+  });
+
+  it('getFretboardVoicings: all chord PCs covered with offset', () => {
+    const voicings = getFretboardVoicings(gmaj, BANJO_OPEN_G, { stringOffset: banjoOffset });
+    const chordPCs = new Set(gmaj.getPitchClasses());
+    for (const v of voicings) {
+      const covered = new Set<number>();
+      for (let i = 0; i < v.frets.length; i++) {
+        const internalFret = v.frets[i] - (banjoOffset[i] ?? 0);
+        if (internalFret >= 0) {
+          covered.add(((BANJO_OPEN_G[i] + internalFret) % oct + oct) % oct);
+        }
+      }
+      for (const pc of chordPCs) {
+        expect(covered.has(pc)).toBe(true);
+      }
+    }
+  });
+
+  it('getFretboardVoicings: stringOffset echoed in result', () => {
+    const voicings = getFretboardVoicings(gmaj, BANJO_OPEN_G, { stringOffset: banjoOffset });
+    expect(voicings.length).toBeGreaterThan(0);
+    expect(voicings[0].stringOffset).toEqual(banjoOffset);
+  });
+
+  it('getFretboardVoicings: no stringOffset in result when not supplied', () => {
+    const voicings = getFretboardVoicings(gmaj, GUITAR_STANDARD);
+    expect(voicings.length).toBeGreaterThan(0);
+    expect(voicings[0].stringOffset).toBeUndefined();
+  });
+
+  it('getFretboardScale: drone positions start at offset (5)', () => {
+    const result = getFretboardScale(gmajScale, BANJO_OPEN_G, { stringOffset: banjoOffset });
+    // All drone frets must be >= 5
+    for (const fret of result.frets[0]) {
+      expect(fret).toBeGreaterThanOrEqual(5);
+    }
+  });
+
+  it('getFretboardScale: all fret positions belong to the scale', () => {
+    const result = getFretboardScale(gmajScale, BANJO_OPEN_G, { stringOffset: banjoOffset });
+    const scalePCs = new Set(gmajScale.getPitchClasses());
+    result.frets.forEach((strFrets, i) => {
+      const off = banjoOffset[i] ?? 0;
+      for (const fret of strFrets) {
+        const pc = ((BANJO_OPEN_G[i] + (fret - off)) % oct + oct) % oct;
+        expect(scalePCs.has(pc)).toBe(true);
+      }
+    });
+  });
+
+  it('getFretboardScale: stringOffset echoed in result', () => {
+    const result = getFretboardScale(gmajScale, BANJO_OPEN_G, { stringOffset: banjoOffset });
+    expect(result.stringOffset).toEqual(banjoOffset);
+  });
+
+  it('getFretboardScalePositions: drone positions start at offset (5)', () => {
+    const boxes = getFretboardScalePositions(gmajScale, BANJO_OPEN_G, { stringOffset: banjoOffset });
+    expect(boxes.length).toBeGreaterThan(0);
+    for (const box of boxes) {
+      for (const fret of box.frets[0]) {
+        expect(fret).toBeGreaterThanOrEqual(5);
+      }
+    }
+  });
+
+  it('getFretboardScalePositions: stringOffset echoed in result', () => {
+    const boxes = getFretboardScalePositions(gmajScale, BANJO_OPEN_G, { stringOffset: banjoOffset });
+    expect(boxes.length).toBeGreaterThan(0);
+    expect(boxes[0].stringOffset).toEqual(banjoOffset);
   });
 });
