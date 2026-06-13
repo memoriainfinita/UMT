@@ -14,6 +14,7 @@ metadata.json
 # Internal docs and archive (kept locally, not published)
 docs/
 archive/
+_archive/
 
 # Source map (large, not needed for CDN usage)
 dist/umt.js.map
