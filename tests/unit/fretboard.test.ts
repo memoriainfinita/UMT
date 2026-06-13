@@ -13,7 +13,6 @@ import {
   FretboardScaleResult,
 } from '../../lib/music-theory/fretboard';
 import { parseChordSymbol, parseScaleSymbol } from '../../lib/music-theory/parser';
-import { TET12 } from '../../lib/music-theory/presets';
 
 // ============================================================================
 // Tuning presets
