@@ -1,3 +1,8 @@
+---
+created: 2026-04-28
+last_updated: 2026-06-13
+---
+
 # State - Universal Music Theory Library
 
 ## System
@@ -17,9 +22,9 @@
 
 ## Dependencies
 
-- esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (107 kb)
+- esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (112 kb)
 - typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
-- vitest - tests unitarios (`npm run test:unit`) - 524 tests
+- vitest - tests unitarios (`npm run test:unit`) - 688 tests
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
 - Tailwind CDN - estilos en demo
@@ -46,6 +51,14 @@
 - [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit `549920d`.
 
 ## History
+
+### 2026-06-13 - Auditoría: docs desactualizadas, LICENSE faltante, typecheck
+
+Revisión completa buscando IA slop y stubs: ninguno encontrado en `lib/` (los "simplified/approximation" son limitaciones documentadas). Corregido: import `TET12` sin usar en `fretboard.test.ts` (rompía `tsc --noEmit`; invisible porque ESLint ignora `tests/**`), `LICENSE` GPL-3.0 creado (el README lo referenciaba pero no existía) + campo `license` en package.json, script `npm run typecheck` añadido, README/CLAUDE.md/state.md actualizados (688 tests, 112 kb, link API docs a Pages, instrucción Playwright rota eliminada). `docs/public/` y `test-results/` huérfanos movidos a `_archive/` (gitignorado). 688 tests pasan, typecheck verde.
+
+### 2026-05-06 - Banjo support: BANJO_OPEN_G + stringOffset
+
+`BANJO_OPEN_G = [-2, -19, -14, -10, -7]` añadido a `fretboard.ts` (drone G4 en index 0, luego D3 G3 B3 D4). `stringOffset?: number[]` añadido a `FretboardVoicingOptions` y a los dos tipos de resultado (`FretboardVoicingResult`, `FretboardScaleResult`). Las tres funciones fretboard aplican el offset a los frets de salida (cálculo interno sin cambios). notae puede pasar `stringOffset: [5,0,0,0,0]` y recibir coordenadas absolutas directamente. 13 tests nuevos, 45 en fretboard.test.ts. Bundle 111.5kb. Commit `45f637e`.
 
 ### 2026-05-05 - Fretboard voicing module
 
