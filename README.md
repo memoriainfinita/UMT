@@ -6,9 +6,9 @@
 
 A TypeScript library for music theory computation that works across any tuning system -
 12-TET, microtonal, historical temperaments, world music traditions, and post-tonal systems.
-Zero runtime dependencies. 104 kb compiled bundle.
+Zero runtime dependencies. 112 kb compiled bundle.
 
-**[Live demo](https://memoriainfinita.github.io/UMT)** · **[Wiki / API docs](https://github.com/memoriainfinita/UMT/wiki)**
+**[Live demo](https://memoriainfinita.github.io/UMT)** · **[API docs](https://memoriainfinita.github.io/UMT/api-docs/)**
 
 ---
 
@@ -255,8 +255,8 @@ scaleToMusicXML(scale);            // MusicXML document
 ## Tests
 
 ```bash
-npm run test:unit    # 524 unit tests via vitest
-npx playwright test  # demo integration tests
+npm run test:unit    # 688 unit tests via vitest
+npm run typecheck    # TypeScript type checking
 ```
 
 ---
