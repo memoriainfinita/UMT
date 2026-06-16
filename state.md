@@ -1,6 +1,6 @@
 ---
 created: 2026-04-28
-last_updated: 2026-06-13
+last_updated: 2026-06-16
 ---
 
 # State - Universal Music Theory Library
@@ -51,6 +51,10 @@ last_updated: 2026-06-13
 - [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit `549920d`.
 
 ## History
+
+### 2026-06-16 - Limpieza: carpetas vacías heredadas
+
+Revisión de organización de la raíz: repo trackeado limpio, sin archivos fuera de sitio. Borradas dos carpetas vacías heredadas del scaffold original: `hooks/` y `.github/workflows/` (más `.github/`, que quedaba vacía tras retirar el `deploy.yml` de Next.js). No estaban trackeadas; sin impacto en git.
 
 ### 2026-06-13 - Auditoría: docs desactualizadas, LICENSE faltante, typecheck
 
