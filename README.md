@@ -264,3 +264,7 @@ npm run typecheck    # TypeScript type checking
 ## License
 
 GPL-3.0. Created for people, not for corporate profit. Any software using this library must also remain free and open. See `LICENSE`.
+
+## Credits
+
+Developed by [@memoriainfinita](https://github.com/memoriainfinita) with the assistance of Claude (Anthropic): Opus 4.8, Sonnet 4.6 and Fable 5.
