@@ -15,6 +15,7 @@ metadata.json
 docs/
 archive/
 _archive/
+.archive/
 
 # Source map (large, not needed for CDN usage)
 dist/umt.js.map
