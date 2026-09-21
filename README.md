@@ -1,4 +1,4 @@
-# Universal Music Theory Library
+# UMT
 
 [![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/dist/umt.js)
 [![Live demo](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://memoriainfinita.github.io/UMT)
