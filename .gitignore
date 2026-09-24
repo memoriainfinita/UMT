@@ -12,7 +12,8 @@ CLAUDE.md
 metadata.json
 
 # Internal docs and archive (kept locally, not published)
-docs/
+docs/*
+!docs/UMT-demo.png
 archive/
 _archive/
 .archive/

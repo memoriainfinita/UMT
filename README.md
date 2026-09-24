@@ -10,6 +10,8 @@ Zero runtime dependencies. 112 kb compiled bundle.
 
 **[Live demo](https://memoriainfinita.github.io/UMT)** · **[API docs](https://memoriainfinita.github.io/UMT/api-docs/)**
 
+![UMT demo page with the Harmony Explorer analysing Cmaj9 in C major: chord tones, suggested scales, tritone substitution and diatonic substitutions](docs/UMT-demo.png)
+
 ---
 
 ## What it does
