@@ -12,7 +12,7 @@ metadata.json
 
 # Internal docs and archive (kept locally, not published)
 docs/*
-!docs/UMT-demo.png
+!docs/UMT-*.png
 archive/
 _archive/
 .archive/

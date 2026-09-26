@@ -152,6 +152,8 @@ npm run build:umt   # lib/music-theory/umt.ts -> dist/umt.js
 
 ### Harmony analysis
 
+![Harmony Explorer in the demo: Cmaj9 analysed in C major, with its notes, intervals, suggested scales, tritone substitution and diatonic substitutions](docs/UMT-harmony.png)
+
 ```typescript
 import { parseChordSymbol, Harmony, getSubstitutions } from './lib/music-theory';
 
@@ -174,7 +176,13 @@ Harmony.getColtraneAxis('C major');
 // { root: 'C', axes: ['C', 'E', 'Ab'] }
 ```
 
+### Tuning
+
+![Universal Tuning in the demo: C major compared across 12-TET, Ptolemaic just intonation and Werckmeister III](docs/UMT-tuning.png)
+
 ### Modal analysis
+
+![Scales and modal analysis in the demo: D dorian with its diatonic triads, brightness, characteristic intervals and parent scale](docs/UMT-modal.png)
 
 ```typescript
 import { parseScaleSymbol } from './lib/music-theory';
@@ -193,6 +201,8 @@ scale.getRelativeMode('lydian');  // A lydian
 
 ### Twelve-tone row
 
+![Set theory and twelve-tone in the demo: a tone row with its P, I, R and RI forms, hexachords and the 12x12 matrix](docs/UMT-settheory.png)
+
 ```typescript
 import { ToneRow } from './lib/music-theory';
 
@@ -210,6 +220,8 @@ row.getHexachords();    // [first6, last6]
 ```
 
 ### World music
+
+![World music in the demo: raga Yaman with its aroha, avaroha, vadi, samvadi and time of performance](docs/UMT-world.png)
 
 ```typescript
 import { RAGAS, MAQAMAT, CLAVE_PATTERNS } from './lib/music-theory';
@@ -230,7 +242,13 @@ const clave = CLAVE_PATTERNS['son-3-2'];
 clave.steps;        // boolean[16] - onset pattern
 ```
 
+### Rhythm
+
+![Rhythm in the demo: the Euclidean rhythm E(5, 8) with its binary pattern, density, detected clave and syncopation index](docs/UMT-rhythm.png)
+
 ### Notation export
+
+![Notation export in the demo: C major rendered as a staff and exported to ABC, LilyPond and MusicXML](docs/UMT-notation.png)
 
 ```typescript
 import { parseScaleSymbol, ABCBridge, scaleToLilyPond, scaleToMusicXML } from './lib/music-theory';
