@@ -42,6 +42,29 @@ export function get12TETName(stepsFromA4: number, preferFlats: boolean = false):
   return `${names[normalizedStep]}${octave}`;
 }
 
+const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const LETTER_STEPS: Record<string, number> = { 'C': -9, 'D': -7, 'E': -5, 'F': -4, 'G': -2, 'A': 0, 'B': 2 };
+
+/**
+ * Names a 12-TET step using the letter `degree` positions above `rootLetter`
+ * (degree 0 = the root letter itself), with whatever accidentals that letter needs.
+ * The octave number follows the letter, so B#3 and C4 are the same pitch.
+ * @returns Full name with octave (e.g. `"E#4"`, `"Cb5"`), or null when the letter
+ *   would need more than two accidentals.
+ */
+export function spellByLetter(stepsFromA4: number, rootLetter: string, degree: number): string | null {
+  const rootIdx = LETTERS.indexOf(rootLetter);
+  if (rootIdx === -1) return null;
+  const letter = LETTERS[(rootIdx + degree) % 7];
+  const natural = LETTER_STEPS[letter];
+  // Signed distance from the natural letter, folded to the nearest octave (-6..5).
+  const diff = ((((stepsFromA4 - natural) % 12) + 18) % 12) - 6;
+  if (Math.abs(diff) > 2) return null;
+  const octave = Math.round((stepsFromA4 - diff - natural) / 12) + 4;
+  const acc = diff > 0 ? '#'.repeat(diff) : 'b'.repeat(-diff);
+  return `${letter}${acc}${octave}`;
+}
+
 /** Returns just the note letter+accidental without octave number (e.g. "C#", "Bb"). */
 export function get12TETBaseName(stepsFromA4: number, preferFlats: boolean = false): string {
   const normalizedStep = ((stepsFromA4 % 12) + 12) % 12;

@@ -2,7 +2,9 @@ import { TuningSystem, EDO } from './tuning';
 import { Note } from './note';
 import { Chord } from './chord';
 import { SCALE_PATTERNS, MODE_PARENT_FAMILY, MODE_BRIGHTNESS } from './dictionaries';
-import { usesFlats, preferFlatsForKey, get12TETBaseName } from './utils';
+import { usesFlats, preferFlatsForKey, get12TETBaseName, spellByLetter, parseNoteToStep12TET } from './utils';
+
+const pcMod12 = (n: number) => ((n % 12) + 12) % 12;
 
 /**
  * Characteristic analysis of a modal scale: brightness relative to Ionian,
@@ -101,19 +103,29 @@ export class Scale {
       pf = false; // non-12-TET tunings have no flat/sharp preference
     }
 
-    const createNote = (step: number): Note => {
-      if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
-        return new Note(this.tuningSystem, step, undefined, pf);
-      }
-      return new Note(this.tuningSystem, step);
+    const is12TET = this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12;
+    // Heptatonic 12-TET scales are spelled one letter per degree (F# major has E#, not F;
+    // D harmonic minor has C#, not Db). Other scales fall back to the flat/sharp preference.
+    const byLetter = is12TET && this.stepPattern.length === 7;
+    // The written root (Cb, E#) comes from the scale name when it matches the root pitch.
+    const written = this.name.match(/^([A-G][#b]*)/)?.[1];
+    const rootLetter = written && pcMod12(parseNoteToStep12TET(written)) === pcMod12(this.rootStep)
+      ? written[0]
+      : get12TETBaseName(this.rootStep, pf)[0];
+
+    const createNote = (step: number, degree: number): Note => {
+      if (!is12TET) return new Note(this.tuningSystem, step);
+      const spelled = byLetter ? spellByLetter(step, rootLetter, degree) : null;
+      return new Note(this.tuningSystem, step, spelled ?? undefined, pf);
     };
 
-    notes.push(createNote(currentStep));
+    let degree = 0;
+    notes.push(createNote(currentStep, degree));
 
     for (let o = 0; o < octaves; o++) {
       for (const step of this.stepPattern) {
         currentStep += step;
-        notes.push(createNote(currentStep));
+        notes.push(createNote(currentStep, ++degree));
       }
     }
 
@@ -213,7 +225,8 @@ export class Scale {
         const key = pcs.join(',');
         const lookup = type === 'seventh' ? SEVENTH_SUFFIX_BY_PCS : TRIAD_SUFFIX_BY_PCS;
         const suffix = lookup[key];
-        const rootName = get12TETBaseName(rootStep, rootPf);
+        // Same letter as the scale degree (E#dim in F# major, not Fdim).
+        const rootName = notes[d].name.replace(/-?\d+$/, '');
         chordName = suffix !== undefined ? `${rootName}${suffix}` : `${rootName}(${pcs.join(',')})`;
       } else {
         const rootName = new Note(this.tuningSystem, rootStep).getName();

@@ -99,6 +99,20 @@ describe('Harmony.analyzeProgression - basic', () => {
     expect(analysis[0].secondaryTarget).toBe('V7/IV');
   });
 
+  it('secondaryTarget is lower case when the tonicized triad is minor', () => {
+    const { analysis } = Harmony.analyzeProgression(prog('V7/ii ii V7/vi vi V7/iii iii', 'C major'), 'C major');
+    expect(analysis[0].secondaryTarget).toBe('V7/ii');
+    expect(analysis[2].secondaryTarget).toBe('V7/vi');
+    expect(analysis[4].secondaryTarget).toBe('V7/iii');
+  });
+
+  it('secondaryTarget casing follows the minor key scale', () => {
+    // A minor: V7/III (G7 → C) is major, V7/iv (A7 → Dm) is minor
+    const { analysis } = Harmony.analyzeProgression([parseChordSymbol('G7'), parseChordSymbol('A7')], 'A minor');
+    expect(analysis[0].secondaryTarget).toBe('V7/III');
+    expect(analysis[1].secondaryTarget).toBe('V7/iv');
+  });
+
   it('isSecondary false for plain diatonic V7', () => {
     const chords = prog('V7 I', 'C major');
     const { analysis } = Harmony.analyzeProgression(chords, 'C major');

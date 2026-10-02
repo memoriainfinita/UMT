@@ -312,7 +312,20 @@ function detectSecondaryDominant(chord: Chord, key: KeyInfo): { isSecondary: boo
   const targetDegree = targetIdx + 1;
   // Only meaningful for dom7 ('7'), or for plain major triads as secondary dominants
   if (quality !== '7') return { isSecondary: false };
-  return { isSecondary: true, target: `V7/${ROMAN_UPPER[targetDegree - 1]}` };
+  return { isSecondary: true, target: `V7/${targetRoman(key, targetIdx, targetDegree)}` };
+}
+
+/**
+ * Roman numeral of a tonicized degree, cased by the diatonic triad built on it:
+ * upper case for major, lower case for minor (V7/ii in C major, V7/IV stays upper).
+ */
+function targetRoman(key: KeyInfo, targetIdx: number, targetDegree: number): string {
+  const upper = ROMAN_UPPER[targetDegree - 1];
+  const pcs = key.scalePcs;
+  if (pcs.length !== 7) return upper;
+  const oct = key.tuning.octaveSteps;
+  const third = pcMod(pcs[(targetIdx + 2) % 7] - pcs[targetIdx], oct);
+  return third === key.tuning.getStepFromStandard(3) ? upper.toLowerCase() : upper;
 }
 
 /**

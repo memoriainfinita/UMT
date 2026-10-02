@@ -2,7 +2,7 @@
 
 ## What is this
 
-A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 688 tests, zero runtime dependencies.
+A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 700 tests, zero runtime dependencies.
 
 The library compiles to a standalone IIFE (`dist/umt.js`, 112 kb) usable via script tag, CDN (jsDelivr), or ESM import.
 

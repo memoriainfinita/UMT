@@ -268,14 +268,14 @@ scaleToMusicXML(scale);            // MusicXML document
 
 **Tuning abstraction:** `parseChordSymbol`, `parseScaleSymbol`, and `parseRomanProgression` accept an optional `TuningSystem` parameter (default: `TET12`). Interval values from the dictionaries are mapped to the target tuning via `tuning.getStepFromStandard()`.
 
-**Enharmonic spelling:** the library uses circle-of-fifths logic to choose flats vs. sharps - not a hardcoded list. `preferFlats` is stored per `Note` and propagated through all transformations. Interval-based overrides ensure m3, m7 etc. are always spelled as flat-side intervals regardless of key.
+**Enharmonic spelling:** the library uses circle-of-fifths logic to choose flats vs. sharps - not a hardcoded list. `preferFlats` is stored per `Note` and propagated through all transformations. Interval-based overrides ensure m3, m7 etc. are always spelled as flat-side intervals regardless of key. Heptatonic scales are spelled one letter per degree, so F# major contains E# and D harmonic minor contains C#; their diatonic chords take the same letters (`E#dim`).
 
 ---
 
 ## Tests
 
 ```bash
-npm run test:unit    # 688 unit tests via vitest
+npm run test:unit    # 700 unit tests via vitest
 npm run typecheck    # TypeScript type checking
 ```
 
