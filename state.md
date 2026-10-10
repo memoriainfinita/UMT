@@ -22,9 +22,9 @@ last_updated: 2026-10-10
 
 ## Dependencies
 
-- esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (125 kb)
+- esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (127 kb)
 - typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
-- vitest - tests unitarios (`npm run test:unit`) - 914 tests
+- vitest - tests unitarios (`npm run test:unit`) - 941 tests
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
 - Tailwind CDN - estilos en demo
@@ -51,6 +51,8 @@ last_updated: 2026-10-10
 - [solfege] Do móvil con la menor desde la (Kodály): en La menor A es "la"; los modos eclesiásticos cantan desde el do de su mayor (en Re dórico D es "re"). Confirmed 2026-10.
 - [twelve-tone] Las formas de una serie se nombran por su primera clase de altura (Straus): la serie dada es `P(row[0])`; la matriz es la estándar (primera fila la serie, primera columna su inversión). Confirmed 2026-10.
 - [counterpoint] `checkSpecies` lee el contrapunto en una rejilla de tiempos por nota del cantus (1, 2, 4, 2, 4 según especie; en 5ª una nota larga repite su altura). Confirmed 2026-10.
+- [tuning] `getStepFromStandard` lleva un paso de 12-TET al paso de la afinación más cercano en cents (clase base); EDO redondea y las afinaciones de 12 clases van uno a uno. Los módulos 12-TET (Tonnetz, contrapunto, cifrado) leen las notas de otras afinaciones por su semitono más cercano según la frecuencia. Confirmed 2026-10.
+- [harmony] Modulación en `analyzeProgression`: empieza en el primer acorde ajeno a la tonalidad activa; tonalidad nueva por cadencia auténtica, luego tónica presente, luego Krumhansl; menos de tres acordes es tonicización. Numerales y cadencias en la tonalidad local (`ChordAnalysis.key`). Confirmed 2026-10.
 - [data] Los datos de referencia se contrastan con fuente y los tests fijan los valores: Forte de la lista de Wikipedia (223 clases, prime forms de Rahn, Z mayúscula), maqamat de maqamworld.com (forma ascendente), ragas de las fichas de Wikipedia (vadi y samvadi como número de svara, Sa = 1 … Ni = 7). La fuente va citada en la cabecera del módulo. Confirmed 2026-10.
 - [substitution] Sustitutos diatónicos: el acorde de la escala a una tercera con la misma función (I → iii, vi; ii ↔ IV; V ↔ vii°), en mayor y menor natural, con la grafía y el tipo (tríada o cuatríada) de la escala. En mayor, IV y ii toman la subdominante menor (iv, bVII7, iiø7), y esta vuelve a IV. Confirmed 2026-10.
 
@@ -65,7 +67,7 @@ last_updated: 2026-10-10
 - [x] ESLint — `typescript-eslint` instalado, parser configurado con tsconfig. 4 errores corregidos. Commit `84cdafa`.
 - [x] `SetTheory.getZRelated` — implementado via búsqueda dinámica en FORTE_TABLE por interval vector. 6 tests. Commit `d1e7d12`.
 - [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit `549920d`.
-- [ ] Auditoría 2026-10: arreglar fallos en 8 fases (0 fallos de MODUS, núcleo, datos, análisis, xen, exportadores, distribución, funciones de MODUS). Fases 0 (`6750e23`), 1 (`a0494bd`…`e893bc3`), 2 (`1c67882`) y 3 (`b3d2390`…`65641ad`) hechas, y `KeyDetection` por duración de la 7 (`bc3b157`); siguiente: fase 4 (microtonal / xen). Detalle y plan en `docs/auditoria-2026-10.md`; peticiones de MODUS en `docs/notas-desde-modus-2026-10.md`
+- [ ] Auditoría 2026-10: arreglar fallos en 8 fases (0 fallos de MODUS, núcleo, datos, análisis, xen, exportadores, distribución, funciones de MODUS). Fases 0 (`6750e23`), 1 (`a0494bd`…`e893bc3`), 2 (`1c67882`), 3 (`b3d2390`…`65641ad`, más `37f1473` por las notas de MODUS) y 4 (`3449c91`…`88171ea`) hechas, y `KeyDetection` por duración de la 7 (`bc3b157`); siguiente: fase 5 (exportadores). Detalle y plan en `docs/auditoria-2026-10.md`; peticiones de MODUS en `docs/notas-desde-modus-2026-10.md`
 
 ## History
 
