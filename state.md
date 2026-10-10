@@ -1,6 +1,6 @@
 ---
 created: 2026-04-28
-last_updated: 2026-10-02
+last_updated: 2026-10-10
 ---
 
 # State - Universal Music Theory Library
@@ -39,6 +39,7 @@ last_updated: 2026-10-02
 - [spelling] m2/m3/m7 siempre usan bemol en `chord.ts:getNotes()` via `intervalPreferFlats()`. d5/A4 y m6/A5 usan contexto del acorde. Confirmed 2026-04.
 - [spelling] Las escalas heptatónicas en 12-TET se escriben por letra (`spellByLetter` en `utils.ts`): F# mayor lleva E#, D menor armónica lleva C#, y los acordes diatónicos toman la misma letra (`E#dim`). La letra raíz sale del nombre de la escala si coincide con la altura. Las demás escalas siguen con `preferFlats`. Confirmed 2026-10.
 - [harmony] `secondaryTarget` va en minúscula cuando la tríada diatónica del grado tonicizado es menor (`V7/ii`, `V7/vi`). Confirmed 2026-10.
+- [harmony] En tonalidad menor, una fundamental cromática del mayor paralelo es grado elevado (`#III`, `#vi°`, `#vii°7`); las demás se leen rebajadas (`bII`, `bV`), igual que en mayor. Confirmed 2026-10.
 
 ## TODO
 

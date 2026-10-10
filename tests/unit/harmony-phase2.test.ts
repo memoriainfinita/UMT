@@ -132,6 +132,30 @@ describe('Harmony.analyzeProgression - basic', () => {
   });
 });
 
+describe('Harmony.analyzeProgression - chromatic roots in minor', () => {
+  const roman = (symbol: string, key: string) => Harmony.analyzeProgression([chord(symbol)], key).analysis[0];
+
+  it('the leading-tone chord is #vii, dominant, not bI', () => {
+    const a = roman('G#dim7', 'A minor');
+    expect(a.roman).toBe('#vii°7');
+    expect(a.degree).toBe(7);
+    expect(a.function).toBe('D');
+    expect(roman('Abdim7', 'A minor').roman).toBe('#vii°7');   // same pitch, flat spelling
+  });
+
+  it('raised third and sixth read as #III and #vi', () => {
+    expect(roman('F#dim', 'A minor').roman).toBe('#vi°');
+    expect(roman('C#', 'A minor').roman).toBe('#III');
+  });
+
+  it('lowered degrees stay flat: Neapolitan in minor, borrowed chords in major', () => {
+    expect(roman('Bb', 'A minor').roman).toBe('bII');
+    expect(roman('Db', 'C major').roman).toBe('bII');
+    expect(roman('Ab', 'C major').roman).toBe('bVI');
+    expect(roman('Bb', 'C major').roman).toBe('bVII');
+  });
+});
+
 describe('Harmony.analyzeProgression - modulations', () => {
   it('no modulations for simple diatonic I-IV-V-I', () => {
     const chords = prog('I IV V I', 'C major');

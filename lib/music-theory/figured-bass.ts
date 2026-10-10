@@ -242,29 +242,30 @@ export class FiguredBass {
 
   /**
    * Derives the figured bass symbol from a chord and its bass note.
-   * Returns the standard abbreviation (e.g., `'6'` for first inversion, `'6/4'` for second).
+   * Returns the standard abbreviation by the chord member in the bass: triads `''`, `'6'`,
+   * `'6/4'`; seventh chords `'7'`, `'6/5'`, `'4/3'`, `'4/2'`. A bass that is no root, third,
+   * fifth or seventh returns its offset in steps above the root.
    */
   static fromChord(chord: Chord, bassNote: Note): string {
     const ts = chord.tuningSystem;
     const oct = ts.octaveSteps;
-    const bassStep = bassNote.stepsFromBase;
-    const rootStep = chord.rootStep;
-    const bassPc = ((bassStep % oct) + oct) % oct;
-    const rootPc = ((rootStep % oct) + oct) % oct;
+    const pc = (step: number) => ((step % oct) + oct) % oct;
+    const bassOffset = pc(bassNote.stepsFromBase - chord.rootStep);
 
-    if (bassPc === rootPc) return ''; // root position
-    const bassOffset = ((bassPc - rootPc + oct) % oct);
+    // Chord members as offsets above the root, read from the chord's own intervals
+    const pcs = new Set(chord.intervalsInSteps.map(pc));
+    const member = (semitones: number[]) => semitones.map(s => ts.getStepFromStandard(s)).find(s => pcs.has(s));
+    const third = member([4, 3]);
+    const fifth = member([7, 6, 8]);
+    // A diminished seventh is the 6th above the root (C Eb Gb Bbb)
+    const isDim7 = [3, 6, 9].every(s => pcs.has(ts.getStepFromStandard(s)));
+    const seventh = member([10, 11]) ?? (isDim7 ? ts.getStepFromStandard(9) : undefined);
+    const isSeventh = seventh !== undefined;
 
-    // Standard inversions for triads (M or m)
-    const is3rd = bassOffset === 4 || bassOffset === 3;
-    const is5th = bassOffset === 7;
-
-    if (is3rd) return '6';
-    if (is5th) return '6/4';
-
-    // For 7th chords
-    if (bassOffset === 7 && chord.intervalsInSteps.some(i => i % oct === 10 || i % oct === 11)) return '6/4';
-
+    if (bassOffset === 0) return isSeventh ? '7' : '';
+    if (bassOffset === third) return isSeventh ? '6/5' : '6';
+    if (bassOffset === fifth) return isSeventh ? '4/3' : '6/4';
+    if (bassOffset === seventh) return '4/2';
     return `${bassOffset}`; // generic
   }
 }

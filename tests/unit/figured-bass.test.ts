@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { FiguredBass } from '../../lib/music-theory/figured-bass';
-import { parseNote } from '../../lib/music-theory/parser';
+import { parseNote, parseChordSymbol } from '../../lib/music-theory/parser';
 
 // ============================================================================
 // FiguredBass.parse
@@ -113,6 +113,33 @@ describe('FiguredBass.fromChord', () => {
     const bass = parseNote('C4');
     const chord = FiguredBass.realize(bass, '');
     expect(FiguredBass.fromChord(chord, bass)).toBe('');
+  });
+
+  const figure = (symbol: string, bass: string) => FiguredBass.fromChord(parseChordSymbol(symbol), parseNote(bass));
+
+  it('triad inversions, including diminished and augmented fifths', () => {
+    expect(figure('C', 'E3')).toBe('6');
+    expect(figure('C', 'G3')).toBe('6/4');
+    expect(figure('Bdim', 'F3')).toBe('6/4');
+    expect(figure('Caug', 'G#3')).toBe('6/4');
+  });
+
+  it('seventh chords: 7, 6/5, 4/3, 4/2', () => {
+    expect(figure('C7', 'C3')).toBe('7');
+    expect(figure('C7', 'E3')).toBe('6/5');
+    expect(figure('C7', 'G3')).toBe('4/3');
+    expect(figure('C7', 'Bb2')).toBe('4/2');
+    expect(figure('Cmaj7', 'B2')).toBe('4/2');
+    expect(figure('Bm7b5', 'A2')).toBe('4/2');
+  });
+
+  it('a diminished seventh has its seventh a major sixth above the root', () => {
+    expect(figure('Bdim7', 'B2')).toBe('7');
+    expect(figure('Bdim7', 'Ab2')).toBe('4/2');
+  });
+
+  it('a sixth chord is not a seventh chord', () => {
+    expect(figure('C6', 'C3')).toBe('');
   });
 });
 

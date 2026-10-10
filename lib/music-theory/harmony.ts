@@ -260,7 +260,12 @@ function getRomanForChord(chord: Chord, key: KeyInfo): {
     // Try as sharped degree
     const flatTarget = pcMod(chordRootPc - 1, oct);
     const sharpIdx = key.scalePcs.indexOf(flatTarget);
-    if (flatIdx !== -1) { degree = flatIdx + 1; accidental = 'b'; }
+    // In a minor key, a root from the parallel major is a raised degree: G# in A minor
+    // is #VII (the leading tone), not bI; C# is #III and F# is #VI.
+    const majorPcs = [0, 2, 4, 5, 7, 9, 11].map(s => pcMod(key.tonicPc + key.tuning.getStepFromStandard(s), oct));
+    const raised = key.isMinor && majorPcs.includes(chordRootPc);
+    if (raised && sharpIdx !== -1) { degree = sharpIdx + 1; accidental = '#'; }
+    else if (flatIdx !== -1) { degree = flatIdx + 1; accidental = 'b'; }
     else if (sharpIdx !== -1) { degree = sharpIdx + 1; accidental = '#'; }
   }
 
