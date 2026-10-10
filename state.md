@@ -24,7 +24,7 @@ last_updated: 2026-10-10
 
 - esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (112 kb)
 - typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
-- vitest - tests unitarios (`npm run test:unit`) - 700 tests
+- vitest - tests unitarios (`npm run test:unit`) - 722 tests
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
 - Tailwind CDN - estilos en demo

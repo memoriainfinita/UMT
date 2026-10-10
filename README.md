@@ -275,7 +275,7 @@ scaleToMusicXML(scale);            // MusicXML document
 ## Tests
 
 ```bash
-npm run test:unit    # 700 unit tests via vitest
+npm run test:unit    # 722 unit tests via vitest
 npm run typecheck    # TypeScript type checking
 ```
 
