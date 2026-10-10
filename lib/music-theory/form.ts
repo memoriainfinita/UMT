@@ -3,11 +3,15 @@
  * from a chord progression.
  */
 import { Chord } from './chord';
+import { parseScaleSymbol } from './parser';
 
-/** Recognized musical form types. `'unknown'` is returned when no pattern matches confidently. */
+/**
+ * Recognized musical form types. `'unknown'` is returned when no pattern matches confidently.
+ * Forms that need more than the chords (sonata, theme and variations) are not detected.
+ */
 export type FormType =
   | 'AABA' | 'AAB' | 'ABAB' | 'ABAC' | 'binary' | 'ternary'
-  | 'rondo' | 'sonata-allegro' | 'theme-variations' | 'blues-12'
+  | 'rondo' | 'blues-12'
   | 'strophic' | 'through-composed' | 'unknown';
 
 /** A labeled section within a formal analysis (e.g. A, B, A'). */
@@ -26,11 +30,14 @@ export interface FormAnalysis {
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
+/** Root pitch class in the chord's own tuning. */
+function rootPc(c: Chord): number {
+  const oct = c.tuningSystem.octaveSteps;
+  return ((c.rootStep % oct) + oct) % oct;
+}
+
 function chordsSignature(chords: Chord[]): string {
-  return chords.map(c => {
-    const root = ((c.rootStep % 12) + 12) % 12;
-    return `${root}:${c.name}`;
-  }).join(',');
+  return chords.map(c => `${rootPc(c)}:${c.name}`).join(',');
 }
 
 function sectionSimilarity(a: Chord[], b: Chord[]): number {
@@ -38,11 +45,24 @@ function sectionSimilarity(a: Chord[], b: Chord[]): number {
   const len = Math.min(a.length, b.length);
   let matches = 0;
   for (let i = 0; i < len; i++) {
-    const rA = ((a[i].rootStep % 12) + 12) % 12;
-    const rB = ((b[i].rootStep % 12) + 12) % 12;
-    if (rA === rB && a[i].name === b[i].name) matches++;
+    if (rootPc(a[i]) === rootPc(b[i]) && a[i].name === b[i].name) matches++;
   }
   return matches / Math.max(a.length, b.length);
+}
+
+// Twelve-bar blues: allowed roots per bar, in 12-TET semitones above the tonic (I = 0,
+// IV = 5, V = 7): quick change in bar 2, V or IV in bar 10, V turnaround in bar 12.
+const BLUES_BARS: number[][] = [[0], [0, 5], [0], [0], [5], [5], [0], [0], [7], [7, 5], [0], [0, 7]];
+
+/** True when the chords, one per bar in choruses of 12, follow the twelve-bar blues. */
+function isTwelveBarBlues(chords: Chord[], keySymbol: string): boolean {
+  if (chords.length === 0 || chords.length % 12 !== 0) return false;
+  let tonic: number;
+  try { tonic = parseScaleSymbol(keySymbol, chords[0].tuningSystem).rootStep; } catch { return false; }
+  const ts = chords[0].tuningSystem;
+  const oct = ts.octaveSteps;
+  return chords.every((c, i) => BLUES_BARS[i % 12].some(s =>
+    (((c.rootStep - tonic - ts.getStepFromStandard(s)) % oct) + oct) % oct === 0));
 }
 
 function sliceSection(chords: Chord[], start: number, size: number): Chord[] {
@@ -89,14 +109,21 @@ export class FormAnalyzer {
   /**
    * Analyzes harmonic form by segmenting `chords` into sections of `barsPerSection`
    * chords (default: auto-detect). Returns form type, labeled sections, and confidence.
+   * One chord per bar in choruses of 12 that follow the twelve-bar blues in `keySymbol`
+   * give `'blues-12'`, one section per chorus.
    */
   static analyzeHarmonic(
     chords: Chord[],
-    _keySymbol: string,
+    keySymbol: string,
     barsPerSection?: number,
   ): FormAnalysis {
     if (chords.length === 0) {
       return { type: 'unknown', sections: [], confidence: 0 };
+    }
+
+    if (isTwelveBarBlues(chords, keySymbol)) {
+      const sections = Array.from({ length: chords.length / 12 }, (_, i) => ({ label: 'A', start: i * 12, end: i * 12 + 11 }));
+      return { type: 'blues-12', sections, confidence: 0.9 };
     }
 
     const size = barsPerSection ?? Math.max(2, Math.floor(chords.length / 4));
@@ -129,31 +156,38 @@ export class FormAnalyzer {
   }
 
   /**
-   * Finds repeated sections of at least `minLength` chords.
-   * Returns array of `{ start, length }` - start index of each repeated segment.
+   * Finds passages of at least `minLength` chords that come back later, longest first.
+   * Each result is the first occurrence (`start`, `length`) of a passage that recurs
+   * without overlapping itself; a passage inside a longer reprise already found, or
+   * overlapping one, is not reported again.
    */
   static detectReprise(chords: Chord[], minLength = 2): { start: number; length: number }[] {
     const results: { start: number; length: number }[] = [];
     const n = chords.length;
     if (n < minLength * 2) return results;
 
-    const seen = new Map<string, number>();
+    const used = new Array(n).fill(false);
+    const free = (from: number, len: number) => used.slice(from, from + len).every(u => !u);
+    const mark = (from: number, len: number) => { for (let k = from; k < from + len; k++) used[k] = true; };
 
-    for (let len = minLength; len <= Math.floor(n / 2); len++) {
-      for (let i = 0; i <= n - len; i++) {
+    for (let len = Math.floor(n / 2); len >= minLength; len--) {
+      for (let i = 0; i + 2 * len <= n; i++) {
+        if (!free(i, len)) continue;
         const sig = chordsSignature(chords.slice(i, i + len));
-        if (seen.has(sig)) {
-          const firstAt = seen.get(sig)!;
-          // avoid duplicates in results
-          const already = results.some(r => r.start === firstAt && r.length === len);
-          if (!already) results.push({ start: firstAt, length: len });
-        } else {
-          seen.set(sig, i);
+        const repeats: number[] = [];
+        for (let j = i + len; j + len <= n; j++) {
+          if (free(j, len) && chordsSignature(chords.slice(j, j + len)) === sig) {
+            repeats.push(j);
+            j += len - 1; // occurrences do not overlap
+          }
+        }
+        if (repeats.length > 0) {
+          results.push({ start: i, length: len });
+          mark(i, len);
+          repeats.forEach(j => mark(j, len));
         }
       }
     }
-
-    // Keep only maximal non-overlapping reprises
     return results.sort((a, b) => b.length - a.length || a.start - b.start);
   }
 }

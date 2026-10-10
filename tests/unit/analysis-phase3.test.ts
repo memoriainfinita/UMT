@@ -7,6 +7,8 @@ import { Schenker } from '../../lib/music-theory/schenker';
 import { Counterpoint, Canon } from '../../lib/music-theory/counterpoint';
 import { ToneRow } from '../../lib/music-theory/twelve-tone';
 import { MetricModulation, RhythmAnalysis, TimeSignature } from '../../lib/music-theory/rhythm';
+import { FormAnalyzer } from '../../lib/music-theory/form';
+import { getProgression } from '../../lib/music-theory/progressions';
 
 const pcSet = (pcs: number[]) => [...new Set(pcs)].sort((a, b) => a - b).join(',');
 
@@ -211,5 +213,20 @@ describe('rhythm.ts fixes', () => {
   it('hemiola: 2+2+2 accents over two bars of 3/4', () => {
     expect(RhythmAnalysis.detectHemiola([0, 2, 4], new TimeSignature([3], 4))).toBe(true);
     expect(RhythmAnalysis.detectHemiola([0, 3], new TimeSignature([3], 4))).toBe(false);
+  });
+});
+
+describe('FormAnalyzer', () => {
+  it('detects the twelve-bar blues from the key', () => {
+    const blues = getProgression('blues-12', 'F major');
+    expect(FormAnalyzer.analyzeHarmonic(blues, 'F major').type).toBe('blues-12');
+    expect(FormAnalyzer.analyzeHarmonic([...blues, ...blues], 'F major').sections).toHaveLength(2);
+    expect(FormAnalyzer.analyzeHarmonic(blues, 'C major').type).not.toBe('blues-12');
+  });
+
+  it('detectReprise reports maximal passages, not their sub-passages', () => {
+    const A = parseRomanProgression('I V IV V', 'C major');
+    const B = parseRomanProgression('vi ii V I', 'C major');
+    expect(FormAnalyzer.detectReprise([...A, ...B, ...A])).toEqual([{ start: 0, length: 4 }]);
   });
 });
