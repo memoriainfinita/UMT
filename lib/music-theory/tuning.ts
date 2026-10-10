@@ -52,6 +52,25 @@ export abstract class TuningSystem {
     while (error(s - 1) < error(s)) s--;
     return s;
   }
+
+  /**
+   * Converts a 12-TET step pattern (successive steps, e.g. major `[2, 2, 1, 2, 2, 2, 1]`) to
+   * this tuning. Each note's position above the first is mapped, not each step, so the
+   * pattern keeps its span: in 22-EDO the major scale spans 22 steps (rounding each step
+   * would give 24), and in a 7-note JI scale a semitone does not collapse to 0 steps.
+   * A step comes out 0 only when two notes land on the same step of this tuning.
+   */
+  getPatternFromStandard(pattern: readonly number[]): number[] {
+    let position = 0;
+    let previous = 0;
+    return pattern.map(step => {
+      position += step;
+      const mapped = this.getStepFromStandard(position);
+      const size = mapped - previous;
+      previous = mapped;
+      return size;
+    });
+  }
 }
 
 /**

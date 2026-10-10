@@ -171,7 +171,7 @@ export function parseChordSymbol(symbol: string, tuning: TuningSystem = TET12, o
  * Root is case-insensitive. Scale type must match a key in `SCALE_PATTERNS` (case-insensitive).
  *
  * @param symbol - Scale symbol string with root and type separated by a space.
- * @param tuning - Target tuning system (default: 12-TET). Pattern steps are mapped via `getStepFromStandard`.
+ * @param tuning - Target tuning system (default: 12-TET). Pattern steps are mapped via `getPatternFromStandard` (positions, not single steps).
  * @param octave - Octave for the root note (default: 4).
  * @throws if the symbol cannot be parsed or the scale type is unknown.
  */
@@ -185,7 +185,7 @@ export function parseScaleSymbol(symbol: string, tuning: TuningSystem = TET12, o
   const pattern12TET = SCALE_PATTERNS[type];
   if (!pattern12TET) throw new Error(`parseScaleSymbol: unknown scale type "${typeRaw}" in "${symbol}".`);
 
-  const pattern = pattern12TET.map(s => tuning.getStepFromStandard(s));
+  const pattern = tuning.getPatternFromStandard(pattern12TET);
   const rootNormalized = rootName.charAt(0).toUpperCase() + rootName.slice(1);
   const rootStep = tuning.getStepFromStandard(parseNoteToStep12TET(rootNormalized, octave));
   const pf = rootNormalized.includes('#') ? false : rootNormalized.includes('b') ? true : preferFlatsForKey(rootNormalized, type);

@@ -4,7 +4,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import { CentTuning, EDO } from '../../lib/music-theory/tuning';
-import { HarmonicSeries, Harmonics1to16, Harmonics8to16, WerckmeisterIII, FiveLimitJI, BohlenPierce } from '../../lib/music-theory/presets';
+import { HarmonicSeries, Harmonics1to16, Harmonics8to16, WerckmeisterIII, FiveLimitJI, BohlenPierce, PtolemaicJI } from '../../lib/music-theory/presets';
+import { parseScaleSymbol } from '../../lib/music-theory/parser';
 import { parseScala } from '../../lib/music-theory/scala';
 
 describe('core fixes (audit 2026-10, phase 1)', () => {
@@ -90,5 +91,17 @@ describe('getStepFromStandard: nearest step in cents for every tuning', () => {
   it('12-step tunings stay one to one', () => {
     expect(FiveLimitJI.getStepFromStandard(6)).toBe(6);
     expect(new EDO(24).getStepFromStandard(7)).toBe(14);
+  });
+});
+
+describe('getPatternFromStandard: scale patterns keep their span', () => {
+  const span = (p: number[]) => p.reduce((a, b) => a + b, 0);
+  it('22-EDO major spans 22 steps; 19-EDO major spans 19', () => {
+    expect(span(new EDO(22).getPatternFromStandard([2, 2, 1, 2, 2, 2, 1]))).toBe(22);
+    expect(new EDO(19).getPatternFromStandard([2, 2, 1, 2, 2, 2, 1])).toEqual([3, 3, 2, 3, 3, 3, 2]);
+  });
+
+  it('C major in 7-note Ptolemaic JI is one step per degree', () => {
+    expect(parseScaleSymbol('C major', PtolemaicJI).stepPattern).toEqual([1, 1, 1, 1, 1, 1, 1]);
   });
 });

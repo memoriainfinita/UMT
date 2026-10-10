@@ -342,7 +342,7 @@ export class Scale {
     const parentPattern12TET = SCALE_PATTERNS[parent.family];
     if (!parentPattern12TET) return null;
 
-    const parentPattern = parentPattern12TET.map(s => this.tuningSystem.getStepFromStandard(s));
+    const parentPattern = this.tuningSystem.getPatternFromStandard(parentPattern12TET);
     let stepShift = 0;
     for (let i = 0; i < parent.degree - 1; i++) stepShift += parentPattern[i];
     const parentRootStep = this.rootStep - stepShift;
