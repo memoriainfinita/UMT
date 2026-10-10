@@ -11,51 +11,64 @@
  */
 import { Chord } from './chord';
 import { Note } from './note';
+import { SetTheory } from './set-theory';
 
-/** The five OPTIC equivalence classes of a chord: Octave, Permutation, Transposition, Inversion, Cardinality. */
+/**
+ * A chord under the OPTIC equivalences, each one added to the previous (O, OP, OPT, OPTI,
+ * OPTIC), in 12-TET pitch classes.
+ */
 export interface OPTICResult {
-  /** O: octave equivalence - pitch classes only */
+  /** O: octave equivalence - pitch classes in voice order, doublings kept */
   O: number[];
-  /** P: permutation-normal form (sorted) */
+  /** OP: + permutation - pitch classes sorted, doublings kept */
   P: number[];
-  /** T: transposition - zero-centred (subtract min) */
+  /** OPT: + transposition - the most compact rotation (normal form), starting on 0 */
   T: number[];
-  /** I: inversion equivalence - prime form */
+  /** OPTI: + inversion - the more compact of T and its inversion's T */
   I: number[];
-  /** C: cardinality - number of distinct pitch classes */
-  C: number;
+  /** OPTIC: + cardinality - doublings removed: the set class's prime form */
+  C: number[];
+  /** Number of distinct pitch classes */
+  cardinality: number;
+}
+
+/** Most compact rotation of a sorted pitch-class multiset (Rahn), transposed to start on 0. */
+function zeroedNormal(sorted: number[], oct: number): number[] {
+  const n = sorted.length;
+  let best: number[] = sorted;
+  for (let i = 0; i < n; i++) {
+    const rot = [...sorted.slice(i), ...sorted.slice(0, i).map(p => p + oct)];
+    // compare spans from the first note to the last, then to the one before, …
+    for (let j = n - 1; j > 0; j--) {
+      const a = rot[j] - rot[0];
+      const b = best[j] - best[0];
+      if (a < b) { best = rot; break; }
+      if (a > b) break;
+    }
+  }
+  return best.map(p => p - best[0]);
 }
 
 /**
- * Computes OPTIC equivalence classes for a chord expressed as pitch classes (mod 12).
+ * Computes the OPTIC equivalence classes of a chord given as pitches or pitch classes
+ * (12-TET semitones), in voice order: (0, 4, 7) → T [0, 4, 7], I and C [0, 3, 7].
  *
- * @param pcs - Array of pitch class integers (0–11).
+ * @param pcs - Pitches or pitch classes, one per voice.
  */
 export function OPTIC(pcs: number[]): OPTICResult {
   const oct = 12;
-
-  // O: reduce to pitch classes
-  const O = [...new Set(pcs.map(p => ((p % oct) + oct) % oct))].sort((a, b) => a - b);
-
-  // P: sorted (permutation normal form)
-  const P = [...O];
-
-  // T: transposed so first = 0
-  const T = P.map(p => (p - P[0] + oct) % oct);
-
-  // I: inversion equivalence (prime form - choose more compact of T and its inversion)
-  const inv = T.map(p => (oct - p) % oct).sort((a, b) => a - b);
-  const invZeroed = inv.map(p => (p - inv[0] + oct) % oct);
-  let I: number[] = T;
+  const O = pcs.map(p => ((p % oct) + oct) % oct);
+  const P = [...O].sort((a, b) => a - b);
+  if (P.length === 0) return { O, P, T: [], I: [], C: [], cardinality: 0 };
+  const T = zeroedNormal(P, oct);
+  const inverted = zeroedNormal(P.map(p => (oct - p) % oct).sort((a, b) => a - b), oct);
+  let I = T;
   for (let i = 0; i < T.length; i++) {
-    if (invZeroed[i] < T[i]) { I = invZeroed; break; }
-    if (T[i] < invZeroed[i]) break;
+    if (inverted[i] < T[i]) { I = inverted; break; }
+    if (T[i] < inverted[i]) break;
   }
-
-  // C: distinct pitch class count
-  const C = O.length;
-
-  return { O, P, T, I, C };
+  const C = SetTheory.primeForm(O, oct);
+  return { O, P, T, I, C, cardinality: C.length };
 }
 
 export class VoiceLeadingGeometry {
@@ -67,10 +80,13 @@ export class VoiceLeadingGeometry {
   }
 
   /**
-   * Finds the most efficient voice leading between two chords.
-   * Minimises total displacement (sum of absolute interval distances for each voice).
+   * Finds the most efficient voice leading between two chords in pitch-class space: each
+   * voice of `a` goes to a note of `b`, and the cost is the sum of the interval classes
+   * moved (the shortest way, up or down, ignoring octaves). Up to 8 voices.
    *
-   * Returns all minimal-cost voice-leading paths and the total distance in semitones.
+   * Returns all minimal-cost assignments (notes of `b` in the order of `a`'s voices) and
+   * the total distance in steps.
+   * @throws RangeError for chords of more than 8 notes.
    *
    * @param a - Source chord.
    * @param b - Target chord.
@@ -84,6 +100,7 @@ export class VoiceLeadingGeometry {
       return { paths: [], totalDistance: 0 };
     }
 
+    if (bNotes.length > 8) throw new RangeError('efficientVoiceLeading: more than 8 voices');
     // Build all permutations of bNotes and find minimum total displacement
     const permutations = getPermutations(bNotes);
     let bestDistance = Infinity;
@@ -92,8 +109,8 @@ export class VoiceLeadingGeometry {
     for (const perm of permutations) {
       let totalDist = 0;
       for (let i = 0; i < Math.min(aNotes.length, perm.length); i++) {
-        const diff = Math.abs(aNotes[i].stepsFromBase - perm[i].stepsFromBase);
-        totalDist += Math.min(diff, oct - diff);
+        const r = (((perm[i].stepsFromBase - aNotes[i].stepsFromBase) % oct) + oct) % oct;
+        totalDist += Math.min(r, oct - r); // interval class: never negative, any octave
       }
       if (totalDist < bestDistance) {
         bestDistance = totalDist;
@@ -117,7 +134,6 @@ export class VoiceLeadingGeometry {
 
 function getPermutations<T>(arr: T[]): T[][] {
   if (arr.length <= 1) return [arr];
-  if (arr.length > 5) return [arr]; // cap at 5 voices to avoid exponential blowup
   const result: T[][] = [];
   for (let i = 0; i < arr.length; i++) {
     const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];

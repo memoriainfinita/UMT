@@ -336,9 +336,10 @@ describe('OPTIC', () => {
     expect(result).toHaveProperty('C');
   });
 
-  it('O is sorted pitch classes', () => {
+  it('O keeps voice order, P sorts', () => {
     const result = OPTIC([7, 0, 4]);
-    expect(result.O).toEqual([0, 4, 7]);
+    expect(result.O).toEqual([7, 0, 4]);
+    expect(result.P).toEqual([0, 4, 7]);
   });
 
   it('T starts from 0', () => {
@@ -346,13 +347,21 @@ describe('OPTIC', () => {
     expect(result.T[0]).toBe(0);
   });
 
-  it('C equals number of unique PCs', () => {
-    expect(OPTIC([0, 4, 7]).C).toBe(3);
-    expect(OPTIC([0, 0, 4]).C).toBe(2);
+  it('C is the prime form; cardinality counts distinct pitch classes', () => {
+    expect(OPTIC([0, 4, 7]).C).toEqual([0, 3, 7]);
+    expect(OPTIC([0, 4, 7]).cardinality).toBe(3);
+    expect(OPTIC([0, 0, 4]).cardinality).toBe(2);
   });
 
-  it('duplicate PCs are removed in O', () => {
-    expect(OPTIC([0, 0, 7]).O).toEqual([0, 7]);
+  it('doublings stay until C', () => {
+    expect(OPTIC([0, 0, 7]).O).toEqual([0, 0, 7]);
+    expect(OPTIC([0, 0, 7]).C).toEqual([0, 5]);
+  });
+
+  it('I is the inversion class: major and minor triads meet', () => {
+    expect(OPTIC([0, 4, 7]).T).toEqual([0, 4, 7]);
+    expect(OPTIC([0, 4, 7]).I).toEqual([0, 3, 7]);
+    expect(OPTIC([9, 0, 4]).I).toEqual([0, 3, 7]);
   });
 });
 
@@ -366,6 +375,13 @@ describe('VoiceLeadingGeometry.efficientVoiceLeading', () => {
   it('identity (same chord) has distance 0', () => {
     const c = chord('C');
     expect(VoiceLeadingGeometry.efficientVoiceLeading(c, c).totalDistance).toBe(0);
+  });
+
+  it('distance is an interval class, never negative, across octaves', () => {
+    const c4 = parseChordSymbol('C', TET12, 4);
+    const c6 = parseChordSymbol('C', TET12, 6);
+    expect(VoiceLeadingGeometry.efficientVoiceLeading(c4, c6).totalDistance).toBe(0);
+    expect(VoiceLeadingGeometry.chordGraphDistance(chord('C'), chord('Am'))).toBe(2);
   });
 
   it('chordGraphDistance is non-negative', () => {
