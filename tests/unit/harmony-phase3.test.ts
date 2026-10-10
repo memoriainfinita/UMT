@@ -93,11 +93,11 @@ describe('Harmony.getBorrowedChords - C major borrowed chords', () => {
     expect(results.every(b => b.sourceMode === 'mixolydian')).toBe(true);
   });
 
-  it('function field maps bVII to T or unknown (non-dominant, non-subdominant)', () => {
+  it('function field maps bVII to S (minor subdominant family)', () => {
     const results = Harmony.getBorrowedChords('C major');
     const bVII = results.find(b => b.chord.name.startsWith('Bb') && b.sourceMode === 'mixolydian');
-    // bVII = degree 7 in home key, major quality → function unknown or T
     expect(bVII).toBeDefined();
+    expect(bVII!.function).toBe('S');
   });
 });
 

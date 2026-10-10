@@ -270,28 +270,54 @@ function getRomanForChord(chord: Chord, key: KeyInfo): {
   }
 
   const quality = chordQualityFromIntervals(chord, oct);
+
+  // Diatonic = every pitch class of the chord is in the scale
+  const chordPcs = chord.getPitchClasses();
+  let isDiatonic = chordPcs.every(pc => key.scalePcs.includes(pc));
+
+  // In a natural minor key, the dominant and leading-tone chords take the raised 7th
+  // (harmonic minor) and count as diatonic: E7 and G#dim7 in A minor. The leading-tone
+  // chord is written vii°, as V is written without an accidental.
+  if (!isDiatonic && isNaturalMinor(key)) {
+    const st = (s: number) => pcMod(key.tonicPc + key.tuning.getStepFromStandard(s), oct);
+    const leadingTone = st(11);
+    const harmonicPcs = key.scalePcs.map(pc => (pc === st(10) ? leadingTone : pc));
+    const isV = chordRootPc === st(7) && (quality === 'M' || quality === '7');
+    const isVii = chordRootPc === leadingTone && (quality === 'dim' || quality === 'dim7');
+    if ((isV || isVii) && chordPcs.includes(leadingTone) && chordPcs.every(pc => harmonicPcs.includes(pc))) {
+      isDiatonic = true;
+      if (isVii) { degree = 7; accidental = ''; }
+    }
+  }
+
   const parts = qualityToRomanParts(quality);
   const romanBase = degree > 0 ? ROMAN_UPPER[degree - 1] : '?';
   const romanCased = parts.upper ? romanBase : romanBase.toLowerCase();
   const roman = `${accidental}${romanCased}${parts.suffix}`;
 
-  // Diatonic = every pitch class of the chord is in the scale
-  const chordPcs = chord.getPitchClasses();
-  const isDiatonic = chordPcs.every(pc => key.scalePcs.includes(pc));
-
   return { roman, degree, accidental, isDiatonic, quality };
+}
+
+function isNaturalMinor(key: KeyInfo): boolean {
+  return key.mode === 'minor' || key.mode === 'aeolian' || key.mode === 'natural minor';
 }
 
 /**
  * Maps a (degree, quality) pair to a functional category T/S/D.
  * Conservative mapping: uses scale degree primarily; quality only disambiguates edge cases.
+ * Secondary dominants and leading-tone chords are D whatever their degree; that override
+ * lives in `analyzeProgression`, which knows the chord is secondary.
  */
-function getFunction(degree: number, quality: string, _isMinor: boolean): 'T' | 'S' | 'D' | 'unknown' {
+function getFunction(degree: number, quality: string, isMinor: boolean, accidental: '' | 'b' | '#' = ''): 'T' | 'S' | 'D' | 'unknown' {
   if (degree <= 0) return 'unknown';
   // Dominants: V (any quality), vii° (leading-tone)
   if (degree === 5) return 'D';
   if (degree === 7) {
     if (quality === 'dim' || quality === 'dim7' || quality === 'm7b5') return 'D';
+    // The subtonic VII of a minor key stands in for V (i-VII-i, the Andalusian cadence)
+    if (isMinor && accidental === '') return 'D';
+    // bVII in major comes from the minor subdominant family (the backdoor bVII7)
+    if (!isMinor && accidental === 'b') return 'S';
     return 'unknown';
   }
   // Subdominants: ii, IV
@@ -304,8 +330,24 @@ function getFunction(degree: number, quality: string, _isMinor: boolean): 'T' | 
 function detectSecondaryDominant(chord: Chord, key: KeyInfo): { isSecondary: boolean; target?: string } {
   const oct = chord.tuningSystem.octaveSteps;
   const quality = chordQualityFromIntervals(chord, oct);
-  if (quality !== '7' && quality !== 'M') return { isSecondary: false };
   const chordRootPc = pcMod(chord.rootStep, oct);
+
+  // Secondary leading-tone chord: a chromatic diminished chord a semitone below a diatonic
+  // degree (F#°7 → G in C major is vii°7/V). Diatonic ones keep their own reading (ii° in minor).
+  const ltSuffix: Record<string, string> = { dim: 'vii°', dim7: 'vii°7', m7b5: 'viiø7' };
+  if (ltSuffix[quality]) {
+    if (chord.getPitchClasses().every(pc => key.scalePcs.includes(pc))) return { isSecondary: false };
+    const targetPc = pcMod(chordRootPc + key.tuning.getStepFromStandard(1), oct);
+    if (targetPc === key.tonicPc) return { isSecondary: false };
+    const targetIdx = key.scalePcs.indexOf(targetPc);
+    if (targetIdx === -1 || key.scalePcs.length !== 7) return { isSecondary: false };
+    // A diminished triad cannot be tonicized
+    const fifth = pcMod(key.scalePcs[(targetIdx + 4) % 7] - targetPc, oct);
+    if (fifth === key.tuning.getStepFromStandard(6)) return { isSecondary: false };
+    return { isSecondary: true, target: `${ltSuffix[quality]}/${targetRoman(key, targetIdx, targetIdx + 1)}` };
+  }
+
+  if (quality !== '7' && quality !== 'M') return { isSecondary: false };
   const targetPc = pcMod(chordRootPc + 5, oct); // V → I is root+5 (a 4th up)
 
   // Don't flag V → I of the main key as secondary
@@ -665,8 +707,8 @@ export class Harmony {
     const key = parseKey(keySymbol, tuning);
 
     const analysis: ChordAnalysis[] = chords.map((chord, i) => {
-      const { roman, degree, isDiatonic, quality } = getRomanForChord(chord, key);
-      const fn = getFunction(degree, quality, key.isMinor);
+      const { roman, degree, accidental, isDiatonic, quality } = getRomanForChord(chord, key);
+      const degreeFn = getFunction(degree, quality, key.isMinor, accidental);
 
       let borrowedFrom: string | undefined;
       let isBorrowed = false;
@@ -676,6 +718,7 @@ export class Harmony {
       }
 
       const { isSecondary, target } = detectSecondaryDominant(chord, key);
+      const fn = isSecondary ? 'D' : degreeFn;
 
       let cadenceWithNext: string | undefined;
       if (i < chords.length - 1) {
@@ -913,8 +956,8 @@ export class Harmony {
         // Skip if all PCs already in home key (not borrowed)
         if (cPcs.every(pc => homeKey.scalePcs.includes(pc))) continue;
 
-        const { degree, quality } = getRomanForChord(c, homeKey);
-        const fn = getFunction(degree, quality, homeKey.isMinor);
+        const { degree, quality, accidental } = getRomanForChord(c, homeKey);
+        const fn = getFunction(degree, quality, homeKey.isMinor, accidental);
 
         // characteristic = chord contains a mode-defining PC (relative to home tonic)
         const tonicPc = homeKey.tonicPc;

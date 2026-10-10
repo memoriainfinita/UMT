@@ -135,12 +135,29 @@ describe('Harmony.analyzeProgression - basic', () => {
 describe('Harmony.analyzeProgression - chromatic roots in minor', () => {
   const roman = (symbol: string, key: string) => Harmony.analyzeProgression([chord(symbol)], key).analysis[0];
 
-  it('the leading-tone chord is #vii, dominant, not bI', () => {
+  it('the leading-tone chord is vii°7, diatonic (harmonic minor), dominant, not bI', () => {
     const a = roman('G#dim7', 'A minor');
-    expect(a.roman).toBe('#vii°7');
+    expect(a.roman).toBe('vii°7');
     expect(a.degree).toBe(7);
     expect(a.function).toBe('D');
-    expect(roman('Abdim7', 'A minor').roman).toBe('#vii°7');   // same pitch, flat spelling
+    expect(a.isDiatonic).toBe(true);
+    expect(a.isBorrowed).toBe(false);
+    expect(roman('Abdim7', 'A minor').roman).toBe('vii°7');   // same pitch, flat spelling
+  });
+
+  it('V and V7 with the raised leading tone are diatonic in minor', () => {
+    for (const s of ['E', 'E7']) {
+      const a = roman(s, 'A minor');
+      expect(a.isDiatonic).toBe(true);
+      expect(a.isBorrowed).toBe(false);
+      expect(a.function).toBe('D');
+    }
+  });
+
+  it('chords from melodic minor stay borrowed: IV major in minor', () => {
+    const a = roman('D', 'A minor');
+    expect(a.isDiatonic).toBe(false);
+    expect(a.isBorrowed).toBe(true);
   });
 
   it('raised third and sixth read as #III and #vi', () => {
@@ -153,6 +170,40 @@ describe('Harmony.analyzeProgression - chromatic roots in minor', () => {
     expect(roman('Db', 'C major').roman).toBe('bII');
     expect(roman('Ab', 'C major').roman).toBe('bVI');
     expect(roman('Bb', 'C major').roman).toBe('bVII');
+  });
+});
+
+describe('Harmony.analyzeProgression - functions', () => {
+  const a = (symbol: string, key: string) => Harmony.analyzeProgression([chord(symbol)], key).analysis[0];
+
+  it('secondary dominants are dominant whatever degree they sit on', () => {
+    for (const s of ['D7', 'A7', 'E7', 'B7', 'C7']) {
+      expect(a(s, 'C major').isSecondary).toBe(true);
+      expect(a(s, 'C major').function).toBe('D');
+    }
+  });
+
+  it('VII in minor is dominant; bVII in major is subdominant', () => {
+    expect(a('G', 'A minor').function).toBe('D');
+    expect(a('Bb', 'C major').function).toBe('S');
+    expect(a('Bb7', 'C major').function).toBe('S');
+  });
+
+  it('secondary leading-tone chords: vii°7/V, vii°/ii, viiø7/V', () => {
+    expect(a('F#dim7', 'C major')).toMatchObject({ isSecondary: true, secondaryTarget: 'vii°7/V', function: 'D' });
+    expect(a('C#dim', 'C major')).toMatchObject({ isSecondary: true, secondaryTarget: 'vii°/ii', function: 'D' });
+    expect(a('F#m7b5', 'C major')).toMatchObject({ isSecondary: true, secondaryTarget: 'viiø7/V' });
+    expect(a('F#dim', 'A minor')).toMatchObject({ isSecondary: true, secondaryTarget: 'vii°/VII', function: 'D' });
+  });
+
+  it('diatonic diminished chords keep their own reading', () => {
+    expect(a('Bdim', 'C major')).toMatchObject({ isSecondary: false, roman: 'vii°', function: 'D' });
+    expect(a('Bdim', 'A minor')).toMatchObject({ isSecondary: false, roman: 'ii°', function: 'S' });
+    expect(a('Bm7b5', 'A minor').isSecondary).toBe(false);
+  });
+
+  it('a diminished triad is not tonicized: A#dim in C is not vii°/vii', () => {
+    expect(a('A#dim', 'C major').isSecondary).toBe(false);
   });
 });
 
