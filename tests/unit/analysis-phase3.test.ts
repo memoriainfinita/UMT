@@ -4,6 +4,7 @@ import { parseChordSymbol, parseRomanProgression, parseNote } from '../../lib/mu
 import { NOTE_NAMES_12TET_FLAT } from '../../lib/music-theory/utils';
 import { FiguredBass } from '../../lib/music-theory/figured-bass';
 import { Schenker } from '../../lib/music-theory/schenker';
+import { Counterpoint, Canon } from '../../lib/music-theory/counterpoint';
 
 const pcSet = (pcs: number[]) => [...new Set(pcs)].sort((a, b) => a - b).join(',');
 
@@ -133,5 +134,34 @@ describe('Schenker', () => {
     expect(Schenker.prolongationLevel(cs, 'foreground').map(c => c.name)).toEqual(['C', 'C7', 'F', 'G7', 'C']);
     expect(Schenker.prolongationLevel(cs, 'middleground').map(c => c.name)).toEqual(['C', 'F', 'G7', 'C']);
     expect(Schenker.prolongationLevel(cs, 'background').map(c => c.name)).toEqual(['C', 'C', 'C7', 'G7', 'C']);
+  });
+});
+
+describe('Counterpoint and Canon', () => {
+  const n = (names: string[]) => names.map(x => parseNote(x));
+  const types = (issues: { type: string }[]) => issues.map(i => i.type);
+
+  it('2nd species: a passing dissonance is fine, a leaped one is not', () => {
+    expect(types(Counterpoint.checkSpecies(2, n(['C4', 'A3']), n(['E4', 'D4', 'C4'])))).not.toContain('Dissonance');
+    expect(types(Counterpoint.checkSpecies(2, n(['C4', 'A3']), n(['E4', 'B4', 'C4'])))).toContain('Dissonance');
+  });
+
+  it('4th species: a prepared suspension resolving down is fine; unprepared is not', () => {
+    const cf = n(['C4', 'B3']);
+    expect(types(Counterpoint.checkSpecies(4, cf, n(['E4', 'A4', 'A4', 'G4'])))).toEqual([]);
+    expect(types(Counterpoint.checkSpecies(4, cf, n(['E4', 'G4', 'A4', 'G4'])))).toContain('Dissonance on Strong Beat');
+  });
+
+  it('modal finalis in any transposition', () => {
+    const cf = n(['G3', 'A3', 'G3']);
+    const ct = n(['D4', 'C4', 'D4']);
+    expect(types(Counterpoint.checkSpecies(1, cf, ct, 'G dorian'))).not.toContain('Modal Finalis');
+    expect(types(Counterpoint.checkSpecies(1, cf, ct, 'dorian'))).toContain('Modal Finalis');
+  });
+
+  it('generateCanon delays the follower with rests', () => {
+    const [leader, follower] = Canon.generateCanon(n(['C4', 'D4', 'E4']), 7, 1);
+    expect(leader.map(x => x?.name ?? null)).toEqual(['C4', 'D4', 'E4', null]);
+    expect(follower.map(x => x?.stepsFromBase ?? null)).toEqual([null, -2, 0, 2]);
   });
 });

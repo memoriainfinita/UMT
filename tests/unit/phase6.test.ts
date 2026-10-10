@@ -418,14 +418,15 @@ describe('Canon.generateCanon', () => {
   it('generates two voices', () => {
     const theme = notes([-9, -7, -5, -4]);
     const [leader, follower] = Canon.generateCanon(theme, 7, 2);
-    expect(leader).toHaveLength(4);
+    expect(leader).toHaveLength(6);
+    expect(follower.slice(0, 2)).toEqual([null, null]);
     expect(follower.length).toBeGreaterThan(0);
   });
 
   it('follower is transposed by interval', () => {
     const theme = notes([-9, -7]);
     const [, follower] = Canon.generateCanon(theme, 5, 0);
-    expect(follower[0].stepsFromBase).toBe(-9 + 5);
+    expect(follower[0]?.stepsFromBase).toBe(-9 + 5);
   });
 
   it('returns empty arrays for empty theme', () => {

@@ -2,6 +2,7 @@
  * Species counterpoint validation and canon/imitation detection.
  */
 import { Note } from './note';
+import { parseNoteToStep12TET } from './utils';
 
 /** A rule violation found during species counterpoint analysis. */
 export interface CounterpointIssue {
@@ -24,15 +25,27 @@ function motionType(cf1: number, cf2: number, ct1: number, ct2: number): 'contra
 const PERFECT_CONSONANCES = new Set([0, 7, 12]); // unison, P5, P8 (steps)
 const IMPERFECT_CONSONANCES = new Set([3, 4, 8, 9]); // m3, M3, m6, M6
 
-// Pitch class (mod 12, steps from A4) of each mode's finalis
+// Pitch class (mod 12, steps from A4) of each mode's finalis on the white keys
 const MODE_FINALIS: Record<string, number> = {
   dorian: 5, phrygian: 7, lydian: 8, mixolydian: 10,
   aeolian: 0, ionian: 3, locrian: 2,
 };
 
+/** `'dorian'` (finalis D) or a transposed mode with its finalis (`'G dorian'`). */
+function parseMode(mode: string): { name: string; finalisPC: number } | null {
+  const m = mode.trim().match(/^(?:([A-G][#b]*)\s+)?(\w+)$/);
+  if (!m) return null;
+  const name = m[2].toLowerCase();
+  const white = MODE_FINALIS[name];
+  if (white === undefined) return null;
+  const finalisPC = m[1] ? ((parseNoteToStep12TET(m[1]) % 12) + 12) % 12 : white;
+  return { name, finalisPC };
+}
+
 function modalChecks(mode: string, cf: Note[], counter: Note[], issues: CounterpointIssue[]): void {
-  const finalisPC = MODE_FINALIS[mode.toLowerCase()];
-  if (finalisPC === undefined) return;
+  const parsed = parseMode(mode);
+  if (!parsed) return;
+  const { finalisPC } = parsed;
 
   // 1. Finalis: CF must start and end on the mode's finalis pitch class
   const pc = (n: Note) => ((n.stepsFromBase % 12) + 12) % 12;
@@ -57,28 +70,38 @@ function modalChecks(mode: string, cf: Note[], counter: Note[], issues: Counterp
   }
 }
 
+/** Counterpoint notes per cantus firmus note, by species. */
+const SLOTS: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 1, 2: 2, 3: 4, 4: 2, 5: 4 };
+
 /**
  * Checks counterpoint rules for a given species.
  * `cf` = cantus firmus notes; `counter` = counterpoint notes.
- * Notes should be in the same tuning system.
+ * Notes should be in the same tuning system. Intervals are read in 12-TET semitones.
  */
 export class Counterpoint {
   /**
    * Validates a counterpoint voice against a cantus firmus.
    *
-   * Species rules enforced:
-   * - 1st: one note against one (note-against-note). Only consonances.
-   * - 2nd: two notes against one. Passing tones allowed on weak beat.
-   * - 3rd: four notes against one. Cambiata and neighbor patterns.
-   * - 4th: syncopated (suspension) counterpoint.
-   * - 5th: florid (mixed values) - lenient check on consonances.
+   * The counterpoint is given on a grid of slots per cantus firmus note: 1 (1st species),
+   * 2 (2nd), 4 (3rd), 2 (4th: slot 1 is the tied-over note, slot 2 the new one) and 4
+   * (5th: a longer note repeats its pitch in the following slots; a tie is a repeated
+   * pitch across the bar line).
+   *
+   * - Strong slots (the first of each measure) must be consonant, except a suspension in
+   *   the 4th and 5th species: prepared (same pitch in the slot before, consonant there)
+   *   and resolved down by step to a consonance.
+   * - Weak slots: a dissonance must be a passing or neighbour note (approached and left by
+   *   step); in the 4th species weak slots are consonant.
+   * - Parallel 5ths and octaves between consecutive strong slots; hidden 5ths and octaves
+   *   in the 1st species; unison only at the start and end.
    *
    * @param species - 1 | 2 | 3 | 4 | 5
-   * @param cf - Cantus firmus notes (one per measure for species 1).
-   * @param counter - Counterpoint notes.
-   * @param mode - Optional mode name (`"dorian"` | `"phrygian"` | `"lydian"` | `"mixolydian"` | `"aeolian"` | `"ionian"` | `"locrian"`).
-   *   When provided, enables modal checks: finalis (CF must start and end on the mode's finalis),
-   *   ambitus (counterpoint within [-7, +15] semitones of the finalis), and melodic tritone detection.
+   * @param cf - Cantus firmus notes (one per measure).
+   * @param counter - Counterpoint notes on the slot grid above.
+   * @param mode - Optional mode, on its white-key finalis (`"dorian"` = D) or transposed
+   *   (`"G dorian"`): `dorian`, `phrygian`, `lydian`, `mixolydian`, `aeolian`, `ionian`, `locrian`.
+   *   Enables modal checks: finalis (CF must start and end on it), ambitus (counterpoint
+   *   within [-7, +15] semitones of the finalis), and melodic tritone detection.
    */
   static checkSpecies(
     species: 1 | 2 | 3 | 4 | 5,
@@ -89,78 +112,68 @@ export class Counterpoint {
     const issues: CounterpointIssue[] = [];
     if (cf.length === 0 || counter.length === 0) return issues;
 
-    const notesPerMeasure = species === 1 ? 1 : species === 2 ? 2 : species === 3 ? 4 : species === 4 ? 1 : 1;
+    const slots = SLOTS[species];
+    const ic = (k: number) => Math.abs(cf[Math.floor(k / slots)].stepsFromBase - counter[k].stepsFromBase) % 12;
+    const consonant = (k: number) => PERFECT_CONSONANCES.has(ic(k)) || IMPERFECT_CONSONANCES.has(ic(k));
+    const step = (from: number, to: number) => counter[to].stepsFromBase - counter[from].stepsFromBase;
+    const isStep = (d: number) => d !== 0 && Math.abs(d) <= 2;
+    const total = Math.min(counter.length, cf.length * slots);
+    const len = Math.ceil(total / slots);
 
-    // Check each beat where CF and counter align
-    const len = Math.min(cf.length, Math.ceil(counter.length / Math.max(1, notesPerMeasure)));
+    // A dissonance that is a suspension: tied from a consonant preparation and resolved
+    // down by step to a consonance
+    const isSuspension = (k: number) =>
+      k > 0 && k + 1 < total && step(k - 1, k) === 0 && consonant(k - 1)
+      && (step(k, k + 1) === -1 || step(k, k + 1) === -2) && consonant(k + 1);
 
     for (let i = 0; i < len; i++) {
+      const k = i * slots;
       const cfNote = cf[i];
-      const ctIndex = i * (species === 2 ? 2 : species === 3 ? 4 : 1);
-      if (ctIndex >= counter.length) break;
-      const ctNote = counter[ctIndex];
+      const ctNote = counter[k];
+      const interval = ic(k);
 
-      const interval = Math.abs(cfNote.stepsFromBase - ctNote.stepsFromBase);
-      const ic = interval % 12;
-      const isConsonant = PERFECT_CONSONANCES.has(ic) || IMPERFECT_CONSONANCES.has(ic);
-
-      // Strong beat must be consonant in all species
-      if (!isConsonant) {
-        issues.push({ type: 'Dissonance on Strong Beat', beat: i + 1, description: `Beat ${i + 1}: interval ${ic} semitones is dissonant on a strong beat.` });
+      if (!consonant(k) && !((species === 4 || species === 5) && isSuspension(k))) {
+        issues.push({ type: 'Dissonance on Strong Beat', beat: k + 1, description: `Beat ${k + 1}: interval ${interval} semitones is dissonant on a strong beat.` });
       }
 
-      // Parallel 5ths and octaves (check successive beats)
+      // Parallel 5ths and octaves between consecutive strong slots
       if (i > 0) {
         const prevCF = cf[i - 1];
-        const prevCTIndex = (i - 1) * (species === 2 ? 2 : species === 3 ? 4 : 1);
-        if (prevCTIndex >= 0 && prevCTIndex < counter.length) {
-          const prevCT = counter[prevCTIndex];
-          const prevInterval = Math.abs(prevCF.stepsFromBase - prevCT.stepsFromBase) % 12;
-          const motion = motionType(prevCF.stepsFromBase, cfNote.stepsFromBase, prevCT.stepsFromBase, ctNote.stepsFromBase);
+        const prevCT = counter[k - slots];
+        const prevInterval = Math.abs(prevCF.stepsFromBase - prevCT.stepsFromBase) % 12;
+        const motion = motionType(prevCF.stepsFromBase, cfNote.stepsFromBase, prevCT.stepsFromBase, ctNote.stepsFromBase);
 
-          if ((ic === 7 || ic === 0) && prevInterval === ic && motion === 'parallel') {
-            const label = ic === 7 ? 'Parallel 5th' : 'Parallel Octave';
-            issues.push({ type: label, beat: i + 1, description: `Beat ${i + 1}: ${label} detected.` });
-          }
+        if ((interval === 7 || interval === 0) && prevInterval === interval && motion === 'parallel') {
+          const label = interval === 7 ? 'Parallel 5th' : 'Parallel Octave';
+          issues.push({ type: label, beat: k + 1, description: `Beat ${k + 1}: ${label} detected.` });
+        }
 
-          // Hidden 5ths/octaves (similar motion into a perfect consonance) - 1st species only
-          if (species === 1 && (ic === 7 || ic === 0) && motion === 'similar') {
-            const label = ic === 7 ? 'Hidden 5th' : 'Hidden Octave';
-            issues.push({ type: label, beat: i + 1, description: `Beat ${i + 1}: ${label} (similar motion into perfect consonance).` });
-          }
+        // Hidden 5ths/octaves (similar motion into a perfect consonance) - 1st species only
+        if (species === 1 && (interval === 7 || interval === 0) && motion === 'similar') {
+          const label = interval === 7 ? 'Hidden 5th' : 'Hidden Octave';
+          issues.push({ type: label, beat: k + 1, description: `Beat ${k + 1}: ${label} (similar motion into perfect consonance).` });
         }
       }
 
       // Unison not allowed except at beginning and end
-      if (ic === 0 && i > 0 && i < len - 1) {
-        issues.push({ type: 'Interior Unison', beat: i + 1, description: `Beat ${i + 1}: unison allowed only at start and end.` });
+      if (interval === 0 && i > 0 && i < len - 1) {
+        issues.push({ type: 'Interior Unison', beat: k + 1, description: `Beat ${k + 1}: unison allowed only at start and end.` });
       }
     }
 
-    // Species 2+: check passing tones
-    if (species >= 2) {
-      for (let i = 1; i < counter.length - 1; i++) {
-        const cfIdx = Math.floor(i / (species === 2 ? 2 : 4));
-        if (cfIdx >= cf.length) break;
-        const ic = Math.abs(cf[cfIdx].stepsFromBase - counter[i].stepsFromBase) % 12;
-        const isWeak = i % (species === 2 ? 2 : 4) !== 0;
-        if (isWeak) continue; // weak beats may be dissonant passing tones - skip
-        if (!PERFECT_CONSONANCES.has(ic) && !IMPERFECT_CONSONANCES.has(ic)) {
-          issues.push({ type: 'Dissonance', beat: i + 1, description: `Beat ${i + 1}: dissonant interval ${ic} on non-passing beat.` });
-        }
+    // Weak slots
+    for (let k = 0; k < total; k++) {
+      if (k % slots === 0 || consonant(k)) continue;
+      if (species === 4) {
+        issues.push({ type: 'Dissonance', beat: k + 1, description: `Beat ${k + 1}: the weak beat of the 4th species must be consonant.` });
+        continue;
       }
-    }
-
-    // Species 4: suspension check - CT must be prepared (same note in previous beat)
-    if (species === 4) {
-      for (let i = 1; i < counter.length; i++) {
-        if (counter[i].stepsFromBase !== counter[i - 1].stepsFromBase) {
-          // Suspension should be tied - if motion is not step down, flag it
-          const step = counter[i].stepsFromBase - counter[i - 1].stepsFromBase;
-          if (Math.abs(step) !== 1 && Math.abs(step) !== 2) {
-            issues.push({ type: 'Improper Resolution', beat: i + 1, description: `Beat ${i + 1}: suspension should resolve by step down.` });
-          }
-        }
+      // passing or neighbour note: approached and left by step (in the 5th species a held
+      // note repeats its pitch, so the approach may be a repetition)
+      const approached = k > 0 && (isStep(step(k - 1, k)) || (species === 5 && step(k - 1, k) === 0));
+      const left = k + 1 < total && isStep(step(k, k + 1));
+      if (!(approached && left) && !(species === 5 && isSuspension(k))) {
+        issues.push({ type: 'Dissonance', beat: k + 1, description: `Beat ${k + 1}: dissonant interval ${ic(k)} is not a passing or neighbour note.` });
       }
     }
 
@@ -217,8 +230,10 @@ export class Canon {
    * @param interval - Transposition interval in steps for the follower voice.
    * @param delay - Entry delay in number of notes.
    * @param inversion - If true, the follower uses the melodic inversion.
+   * @returns `[leader, follower]`, both `theme.length + delay` long: the follower opens with
+   *   `delay` rests (`null`) and the leader ends with as many, so index i sounds together.
    */
-  static generateCanon(theme: Note[], interval: number, delay: number, inversion = false): Note[][] {
+  static generateCanon(theme: Note[], interval: number, delay: number, inversion = false): (Note | null)[][] {
     if (theme.length === 0) return [[], []];
 
     const leader = theme;
@@ -238,10 +253,8 @@ export class Canon {
       follower = theme.map(n => new (n.constructor as typeof Note)(n.tuningSystem, n.stepsFromBase + interval) as Note);
     }
 
-    // Build padded voices
-    const pad: Note[] = Array(delay).fill(null);
-    const voice2: (Note | null)[] = [...pad, ...follower];
-
-    return [leader as Note[], voice2.filter((n): n is Note => n !== null)];
+    // Rests: the follower enters `delay` notes after the leader
+    const rests: null[] = Array(Math.max(0, delay)).fill(null);
+    return [[...leader, ...rests], [...rests, ...follower]];
   }
 }
