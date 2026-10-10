@@ -95,6 +95,14 @@ export declare abstract class TuningSystem {
 	 * maps to step 5 (731.6¢). Tunings with 12 steps per octave map one to one.
 	 */
 	getStepFromStandard(standardStep: number): number;
+	/**
+	 * Converts a 12-TET step pattern (successive steps, e.g. major `[2, 2, 1, 2, 2, 2, 1]`) to
+	 * this tuning. Each note's position above the first is mapped, not each step, so the
+	 * pattern keeps its span: in 22-EDO the major scale spans 22 steps (rounding each step
+	 * would give 24), and in a 7-note JI scale a semitone does not collapse to 0 steps.
+	 * A step comes out 0 only when two notes land on the same step of this tuning.
+	 */
+	getPatternFromStandard(pattern: readonly number[]): number[];
 }
 /**
  * Equal Division of the Octave - divides the octave into `divisions` equal steps.
@@ -680,7 +688,7 @@ export declare function parseChordSymbol(symbol: string, tuning?: TuningSystem, 
  * Root is case-insensitive. Scale type must match a key in `SCALE_PATTERNS` (case-insensitive).
  *
  * @param symbol - Scale symbol string with root and type separated by a space.
- * @param tuning - Target tuning system (default: 12-TET). Pattern steps are mapped via `getStepFromStandard`.
+ * @param tuning - Target tuning system (default: 12-TET). Pattern steps are mapped via `getPatternFromStandard` (positions, not single steps).
  * @param octave - Octave for the root note (default: 4).
  * @throws if the symbol cannot be parsed or the scale type is unknown.
  */

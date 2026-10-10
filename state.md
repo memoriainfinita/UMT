@@ -16,15 +16,18 @@ last_updated: 2026-10-10
 - Repo: https://github.com/memoriainfinita/UMT
 - Demo: https://memoriainfinita.github.io/UMT (GitHub Pages, branch `main`, root `/`)
 - API Docs: https://memoriainfinita.github.io/UMT/api-docs/ (TypeDoc, generado en `api-docs/`)
-- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/dist/umt.js
+- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.2.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
+- Versión: 0.2.0 (tag `v0.2.0`); `v0.1.0` es el estado previo a la auditoría (`801e5ec`). Cambios en `CHANGELOG.md`
 - Status: publicado y en producción.
-- Deploy: `npm run build:umt` + commit `dist/umt.js` + push. Para docs: `npm run docs` + commit `api-docs/` + push.
+- Deploy: `npm run build` + commit `dist/` + push; versión nueva: `package.json`, `CHANGELOG.md` y tag `vX.Y.Z`. Para docs: `npm run docs` + commit `api-docs/` + push.
 
 ## Dependencies
 
-- esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (130 kb)
+- esbuild (fijado 0.28.2) - compila `dist/umt.js` (IIFE, 130 kb) y `dist/umt.mjs` (ESM)
+- dts-bundle-generator (fijado 9.5.1) - tipos en un solo `dist/umt.d.ts`
 - typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
-- vitest - tests unitarios (`npm run test:unit`) - 960 tests
+- vitest - tests unitarios (`npm run test:unit`) - 961 tests, un archivo por módulo
+- GitHub Actions (`.github/workflows/ci.yml`) - typecheck, lint, tests, build y `dist` igual a las fuentes
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
 - Tailwind CDN - estilos en demo
@@ -33,7 +36,8 @@ last_updated: 2026-10-10
 
 - [coordinate-system] Steps from A4=0. C4=-9 in 12-TET. Confirmed 2026-04.
 - [library-language] All library strings in English. Confirmed 2026-04.
-- [build-umt] `npm run build:umt` es el único paso de build. El bundle se commitea en git en `dist/umt.js`. Confirmed 2026-05.
+- [build] `npm run build` genera `dist/umt.js`, `dist/umt.mjs` y `dist/umt.d.ts`; los tres se commitean y la CI falla si no coinciden con las fuentes. Confirmed 2026-10.
+- [tests] Un archivo de tests por módulo de `lib/music-theory/` (harmony por tema: analysis, chromatic, voice-leading), con las fuentes teóricas que cita el módulo en la cabecera. Confirmed 2026-10.
 - [audio-lib] Tone.js via CDN para audio en demo vanilla. Confirmed 2026-04.
 - [sheet-music] abcjs via CDN + ABCBridge para partituras en demo vanilla. Confirmed 2026-04.
 - [spelling] Las escalas heptatónicas en 12-TET se escriben por letra (`spellByLetter` en `utils.ts`): F# mayor lleva E#, D menor armónica lleva C#, y los acordes diatónicos toman la misma letra (`E#dim`). La letra raíz sale del nombre de la escala si coincide con la altura. Las demás escalas siguen con `preferFlats`. Confirmed 2026-10.
@@ -68,9 +72,13 @@ last_updated: 2026-10-10
 - [x] ESLint — `typescript-eslint` instalado, parser configurado con tsconfig. 4 errores corregidos. Commit `84cdafa`.
 - [x] `SetTheory.getZRelated` — implementado via búsqueda dinámica en FORTE_TABLE por interval vector. 6 tests. Commit `d1e7d12`.
 - [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit `549920d`.
-- [ ] Auditoría 2026-10: arreglar fallos en 8 fases (0 fallos de MODUS, núcleo, datos, análisis, xen, exportadores, distribución, funciones de MODUS). Fases 0 (`6750e23`), 1 (`a0494bd`…`e893bc3`), 2 (`1c67882`), 3 (`b3d2390`…`65641ad`, más `37f1473` por las notas de MODUS) 4 (`3449c91`…`88171ea`) y 5 (`6a8d4fa`) hechas, y `KeyDetection` por duración de la 7 (`bc3b157`); siguiente: fase 6 (distribución). Detalle y plan en `docs/auditoria-2026-10.md`; peticiones de MODUS en `docs/notas-desde-modus-2026-10.md`
+- [ ] Auditoría 2026-10: arreglar fallos en 8 fases (0 fallos de MODUS, núcleo, datos, análisis, xen, exportadores, distribución, funciones de MODUS). Fases 0 (`6750e23`), 1 (`a0494bd`…`e893bc3`), 2 (`1c67882`), 3 (`b3d2390`…`65641ad`, más `37f1473` por las notas de MODUS) 4 (`3449c91`…`88171ea`), 5 (`6a8d4fa`) y 6 (`3f3fd6c`…`v0.2.0`) hechas, y `KeyDetection` por duración de la 7 (`bc3b157`); siguiente: fase 7 (funciones pedidas por MODUS). Detalle y plan en `docs/auditoria-2026-10.md`; peticiones de MODUS en `docs/notas-desde-modus-2026-10.md`
 
 ## History
+
+### 2026-10-11 - El build deja de ser solo `build:umt`
+
+El pattern [build-umt] decía que `npm run build:umt` (IIFE) era el único paso. La fase 6 añade el paquete ESM con tipos para consumir la librería por npm desde un tag: `npm run build` genera también `dist/umt.mjs` y `dist/umt.d.ts`.
 
 ### 2026-10-10 - `I7` pasa a ser dominante en `parseRomanProgression`
 

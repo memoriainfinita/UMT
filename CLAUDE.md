@@ -2,22 +2,24 @@
 
 ## What is this
 
-A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 960 tests, zero runtime dependencies.
+A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 961 tests, zero runtime dependencies.
 
-The library compiles to a standalone IIFE (`dist/umt.js`, 130 kb) usable via script tag, CDN (jsDelivr), or ESM import.
+The library compiles to a standalone IIFE (`dist/umt.js`, 130 kb) for script tags and jsDelivr, and to an ESM bundle (`dist/umt.mjs`) with bundled types (`dist/umt.d.ts`). Releases are git tags with notes in `CHANGELOG.md`.
 
 The demo is a single vanilla HTML file (`index.html`) with 7 interactive sections. The original Next.js scaffolding and old demo versions are in `archive/` (gitignored).
 
 ## Stack
 
-- **Library**: TypeScript, compiled with esbuild → `dist/umt.js`
+- **Library**: TypeScript, compiled with esbuild → `dist/umt.js` (IIFE) and `dist/umt.mjs` (ESM); types by dts-bundle-generator → `dist/umt.d.ts`
 - **Demo**: Vanilla HTML (`index.html`) - no build step. CDN: Tone.js (audio), abcjs (sheet music), Tailwind. No Next.js/React.
-- **Deploy**: build locally (`npm run build:umt`), commit `dist/umt.js`, push. GitHub Pages serves from root `/`. Repo: https://github.com/memoriainfinita/UMT
+- **Deploy**: build locally (`npm run build`), commit `dist/`, push. CI (GitHub Actions) fails if `dist/` does not match the sources. A release bumps `package.json`, adds a `CHANGELOG.md` entry and a `vX.Y.Z` tag. GitHub Pages serves from root `/`. Repo: https://github.com/memoriainfinita/UMT
 
 ## Commands
 
 ```bash
-npm run build:umt    # Compile lib/music-theory/umt.ts → dist/umt.js (the only required step)
+npm run build        # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
+npm run build:umt    # IIFE only, for a quick demo check
+npm run test:unit    # vitest, one file per module in tests/unit/
 npx http-server . -p 8080   # Serve the demo locally
 npm run lint         # ESLint
 npm run typecheck    # tsc --noEmit (covers lib/ and tests/)
