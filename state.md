@@ -39,7 +39,7 @@ last_updated: 2026-10-10
 - [spelling] m2/m3/m7 siempre usan bemol en `chord.ts:getNotes()` via `intervalPreferFlats()`. d5/A4 y m6/A5 usan contexto del acorde. Confirmed 2026-04.
 - [spelling] Las escalas heptatónicas en 12-TET se escriben por letra (`spellByLetter` en `utils.ts`): F# mayor lleva E#, D menor armónica lleva C#, y los acordes diatónicos toman la misma letra (`E#dim`). La letra raíz sale del nombre de la escala si coincide con la altura. Las demás escalas siguen con `preferFlats`. Confirmed 2026-10.
 - [harmony] `secondaryTarget` va en minúscula cuando la tríada diatónica del grado tonicizado es menor (`V7/ii`, `V7/vi`). Confirmed 2026-10.
-- [harmony] En tonalidad menor, una fundamental cromática del mayor paralelo es grado elevado (`#III`, `#vi°`, `#vii°7`); las demás se leen rebajadas (`bII`, `bV`), igual que en mayor. Confirmed 2026-10.
+- [harmony] En tonalidad menor, una fundamental cromática del mayor paralelo es grado elevado (`#III`, `#vi°`; el vii° de la sensible va sin alteración, ver abajo); las demás se leen rebajadas (`bII`, `bV`), igual que en mayor. Confirmed 2026-10.
 - [harmony] Función: toda secundaria (V7/x, vii°/x) es D. VII en menor es D; bVII en mayor es S. Confirmed 2026-10.
 - [harmony] En menor natural, V, V7, vii° y vii°7 con la sensible elevada son diatónicos (menor armónica), y el vii° se escribe sin alteración. Lo de la menor melódica (IV mayor) sigue prestado. Confirmed 2026-10.
 - [harmony] Acorde de sensible secundario: dim, dim7 o m7b5 cromático un semitono bajo un grado diatónico no disminuido → `vii°/x`, `vii°7/x`, `viiø7/x`. Los diatónicos conservan su lectura (ii° en menor). Confirmed 2026-10.
