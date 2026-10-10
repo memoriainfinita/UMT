@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Harmony } from '../../lib/music-theory/harmony';
-import { parseChordSymbol, parseRomanProgression } from '../../lib/music-theory/parser';
+import { parseChordSymbol, parseRomanProgression, parseNote } from '../../lib/music-theory/parser';
 import { NOTE_NAMES_12TET_FLAT } from '../../lib/music-theory/utils';
 
 const pcSet = (pcs: number[]) => [...new Set(pcs)].sort((a, b) => a - b).join(',');
@@ -41,5 +41,48 @@ describe('analyzeProgression spelling option', () => {
 
   it('written spelling leaves diatonic chords as they are', () => {
     expect(romans(['C', 'Dm7', 'G7', 'F#m7b5'], 'G major', 'written')).toEqual(['IV', 'vm7', 'I7', 'viiø7']);
+  });
+});
+
+describe('harmony.ts analysis fixes', () => {
+  const chords = (names: string[]) => names.map(n => parseChordSymbol(n));
+
+  it('detectModulations picks the best-correlated key, not the first by pitch class', () => {
+    const { modulations } = Harmony.analyzeProgression(chords(['G', 'D', 'G', 'C', 'F', 'C']), 'G major');
+    expect(modulations.map(m => m.toKey)).toEqual(['C major']);
+  });
+
+  it('detectSequence: rising steps ascend; diatonic circle with a tritone', () => {
+    expect(Harmony.detectSequence(chords(['D', 'E', 'F#', 'G#'])).type).toBe('parallel-ascending');
+    expect(Harmony.detectSequence(chords(['D', 'C', 'Bb', 'Ab'])).type).toBe('parallel-descending');
+    expect(Harmony.detectSequence(chords(['C', 'F', 'Bdim', 'Em', 'Am', 'Dm', 'G', 'C'])).type)
+      .toBe('diatonic-circle-of-fifths-descending');
+  });
+
+  it('respellChord keeps extensions and slash bass', () => {
+    expect(Harmony.respellChord(parseChordSymbol('C#9'), { direction: 'descending' }).name).toBe('Db9');
+    expect(Harmony.respellChord(parseChordSymbol('C#/G#'), { direction: 'descending' }).name).toBe('Db/Ab');
+    expect(Harmony.respellChord(parseChordSymbol('C9'), { keySymbol: 'C major' }).name).toBe('C9');
+    expect(Harmony.respellChord(parseChordSymbol('C#m7'), { keySymbol: 'Db major' }).name).toBe('Dbm7');
+  });
+
+  it('respellNote in a key uses the key spelling', () => {
+    expect(Harmony.respellNote(parseNote('F#4'), { keySymbol: 'Db major' }).name).toBe('Gb4');
+    expect(Harmony.respellNote(parseNote('Gb4'), { keySymbol: 'C major' }).name).toBe('F#4');
+  });
+
+  it('voiceLeadingSmoothness counts every voice, not just the root', () => {
+    const toRelative = Harmony.voiceLeadingSmoothness(chords(['C', 'Am']));
+    const toTritone = Harmony.voiceLeadingSmoothness(chords(['C', 'F#']));
+    expect(toRelative).toBeGreaterThan(toTritone);
+    expect(Harmony.voiceLeadingSmoothness(chords(['C', 'C']))).toBe(1);
+  });
+
+  it('voice overlap is checked between adjacent voices only', () => {
+    const a = ['C3', 'E3', 'G3', 'C4'].map(n => parseNote(n));
+    const b = ['A3', 'C4', 'E4', 'G4'].map(n => parseNote(n));
+    const overlaps = Harmony.checkVoiceLeading(a, b, 'contemporary').filter(i => i.type === 'Voice Overlap');
+    expect(overlaps.every(o => o.voices[1] - o.voices[0] === 1)).toBe(true);
+    expect(overlaps).toHaveLength(3);
   });
 });

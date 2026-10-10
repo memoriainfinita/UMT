@@ -3,12 +3,13 @@
  * negative harmony, Coltrane axis, and slash chord analysis.
  */
 import { Chord } from './chord';
-import { spellChordInKey } from './spelling';
+import { spellChordInKey, spellPitchInKey } from './spelling';
 import { parseScaleSymbol, parseChordSymbol } from './parser';
 import { get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, writtenRoot, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 import { CHORD_FORMULAS, SCALE_PATTERNS, MODE_BRIGHTNESS } from './dictionaries';
 import { Note } from './note';
 import { Scale } from './scale';
+import { KeyDetection } from './key-detection';
 import { TuningSystem, TET12 } from './tuning';
 
 // ============================================================================
@@ -535,10 +536,11 @@ export class Harmony {
         if (chordB[i].stepsFromBase > chordB[j].stepsFromBase) {
           issues.push({ type: 'Voice Crossing', voices: [i, j], message: `Voice Crossing: Voice ${i+1} crosses above Voice ${j+1}` });
         }
-        if (chordB[i].stepsFromBase > chordA[j].stepsFromBase) {
+        // Overlap: a voice passes where its neighbour just was (adjacent voices only)
+        if (j === i + 1 && chordB[i].stepsFromBase > chordA[j].stepsFromBase) {
           issues.push({ type: 'Voice Overlap', voices: [i, j], message: `Voice Overlap: Voice ${i+1} rises above previous Voice ${j+1}` });
         }
-        if (chordB[j].stepsFromBase < chordA[i].stepsFromBase) {
+        if (j === i + 1 && chordB[j].stepsFromBase < chordA[i].stepsFromBase) {
           issues.push({ type: 'Voice Overlap', voices: [i, j], message: `Voice Overlap: Voice ${j+1} falls below previous Voice ${i+1}` });
         }
       }
@@ -571,7 +573,7 @@ export class Harmony {
     if (context?.keySymbol) {
       try {
         const key = parseKey(context.keySymbol, ts);
-        const leadingTonePc = pcMod(key.tonicPc + oct - 1, oct);
+        const leadingTonePc = pcMod(key.tonicPc + ts.getStepFromStandard(11), oct);
         const tonicPc = key.tonicPc;
 
         if (context.chordA) {
@@ -612,7 +614,8 @@ export class Harmony {
             chordA.forEach((n, idx) => {
               if (pcMod(n.stepsFromBase, oct) === seventhPc) {
                 const delta = chordB[idx].stepsFromBase - n.stepsFromBase;
-                if (delta !== -1 && delta !== -ts.getStepFromStandard(1) && delta !== -2) {
+                // down a minor or major second, in this tuning's steps
+                if (delta !== -ts.getStepFromStandard(1) && delta !== -ts.getStepFromStandard(2)) {
                   issues.push({
                     type: '7th Unresolved',
                     voices: [idx],
@@ -694,7 +697,7 @@ export class Harmony {
     if (keySymbol) {
       try {
         const key = parseKey(keySymbol, ts);
-        const leadingTonePc = pcMod(key.tonicPc + oct - 1, oct);
+        const leadingTonePc = pcMod(key.tonicPc + ts.getStepFromStandard(11), oct);
         const leadingVoices: number[] = [];
         voicing.forEach((n, i) => {
           if (pcMod(n.stepsFromBase, oct) === leadingTonePc) leadingVoices.push(i);
@@ -962,7 +965,7 @@ export class Harmony {
   /**
    * Returns borrowed chords from parallel modes (Modal Interchange).
    *
-   * **Breaking change (v2):** now returns `BorrowedChord[]` instead of `Chord[]`.
+   * Returns `BorrowedChord[]`.
    * Each entry includes the source mode, brightness, harmonic function in the
    * home key, and whether the chord is characteristic of its source mode.
    *
@@ -1369,7 +1372,7 @@ export class Harmony {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  //  Fase 4: sequence detection, retrograde/inversion, smoothness
+  //  Sequence detection, retrograde/inversion, smoothness
   // ──────────────────────────────────────────────────────────────────────────
 
   /**
@@ -1394,10 +1397,20 @@ export class Harmony {
     const is5asc = intervals.every(iv => iv === 7);
     if (is5asc) return { type: 'circle-of-fifths-ascending', confidence: 1 };
 
-    // Parallel descending: all roots descend by the same step and quality matches
+    // Diatonic circle of fifths: fifths with one diminished fifth / augmented fourth to stay
+    // in the key (C F B E A D G C: descending fifths, F → B a tritone)
+    const tritone = oct / 2;
+    const fourth = Math.round(oct * 5 / 12);
+    const fifth = oct - fourth;
+    if (intervals.includes(tritone) && intervals.filter(iv => iv === tritone).length === 1) {
+      if (intervals.every(iv => iv === fourth || iv === tritone)) return { type: 'diatonic-circle-of-fifths-descending', confidence: 0.95 };
+      if (intervals.every(iv => iv === fifth || iv === tritone)) return { type: 'diatonic-circle-of-fifths-ascending', confidence: 0.95 };
+    }
+
+    // Parallel motion: all roots move by the same interval, up (1..half octave) or down
     const allSameInterval = intervals.every(iv => iv === intervals[0]);
     if (allSameInterval && intervals[0] !== 0) {
-      const descending = intervals[0] > oct / 2 || intervals[0] === 1 || intervals[0] === 2;
+      const descending = intervals[0] > oct / 2;
       if (descending) return { type: 'parallel-descending', confidence: 0.85 };
       return { type: 'parallel-ascending', confidence: 0.85 };
     }
@@ -1415,7 +1428,8 @@ export class Harmony {
       }
     }
 
-    // Romanesca: I-V-vi-III (roots: 0,7,9,4)
+    // Romanesca: III-VII-i-V in minor, I-V-vi-iii in major (roots 0,7,9,4; the opening
+    // of the Pachelbel pattern above)
     if (intervals.length >= 3) {
       const romPattern = [7, 2, 7];
       const matchRom = romPattern.every((iv, i) => intervals[i] === iv);
@@ -1448,29 +1462,27 @@ export class Harmony {
 
   /**
    * Measures average voice-leading smoothness across a progression (0 = rough, 1 = smooth).
-   * Uses root-motion size relative to the octave as a proxy: smaller intervals = smoother.
+   * Every pitch class of each chord moves to the nearest pitch class of the next one, and
+   * every pitch class of the next to the nearest of the previous: the mean move, in interval
+   * classes, against half an octave (the largest move). Common tones count as 0.
    */
   static voiceLeadingSmoothness(chords: Chord[]): number {
     if (chords.length <= 1) return 1;
     const oct = chords[0].tuningSystem.octaveSteps;
-    let totalDistance = 0;
+    const ic = (a: number, b: number) => { const d = Math.abs(a - b); return Math.min(d, oct - d); };
+    let total = 0;
     let count = 0;
     for (let i = 1; i < chords.length; i++) {
-      const r1 = ((chords[i - 1].rootStep % oct) + oct) % oct;
-      const r2 = ((chords[i].rootStep % oct) + oct) % oct;
-      const diff = Math.abs(r2 - r1);
-      const distance = Math.min(diff, oct - diff); // smallest interval class
-      totalDistance += distance;
-      count++;
+      const a = chords[i - 1].getPitchClasses();
+      const b = chords[i].getPitchClasses();
+      for (const p of a) { total += Math.min(...b.map(q => ic(p, q))); count++; }
+      for (const q of b) { total += Math.min(...a.map(p => ic(p, q))); count++; }
     }
-    const avgDistance = totalDistance / count;
-    // Normalize: max meaningful distance is half an octave (tritone = 6 in 12-TET)
-    const maxDist = oct / 2;
-    return Math.max(0, 1 - avgDistance / maxDist);
+    return Math.max(0, 1 - total / count / (oct / 2));
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  //  Phase 5: slash analysis, chord-scale completeness, enharmonic respelling
+  //  Slash analysis, chord-scale completeness, enharmonic respelling
   // ──────────────────────────────────────────────────────────────────────────
 
   /**
@@ -1587,23 +1599,19 @@ export class Harmony {
   }
 
   /**
-   * Respells a note's accidental based on key context or melodic direction.
-   * - `keySymbol`: use the key's flat/sharp preference.
+   * Respells a note based on key context or melodic direction.
+   * - `keySymbol`: the key's spelling (`spellPitchInKey`): scale letters, chromatic notes
+   *   as the harmonic chromatic scale writes them (F# in C, Gb in Db major).
    * - `direction: 'ascending'`: prefer sharps; `'descending'`: prefer flats.
    * Returns the original note if no context applies.
    */
   static respellNote(note: Note, context: RespellContext): Note {
     const ts = note.tuningSystem;
     if (ts.octaveSteps !== 12) return note;
+    if (context.keySymbol) return new Note(ts, note.stepsFromBase, spellPitchInKey(note.stepsFromBase, context.keySymbol));
 
     let useFlats: boolean;
-
-    if (context.keySymbol) {
-      const m = context.keySymbol.match(/^([A-G][#b]*)\s+(.*)$/i);
-      const root = m ? m[1] : 'C';
-      const mode = m ? m[2].toLowerCase().trim() : 'major';
-      useFlats = preferFlatsForKey(root, mode);
-    } else if (context.direction === 'ascending') {
+    if (context.direction === 'ascending') {
       useFlats = false;
     } else if (context.direction === 'descending') {
       useFlats = true;
@@ -1618,20 +1626,18 @@ export class Harmony {
   }
 
   /**
-   * Respells a chord's root (and updates the name) based on key context or melodic direction.
+   * Respells a chord's root and slash bass based on key context or melodic direction,
+   * keeping the written suffix (extensions, alterations).
+   * - `keySymbol`: `spellChordInKey` (root letter from the key, chord tones by interval).
+   * - `direction: 'ascending'`: sharp names; `'descending'`: flat names (C#9 → Db9).
    */
   static respellChord(chord: Chord, context: RespellContext): Chord {
     const ts = chord.tuningSystem;
     if (ts.octaveSteps !== 12) return chord;
+    if (context.keySymbol) return spellChordInKey(chord, context.keySymbol);
 
     let useFlats: boolean;
-
-    if (context.keySymbol) {
-      const m = context.keySymbol.match(/^([A-G][#b]*)\s+(.*)$/i);
-      const root = m ? m[1] : 'C';
-      const mode = m ? m[2].toLowerCase().trim() : 'major';
-      useFlats = preferFlatsForKey(root, mode);
-    } else if (context.direction === 'ascending') {
+    if (context.direction === 'ascending') {
       useFlats = false;
     } else if (context.direction === 'descending') {
       useFlats = true;
@@ -1639,13 +1645,14 @@ export class Harmony {
       return chord;
     }
 
-    const rootPc = ((chord.rootStep % 12) + 12) % 12;
-    const newRootName = useFlats ? NOTE_NAMES_12TET_FLAT[rootPc] : NOTE_NAMES_12TET_SHARP[rootPc];
+    const pick = (step: number) => (useFlats ? NOTE_NAMES_12TET_FLAT : NOTE_NAMES_12TET_SHARP)[pcMod(step, 12)];
+    const [main, slash] = chord.name.split('/');
+    const written = main.match(/^[A-G][#b]*/)?.[0];
     const quality = chordQualityFromIntervals(chord, 12);
-    const suffix = quality === 'M' ? '' : quality;
-    const newName = `${newRootName}${suffix}`;
+    const suffix = written ? main.slice(written.length) : (quality === 'M' ? '' : quality);
+    const bass = slash !== undefined && chord.bassStep !== undefined ? `/${pick(chord.bassStep)}` : '';
 
-    return new Chord(newName, ts, chord.rootStep, chord.intervalsInSteps, chord.bassStep, useFlats);
+    return new Chord(`${pick(chord.rootStep)}${suffix}${bass}`, ts, chord.rootStep, chord.intervalsInSteps, chord.bassStep, useFlats);
   }
 }
 
@@ -1686,11 +1693,21 @@ function detectModulations(chords: Chord[], key: KeyInfo): ModulationEvent[] {
     const fitsActive = windowPcs.every(pc => activeKeyPcs.includes(pc));
     if (fitsActive) { i++; continue; }
 
-    // Find best candidate (not active) that fits all three
-    const hit = candidateKeys.find(ck =>
+    // Of the candidates (not active) that fit all three, the one the window's notes
+    // correlate with best (Krumhansl-Schmuckler): C-F-C fits C major, F major, A minor
+    // and D minor, and reads as C major.
+    const fitting = candidateKeys.filter(ck =>
       ck.symbol !== activeKeySymbol &&
       windowPcs.every(pc => ck.pcs.includes(pc))
     );
+    const histogram = new Array(12).fill(0);
+    for (const pc of windowPcs) histogram[(pc + 9) % 12] += 1; // A-based pitch class → C-based
+    const ranking = KeyDetection.detectFromHistogram(histogram).map(r => r.key.toLowerCase());
+    const rank = (ck: { symbol: string }) => {
+      const r = ranking.indexOf(ck.symbol.toLowerCase());
+      return r === -1 ? Infinity : r;
+    };
+    const hit = fitting.sort((a, b) => rank(a) - rank(b))[0];
     if (hit) {
       // Determine type: 'pivot' if chord at i-1 is diatonic to both keys, 'direct' otherwise
       let modType: ModulationEvent['type'] = 'direct';
