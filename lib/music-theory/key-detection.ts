@@ -1,4 +1,5 @@
 import { Note } from './note';
+import { EDO } from './tuning';
 import { preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 
 /**
@@ -12,19 +13,42 @@ export class KeyDetection {
 
   /**
    * Detects the most likely key based on an array of notes.
+   * Each note counts once, or by its duration when `durations` is given (as in the original
+   * Krumhansl-Schmuckler algorithm). Notes outside 12-TET count for the nearest 12-TET pitch class.
+   * @param notes - The notes to analyse.
+   * @param durations - Optional duration of each note, in any unit (only proportions matter).
    * @returns Array of possible keys sorted by confidence (Pearson correlation coefficient).
+   * @throws RangeError if `durations` does not match `notes` in length, or holds a negative or non-finite value.
    */
-  static detect(notes: Note[]): { key: string, confidence: number }[] {
-    if (notes.length === 0) return [];
-
-    // 1. Build pitch class histogram
-    const histogram = new Array(12).fill(0);
-    for (const note of notes) {
-      const pc = ((note.stepsFromBase % 12) + 12) % 12;
-      histogram[pc] += 1;
+  static detect(notes: Note[], durations?: readonly number[]): { key: string, confidence: number }[] {
+    if (durations !== undefined && durations.length !== notes.length) {
+      throw new RangeError(`KeyDetection.detect: ${notes.length} notes but ${durations.length} durations`);
     }
+    const histogram = new Array(12).fill(0);
+    notes.forEach((note, i) => {
+      histogram[this.pitchClass(note)] += durations ? durations[i] : 1;
+    });
+    return this.detectFromHistogram(histogram);
+  }
 
-    // 2. Calculate correlations
+  /**
+   * Detects the most likely key from a pitch class histogram (index 0 = C, 1 = C#/Db, … 11 = B),
+   * e.g. total durations per pitch class accumulated over a piece.
+   * @param weights - 12 non-negative weights.
+   * @returns Array of possible keys sorted by confidence; empty when all weights are 0.
+   * @throws RangeError if there are not 12 weights, or one is negative or non-finite.
+   */
+  static detectFromHistogram(weights: readonly number[]): { key: string, confidence: number }[] {
+    if (weights.length !== 12) {
+      throw new RangeError(`KeyDetection.detectFromHistogram: expected 12 weights, got ${weights.length}`);
+    }
+    if (weights.some(w => !Number.isFinite(w) || w < 0)) {
+      throw new RangeError('KeyDetection: weights and durations must be finite and non-negative');
+    }
+    if (weights.every(w => w === 0)) return [];
+
+    // Profiles and note names are indexed from A (0 = A, 3 = C).
+    const histogram = weights.map((_, j) => weights[(j + 9) % 12]);
     const results: { key: string, confidence: number }[] = [];
 
     for (let i = 0; i < 12; i++) {
@@ -44,6 +68,14 @@ export class KeyDetection {
 
     // Sort by confidence descending
     return results.sort((a, b) => b.confidence - a.confidence);
+  }
+
+  /** 12-TET pitch class (0 = C); other tunings round the note's frequency to the nearest semitone. */
+  private static pitchClass(note: Note): number {
+    const semitonesFromA4 = note.tuningSystem instanceof EDO && note.tuningSystem.divisions === 12
+      ? note.stepsFromBase
+      : Math.round(12 * Math.log2(note.frequency / 440));
+    return (((semitonesFromA4 + 9) % 12) + 12) % 12;
   }
 
   private static shiftProfile(profile: number[], shift: number): number[] {
