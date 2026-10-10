@@ -2,15 +2,41 @@
   "name": "universal-music-theory-library",
   "version": "0.1.0",
   "private": true,
+  "description": "Music theory library: 12-TET and microtonal tunings, harmony and analysis, post-tonal theory, rhythm, and notation export.",
   "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/memoriainfinita/UMT.git"
+  },
+  "module": "./dist/umt.mjs",
+  "types": "./dist/umt.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/umt.d.ts",
+      "import": "./dist/umt.mjs"
+    },
+    "./iife": "./dist/umt.js"
+  },
+  "files": [
+    "dist/umt.js",
+    "dist/umt.mjs",
+    "dist/umt.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
-    "build:umt": "npx -y esbuild lib/music-theory/umt.ts --bundle --minify --sourcemap --format=iife --global-name=UMT --outfile=dist/umt.js",
+    "build": "npm run build:umt && npm run build:esm && npm run build:types",
+    "build:umt": "esbuild lib/music-theory/umt.ts --bundle --minify --sourcemap --format=iife --global-name=UMT --outfile=dist/umt.js",
+    "build:esm": "esbuild lib/music-theory/index.ts --bundle --minify --format=esm --outfile=dist/umt.mjs",
+    "build:types": "dts-bundle-generator --no-banner --silent -o dist/umt.d.ts lib/music-theory/index.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run",
     "docs": "typedoc"
   },
   "devDependencies": {
+    "dts-bundle-generator": "9.5.1",
+    "esbuild": "0.28.2",
     "eslint": "9.39.1",
     "typedoc": "^0.28.19",
     "typescript": "5.9.3",
