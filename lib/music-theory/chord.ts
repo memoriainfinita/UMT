@@ -1,6 +1,6 @@
 import { TuningSystem, EDO } from './tuning';
 import { Note } from './note';
-import { get12TETBaseName, usesFlats, preferFlatsForKey, spellByLetter, chordToneOffset, writtenRoot } from './utils';
+import { get12TETBaseName, preferFlatsForKey, spellByLetter, chordToneOffset, writtenRoot } from './utils';
 
 // m2 (1), m3 (3), m7 (10) are always flat-side intervals in tonal context regardless of key.
 // d5/A4 (6) and m6/A5 (8) are genuinely ambiguous - defer to chord-level preference.
@@ -37,7 +37,11 @@ export class Chord {
     public readonly intervalsInSteps: readonly number[],
     public bassStep?: number,
     public readonly preferFlats?: boolean
-  ) {}
+  ) {
+    if (intervalsInSteps.length === 0 || intervalsInSteps[0] !== 0) {
+      throw new RangeError(`Chord "${name}": intervalsInSteps must start with 0 (the root).`);
+    }
+  }
 
   /**
    * Returns the notes of the chord in root position. In 12-TET each tone is named by its
@@ -52,7 +56,7 @@ export class Chord {
       chordPf = this.preferFlats;
     } else {
       const rootFlatName = new Note(this.tuningSystem, this.rootStep).getName({ preferFlats: true });
-      chordPf = usesFlats(rootFlatName);
+      chordPf = preferFlatsForKey(rootFlatName);
     }
 
     const is12TET = this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12;
@@ -200,11 +204,11 @@ export class Chord {
     if (type === 'close') return notes;
 
     if (type === 'rootless') {
-      // Remove the root note (assuming it's the first note if no bass, or we filter by modulo)
-      return notes.filter(n => 
-        (n.stepsFromBase % this.tuningSystem.octaveSteps + this.tuningSystem.octaveSteps) % this.tuningSystem.octaveSteps 
-        !== (this.rootStep % this.tuningSystem.octaveSteps + this.tuningSystem.octaveSteps) % this.tuningSystem.octaveSteps
-      );
+      // Drop the root and its octave doublings from the chord tones; a slash bass stays
+      const os = this.tuningSystem.octaveSteps;
+      const pc = (s: number) => ((s % os) + os) % os;
+      const hasBass = this.bassStep !== undefined;
+      return notes.filter((n, i) => (hasBass && i === 0) || pc(n.stepsFromBase) !== pc(this.rootStep));
     }
 
     if (type === 'drop2') {

@@ -105,61 +105,64 @@ export function get12TETBaseName(stepsFromA4: number, preferFlats: boolean = fal
 }
 
 /**
- * Returns all enharmonic spellings of a given note name.
- * @param noteName - Note name with optional accidental, e.g. `"C#"`, `"Db"`, `"F#4"`.
- * @returns Array of enharmonic equivalents, e.g. `["Db"]` for `"C#"`.
+ * Returns the other spellings of a note, up to double sharps and double flats (`##`,
+ * `bb`), fewest accidentals first. With an octave, the octave follows the letter
+ * (C4 → B#3, Dbb4).
+ * @param noteName - Note name with optional accidental and octave, e.g. `"C#"`, `"F#4"`.
+ * @returns Enharmonic equivalents, e.g. `["Db", "B##"]` for `"C#"`; empty for an invalid name.
  */
 export function getEnharmonics(noteName: string): string[] {
-  const enharmonicsMap: Record<string, string[]> = {
-    'C#': ['Db', 'Bx'], 'Db': ['C#'],
-    'D#': ['Eb'], 'Eb': ['D#'],
-    'F#': ['Gb', 'Ex'], 'Gb': ['F#'],
-    'G#': ['Ab'], 'Ab': ['G#'],
-    'A#': ['Bb'], 'Bb': ['A#'],
-    'E': ['Fb', 'Dx'], 'F': ['E#'],
-    'B': ['Cb', 'Ax'], 'C': ['B#']
-  };
-  const match = noteName.match(/^([A-G][#b]*)(.*)$/);
+  const match = noteName.trim().match(/^([A-G])([#b]*)(-?\d+)?$/);
   if (!match) return [];
-  const base = match[1];
-  const rest = match[2];
-  return (enharmonicsMap[base] || []).map(enh => enh + rest);
+  const [, letter, acc, octave] = match;
+  const step = parseNoteToStep12TET(letter + acc, octave !== undefined ? parseInt(octave, 10) : 4);
+  const count = (n: string) => (n.match(/[#b]/g) ?? []).length;
+  return LETTERS
+    .map((_, degree) => spellByLetter(step, 'C', degree))
+    .filter((n): n is string => n !== null && n[0] !== letter)
+    .sort((a, b) => count(a) - count(b))
+    .map(n => (octave !== undefined ? n : n.replace(/-?\d+$/, '')));
 }
-
 /** Major key roots that use flat accidentals (circle of fifths, flat side). */
 const FLAT_MAJOR_ROOTS = new Set(['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb']);
 /** Minor key roots that use flat accidentals (circle of fifths, flat side). */
 const FLAT_MINOR_ROOTS = new Set(['D', 'G', 'C', 'F', 'Bb', 'Eb', 'Ab']);
 
 /**
- * Semitones from a mode root to its parent Ionian (major) scale root.
+ * Semitones from a mode root down to its parent major (Ionian) root.
  * Used to compute the parent key and determine flat/sharp preference via the circle of fifths.
  */
 const MAJOR_MODE_PARENT_OFFSET: Record<string, number> = {
   'major': 0, 'ionian': 0, 'bebop major': 0, 'blues major': 0, 'harmonic major': 0,
-  'dorian': 2, 'dorian b2': 2, 'bebop dorian': 2,
+  'dorian': 2, 'bebop dorian': 2,
   'phrygian': 4,
-  'lydian': 5, 'lydian augmented': 5, 'lydian dominant': 5,
-  'mixolydian': 7, 'mixolydian b6': 7, 'bebop dominant': 7,
+  'lydian': 5,
+  'mixolydian': 7, 'bebop dominant': 7,
   'aeolian': 9, 'natural minor': 9,
-  'locrian': 11, 'locrian #2': 11, 'altered': 11, 'super locrian': 11,
+  'locrian': 11,
 };
 
 /**
- * Scale types in the minor family (natural/harmonic/melodic minor and their modes).
- * For these, flat/sharp preference is determined by the root as a minor key root.
+ * Semitones from a mode root down to its parent minor root: modes of the harmonic and
+ * melodic minor take the key signature of that minor key (E phrygian dominant → A minor,
+ * G lydian dominant → D minor).
  */
-const MINOR_FAMILY = new Set([
-  'minor', 'harmonic minor', 'melodic minor', 'jazz minor',
-  'phrygian dominant', 'ionian #5', 'dorian #4', 'locrian #6', 'lydian #2', 'super locrian bb7',
-]);
+const MINOR_MODE_PARENT_OFFSET: Record<string, number> = {
+  'minor': 0,
+  // harmonic minor family
+  'harmonic minor': 0, 'locrian #6': 2, 'ionian #5': 3, 'dorian #4': 5,
+  'phrygian dominant': 7, 'lydian #2': 8, 'super locrian bb7': 11,
+  // melodic minor family
+  'melodic minor': 0, 'jazz minor': 0, 'dorian b2': 2, 'lydian augmented': 3,
+  'lydian dominant': 5, 'mixolydian b6': 7, 'locrian #2': 9, 'altered': 11, 'super locrian': 11,
+};
 
 /**
  * Returns true if the given key should use flat accidentals for note naming.
  *
- * Uses circle-of-fifths logic extended to common church modes and minor-family scales.
- * For major-family modes, the parent Ionian key is computed and looked up in the circle.
- * For minor-family scales, the root is looked up directly as a minor key.
+ * Uses circle-of-fifths logic extended to the church modes and the modes of harmonic and
+ * melodic minor. For major-family modes, the parent Ionian key is looked up in the circle;
+ * for minor-family modes, the parent minor key (a minor tonic is looked up by its own name).
  * Falls back to checking the root's own accidental for unknown scale types.
  *
  * @param rootName - Root note name (e.g. 'D', 'Bb', 'F#'). Octave digits are stripped.
@@ -167,22 +170,23 @@ const MINOR_FAMILY = new Set([
  */
 export function preferFlatsForKey(rootName: string, scaleType: string = 'major'): boolean {
   const base = rootName.replace(/\d+$/, '');
+  const normalized = base.charAt(0).toUpperCase() + base.slice(1);
   const type = scaleType.toLowerCase().trim();
+  const parentPc = (offset: number) => {
+    const rootPC = ((parseNoteToStep12TET(normalized, 4) % 12) + 12) % 12;
+    return ((rootPC - offset) % 12 + 12) % 12;
+  };
 
   // Major-mode family: compute parent major key pitch class, then look up in flat set.
   const majorOffset = MAJOR_MODE_PARENT_OFFSET[type];
   if (majorOffset !== undefined) {
-    const rootPC = ((parseNoteToStep12TET(
-      base.charAt(0).toUpperCase() + base.slice(1), 4
-    ) % 12) + 12) % 12;
-    const parentPC = ((rootPC - majorOffset) % 12 + 12) % 12;
-    return FLAT_MAJOR_ROOTS.has(NOTE_NAMES_12TET_FLAT[parentPC]);
+    return FLAT_MAJOR_ROOTS.has(NOTE_NAMES_12TET_FLAT[parentPc(majorOffset)]);
   }
 
-  // Minor-family scales: look up root directly as a minor key root.
-  if (MINOR_FAMILY.has(type)) {
-    const normalized = base.charAt(0).toUpperCase() + base.slice(1);
-    return FLAT_MINOR_ROOTS.has(normalized);
+  // Minor-family modes: the parent minor key; a minor tonic keeps its own name (A# minor).
+  const minorOffset = MINOR_MODE_PARENT_OFFSET[type];
+  if (minorOffset !== undefined) {
+    return FLAT_MINOR_ROOTS.has(minorOffset === 0 ? normalized : NOTE_NAMES_12TET_FLAT[parentPc(minorOffset)]);
   }
 
   // Fallback: check root's own accidental (covers custom/unknown scale types).
@@ -300,11 +304,12 @@ export function getSemanticIntervalName(cents: number): string {
 }
 
 /**
- * Converts a frequency in Hz to the nearest MIDI note number (0-127).
+ * Converts a frequency in Hz to the nearest MIDI note number, clamped to 0-127.
  * MIDI note 69 is A4 (default 440Hz).
  */
 export function freqToMidi(freq: Hertz, baseA4: Hertz = 440): MidiNote {
-  return Math.round(69 + 12 * Math.log2(freq / baseA4));
+  const midi = Math.round(69 + 12 * Math.log2(freq / baseA4));
+  return Math.min(127, Math.max(0, midi));
 }
 
 /**

@@ -186,7 +186,8 @@ export class CentTuning extends TuningSystem {
       throw new RangeError(`CentTuning "${name}": cents array must not be empty.`);
     }
     super(name, baseFrequency);
-    if (this.cents[0] !== 0) this.cents.unshift(0);
+    // a copy: the caller's array is not changed
+    this.cents = cents[0] === 0 ? [...cents] : [0, ...cents];
   }
 
   getInterval(steps: number): Interval {

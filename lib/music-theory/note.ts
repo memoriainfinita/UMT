@@ -95,6 +95,16 @@ export class Note {
   }
 
   /**
+   * Octave number of the written name, in scientific pitch notation: C4 is middle C,
+   * B3 is the note below it, and B#3 (same pitch as C4) keeps octave 3. Not the same as
+   * `octave`, which counts from A4. Null when the name carries no octave.
+   */
+  get scientificOctave(): number | null {
+    const m = this.name.match(/(-?\d+)$/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+
+  /**
    * Returns a new note transposed by the given number of steps in the same tuning system.
    * By whole octaves an explicit name keeps its letter (D#4 → D#5). Otherwise the name is
    * computed again, with the flat/sharp preference of `_name` or `_preferFlats`.
