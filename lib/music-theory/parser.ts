@@ -267,7 +267,11 @@ function romanToSymbol(token: string, key: RomanKey): { symbol: string; octave: 
 
   let type: string;
   const diatonic = acc === '' && shift === 0;
-  if (suffix === '' || suffix === '7') {
+  if (/^dom\d/.test(suffix)) {
+    // explicit dominant, whatever the key's seventh (`Idom7` in C is C7, `IVdom9` F9)
+    if (lower) throw new Error(`parseRomanProgression: a dominant needs an upper-case numeral, got "${token}".`);
+    type = suffix.slice(3);
+  } else if (suffix === '' || suffix === '7') {
     const chord = key.scale.getChordOnDegree(degree, suffix === '7' ? 'seventh' : 'triad');
     const pcs = chord.intervalsInSteps.map(i => ((i % 12) + 12) % 12);
     const keyThirdMinor = pcs.includes(3);
@@ -304,6 +308,7 @@ function romanToSymbol(token: string, key: RomanKey): { symbol: string; octave: 
  * - Any other suffix is a chord type, read like `parseChordSymbol` (dictionary, then
  *   compositional); lower case adds the minor third: `ii9` is Dm9, `V7b9` G7b9,
  *   `viiø7` Bm7b5, `vii°7` Bdim7. An unknown suffix throws
+ * - `dom` asks for a dominant whatever the key says: `Idom7` in C is C7, `IVdom9` F9
  * - Accidentals move the key's own degree: `bVII` in C major is Bb, `bII` in A minor is
  *   Bb. In minor, `VII` and `VI` are the natural degrees (G and F in A minor), and
  *   `vii°`, `vii°7`, `viiø7` stand on the raised leading tone (G#)

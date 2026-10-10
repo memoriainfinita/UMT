@@ -42,6 +42,9 @@ const ROOT_NAME_TO_PC: Record<string, number> = {};
 NOTE_NAMES_12TET_FLAT.forEach((n, i) => { ROOT_NAME_TO_PC[n] = i; });
 NOTE_NAMES_12TET_SHARP.forEach((n, i) => { ROOT_NAME_TO_PC[n] = i; });
 
+// Letter positions on the line of fifths (C = 0)
+const LETTER_FIFTHS: Record<string, number> = { F: -1, C: 0, G: 1, D: 2, A: 3, E: 4, B: 5 };
+
 // Canonical diatonic modes ordered by brightness (brightest first)
 const CANONICAL_DIATONIC_MODES = ['lydian', 'ionian', 'mixolydian', 'dorian', 'aeolian', 'phrygian', 'locrian'] as const;
 
@@ -71,24 +74,19 @@ export class CircleOfFifths {
   }
 
   /**
-   * Returns the number of sharps (positive) or flats (negative) for a given key.
+   * Returns the key signature of a key as written: Gb → 6 flats, F# → 6 sharps, C# → 7 sharps,
+   * eb → 6 flats. Theoretical keys go past 7 (G# → 8 sharps). Unrecognized keys → no accidentals.
    */
   static getSignature(key: string): { sharps: number; flats: number } {
-    const normalized = this.normalizeKey(key);
-    const isMinor = normalized === normalized.toLowerCase() && normalized.length > 0;
-    const circle = isMinor ? this.minorKeys : this.majorKeys;
-
-    const index = circle.indexOf(normalized);
-    if (index === -1) return { sharps: 0, flats: 0 };
-
-    // C is index 0 (no accidentals). G is index 1 (1 sharp). F is index 11 (1 flat).
-    let accidentals = index;
-    if (index > 6) accidentals = index - 12;
-
-    return {
-      sharps: accidentals > 0 ? accidentals : 0,
-      flats: accidentals < 0 ? Math.abs(accidentals) : 0
-    };
+    const match = key.match(/^([A-Ga-g])(#{1,2}|b{1,2})?$/);
+    if (!match) return { sharps: 0, flats: 0 };
+    const [, letter, acc = ''] = match;
+    const isMinor = letter === letter.toLowerCase();
+    // Position on the line of fifths: C = 0, G = 1 … F = -1; each sharp or flat moves 7.
+    const fifths = LETTER_FIFTHS[letter.toUpperCase()]
+      + (acc.startsWith('#') ? 7 : -7) * acc.length
+      - (isMinor ? 3 : 0);
+    return { sharps: Math.max(fifths, 0), flats: Math.max(-fifths, 0) };
   }
 
   /**

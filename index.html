@@ -621,8 +621,8 @@ function runRaga() {
     let t = `${raga.name}  (${raga.thaat} thaat)\n\n`;
     t += `Aroha (ascending):    ${raga.aroha.join(' – ')} semitones\n`;
     t += `Avaroha (descending): ${raga.avaroha.join(' – ')} semitones\n\n`;
-    t += `Vadi (primary note):    ${raga.vadi}\n`;
-    t += `Samvadi (secondary):    ${raga.samvadi}\n`;
+    t += `Vadi (primary note):    ${UMT.SVARA_NAMES[raga.vadi]}\n`;
+    t += `Samvadi (secondary):    ${UMT.SVARA_NAMES[raga.samvadi]}\n`;
     if (raga.time) t += `Time of performance:    ${raga.time}\n`;
     t += `\n${raga.description}`;
     out('out-raga', t);
@@ -650,7 +650,7 @@ function runMaqam() {
       t += `\nAjnas (tetrachords):\n`;
       maqam.ajnas.forEach(j => { t += `  ${j.name}\n`; });
     }
-    if (maqam.gharsa) t += `\nCharacter: ${maqam.gharsa}`;
+    if (maqam.character) t += `\nCharacter: ${maqam.character}`;
     out('out-maqam', t);
   } catch(e) { outErr('out-maqam', e); }
 }

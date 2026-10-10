@@ -77,18 +77,22 @@ export class TemperamentAnalysis {
   }
 
   /**
-   * Returns definitions of common musical commas.
+   * Returns definitions of common musical commas, with cents to three decimals.
+   * `ratioText` is exact. The Mercator comma (3^53/2^84) is beyond Number precision:
+   * its `ratio` is the nearest doubles and its cents are computed from the exponents.
    */
-  static getCommas(): { name: string; ratio: [number, number]; cents: number }[] {
+  static getCommas(): { name: string; ratio: [number, number]; ratioText: string; cents: number }[] {
+    const round3 = (c: number) => Math.round(c * 1000) / 1000;
+    const comma = (name: string, n: number, d: number) =>
+      ({ name, ratio: [n, d] as [number, number], ratioText: `${n}/${d}`, cents: round3(1200 * Math.log2(n / d)) });
     return [
-      { name: 'Syntonic comma',    ratio: [81, 80],              cents: 21.506 },
-      { name: 'Pythagorean comma', ratio: [531441, 524288],      cents: 23.460 },
-      { name: 'Schisma',           ratio: [32805, 32768],        cents: 1.954 },
-      { name: 'Diesis (diminished)', ratio: [128, 125],          cents: 41.059 },
-      { name: 'Diaschisma',        ratio: [2048, 2025],          cents: 19.553 },
-      { name: 'Septimal comma',    ratio: [64, 63],              cents: 27.264 },
-      // eslint-disable-next-line no-loss-of-precision
-      { name: 'Mercator comma',    ratio: [19383245667680019, 19342813113834066795298816], cents: 3.615 },
+      comma('Syntonic comma', 81, 80),
+      comma('Pythagorean comma', 531441, 524288),
+      comma('Schisma', 32805, 32768),
+      comma('Diesis (diminished)', 128, 125),
+      comma('Diaschisma', 2048, 2025),
+      comma('Septimal comma', 64, 63),
+      { name: 'Mercator comma', ratio: [3 ** 53, 2 ** 84], ratioText: '3^53/2^84', cents: round3(1200 * (53 * Math.log2(3) - 84)) },
     ];
   }
 

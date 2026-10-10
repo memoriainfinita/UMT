@@ -20,7 +20,7 @@ export const PROGRESSIONS: Record<string, ProgressionEntry> = {
   'ii-V-i': {
     name: 'ii-V-i',
     romanNumerals: ['iim7b5', 'V7', 'im'],
-    description: 'Minor key ii-V-i. Half-diminished ii leads to altered dominant.',
+    description: 'Minor key ii-V-i. Half-diminished ii, dominant V, minor tonic.',
     style: 'jazz',
   },
   'I-V-vi-IV': {
@@ -43,8 +43,8 @@ export const PROGRESSIONS: Record<string, ProgressionEntry> = {
   },
   'blues-12': {
     name: 'blues-12',
-    romanNumerals: ['I7', 'I7', 'I7', 'I7', 'IV7', 'IV7', 'I7', 'I7', 'V7', 'IV7', 'I7', 'V7'],
-    description: '12-bar blues. Standard I7-IV7-V7 form with turnaround.',
+    romanNumerals: ['Idom7', 'Idom7', 'Idom7', 'Idom7', 'IVdom7', 'IVdom7', 'Idom7', 'Idom7', 'V7', 'IVdom7', 'Idom7', 'V7'],
+    description: '12-bar blues. Dominant sevenths on I, IV and V, with V in the turnaround.',
     style: 'blues',
   },
   'blues-minor': {
@@ -55,23 +55,23 @@ export const PROGRESSIONS: Record<string, ProgressionEntry> = {
   },
   'blues-jazz': {
     name: 'blues-jazz',
-    romanNumerals: ['Imaj7', 'IV7', 'Imaj7', 'Imaj7', 'IV7', 'IV7', 'Imaj7', 'vi7', 'ii7', 'V7', 'Imaj7', 'ii7 V7'],
-    description: 'Jazz blues (Bird blues variant). Richer substitutions.',
+    romanNumerals: ['Idom7', 'IVdom7', 'Idom7', 'v7 Idom7', 'IVdom7', '#iv°7', 'Idom7', 'VI7', 'ii7', 'V7', 'Idom7 VI7', 'ii7 V7'],
+    description: 'Jazz blues. ii-V into IV in bar 4, #iv°7 in bar 6, VI7 leading to the ii-V turnaround.',
     style: 'jazz',
     defaultKey: 'Bb major',
   },
   'rhythm-changes': {
     name: 'rhythm-changes',
     romanNumerals: ['Imaj7', 'vi7', 'ii7', 'V7', 'Imaj7', 'vi7', 'ii7', 'V7',
-                    'Imaj7', 'I7', 'IVmaj7', 'IVm7', 'Imaj7', 'V7', 'Imaj7', 'V7'],
+                    'Imaj7', 'Idom7', 'IVmaj7', 'iv7', 'Imaj7', 'V7', 'Imaj7', 'V7'],
     description: "Rhythm changes A section (from Gershwin's I Got Rhythm).",
     style: 'jazz',
     defaultKey: 'Bb major',
   },
   'coltrane-changes': {
     name: 'coltrane-changes',
-    romanNumerals: ['Imaj7', 'bIIImaj7', 'bVImaj7', 'Imaj7'],
-    description: "Coltrane changes - tonic substitution by major thirds (tritone sub cycle). Used in Giant Steps.",
+    romanNumerals: ['ii7', 'bIII7', 'bVImaj7', 'VII7', 'IIImaj7', 'V7', 'Imaj7'],
+    description: 'Coltrane changes - a ii-V-I passing through tonics a major third apart (I, bVI, III), each reached by its dominant. Used in Countdown.',
     style: 'jazz',
   },
   'andalusian': {
@@ -95,20 +95,20 @@ export const PROGRESSIONS: Record<string, ProgressionEntry> = {
   'backdoor-ii-V': {
     name: 'backdoor-ii-V',
     romanNumerals: ['iv7', 'bVII7', 'Imaj7'],
-    description: 'Backdoor ii-V-I. bVII7 resolves to I by half-step above.',
+    description: 'Backdoor ii-V-I. bVII7 resolves up a whole step to I.',
     style: 'jazz',
   },
   'bird-blues': {
     name: 'bird-blues',
-    romanNumerals: ['Imaj7', 'IV7', 'Imaj7', 'iim7b5 V7alt', 'IV7', 'iv7', 'Imaj7', 'vi7', 'iim7b5', 'V7alt', 'Imaj7', 'ii7 V7'],
-    description: "Parker blues (Bird blues). Extended substitutions throughout.",
+    romanNumerals: ['Imaj7', 'viiø7 III7', 'vi7 II7', 'v7 Idom7', 'IVdom7', 'iv7 bVII7', 'iii7 VI7', 'biii7 bVI7', 'ii7', 'V7', 'Imaj7 VI7', 'ii7 V7'],
+    description: "Bird blues (Parker's Blues for Alice). Chains of ii-V descending from bar 2 to bar 8.",
     style: 'jazz',
     defaultKey: 'F major',
   },
   'giant-steps-cycle': {
     name: 'giant-steps-cycle',
-    romanNumerals: ['Imaj7', 'V7', 'bIIImaj7', 'bVII7', 'bVImaj7', 'bIII7', 'bVImaj7'],
-    description: "Giant Steps tonal cycle. Three tonal centers a major third apart.",
+    romanNumerals: ['Imaj7 bIII7', 'bVImaj7 VII7', 'IIImaj7'],
+    description: "Opening of Giant Steps (bars 1-3): tonics B, G and Eb a major third apart, each reached by its dominant. In B major the roots are spelled with sharps (A#7, D#maj7).",
     style: 'jazz',
     defaultKey: 'B major',
   },
@@ -116,7 +116,7 @@ export const PROGRESSIONS: Record<string, ProgressionEntry> = {
 
 /**
  * Returns a realized Chord[] for the named progression in the given key.
- * Progressions with compound roman numerals (e.g. "ii7 V7") use only the first token.
+ * A bar with two chords ("ii7 V7") gives both, in order.
  */
 export function getProgression(id: string, keySymbol: string, tuning: TuningSystem = TET12): Chord[] {
   const entry = PROGRESSIONS[id];

@@ -21,8 +21,8 @@ export const CLAVE_PATTERNS: Record<string, ClavePattern> = {
   },
   'son-2-3': {
     name: 'Son Clave 2-3',
-    // X . . . X . X . | . X . . X . . .
-    steps: [1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0].map(Boolean) as unknown as readonly boolean[],
+    // . . X . X . . . | X . . X . . X .
+    steps: [0,0,1,0,1,0,0,0,1,0,0,1,0,0,1,0].map(Boolean) as unknown as readonly boolean[],
     description: 'Cuban son clave - 2 side first, 3 side second.',
   },
   'rumba-3-2': {
@@ -33,8 +33,8 @@ export const CLAVE_PATTERNS: Record<string, ClavePattern> = {
   },
   'rumba-2-3': {
     name: 'Rumba Clave 2-3',
-    // X . . . X . X . | . . X . . X . .
-    steps: [1,0,0,0,1,0,1,0,0,0,1,0,0,1,0,0].map(Boolean) as unknown as readonly boolean[],
+    // . . X . X . . . | X . . X . . . X
+    steps: [0,0,1,0,1,0,0,0,1,0,0,1,0,0,0,1].map(Boolean) as unknown as readonly boolean[],
     description: 'Cuban rumba clave - 2 side first, 3 side second.',
   },
   'bossa': {
@@ -51,8 +51,8 @@ export const CLAVE_PATTERNS: Record<string, ClavePattern> = {
   },
   'cinquillo': {
     name: 'Cinquillo',
-    // X . X X . X . X (8 steps) - 5 pulses over 8
-    steps: [1,0,1,1,0,1,0,1].map(Boolean) as unknown as readonly boolean[],
+    // X . X X . X X . (8 steps) - 5 pulses over 8 (2+1+2+1+2)
+    steps: [1,0,1,1,0,1,1,0].map(Boolean) as unknown as readonly boolean[],
     description: '5-pulse figure over 8 steps. Common in Cuban danzón.',
   },
   'habanera': {

@@ -18,14 +18,21 @@ export const TET53 = new EDO(53);
 
 // ── Historical Temperaments ──────────────────────────────────────────────────
 
+/** Cents measured from C, re-measured from A (step 0 = A4): the tuning keeps its own A as reference. */
+const centsFromA = (centsFromC: number[]): number[] =>
+  centsFromC.map((_, k) => {
+    const c = centsFromC[(k + 9) % 12] - centsFromC[9];
+    return Math.round((c < 0 ? c + 1200 : c) * 1000) / 1000;
+  });
+
 /**
  * Werckmeister III (Well Temperament, 1691).
  * Used by Bach and contemporaries. Each key has a slightly different character.
- * Values in cents from C, following Werckmeister's original specification.
+ * Werckmeister's values are in cents from C; step 0 is A4 (A → C = 311.73¢).
  */
 export const WerckmeisterIII = new CentTuning(
   'Werckmeister III',
-  [0, 90.225, 192.18, 294.135, 390.225, 498.045, 588.27, 696.09, 792.18, 888.27, 996.09, 1092.18]
+  centsFromA([0, 90.225, 192.18, 294.135, 390.225, 498.045, 588.27, 696.09, 792.18, 888.27, 996.09, 1092.18])
 );
 
 // ── Non-Octave Tunings ───────────────────────────────────────────────────────
@@ -117,21 +124,30 @@ export const ChromaticScale = (tuning: TuningSystem, rootStep: number) => {
 
 // ── Harmonic / Overtone Series Scales ────────────────────────────────────────
 
-import { JustIntonation as _JI } from './tuning';
-
 /**
- * Builds a JI scale from a segment of the harmonic series.
- * @param rootHz - Fundamental frequency in Hz.
+ * Builds a scale from a segment of the harmonic series. The tuning is octave-repeating JI whose
+ * pitch classes are the partials reduced to one octave; the scale climbs through the partials,
+ * so a segment wider than an octave (1–16) spans several octaves.
+ * @param rootHz - Frequency of the first partial in Hz (scale step 0).
  * @param fromHarmonic - First partial (e.g. 8).
  * @param toHarmonic - Last partial (e.g. 16).
  */
 export function HarmonicSeries(rootHz: number, fromHarmonic: number, toHarmonic: number): Scale {
-  const ratios: [number, number][] = [];
-  for (let n = fromHarmonic; n <= toHarmonic; n++) {
-    ratios.push([n, fromHarmonic]);
+  if (!Number.isInteger(fromHarmonic) || !Number.isInteger(toHarmonic) || fromHarmonic < 1 || toHarmonic <= fromHarmonic) {
+    throw new RangeError(`HarmonicSeries: invalid partial range ${fromHarmonic}–${toHarmonic}`);
   }
-  const tuning = new _JI(`Harmonic ${fromHarmonic}–${toHarmonic}`, ratios, rootHz);
-  const pattern = Array(ratios.length - 1).fill(1);
+  // Each partial n as (octave, ratio n / (from · 2^octave) in [1, 2)).
+  const partials = [];
+  for (let n = fromHarmonic; n <= toHarmonic; n++) {
+    const octave = Math.floor(Math.log2(n / fromHarmonic) + 1e-9);
+    partials.push({ octave, num: n, den: fromHarmonic * 2 ** octave });
+  }
+  const classes = [...new Map(partials.map(p => [p.num / p.den, p])).values()]
+    .sort((a, b) => a.num / a.den - b.num / b.den);
+  const classIndex = (p: { num: number, den: number }) => classes.findIndex(c => c.num / c.den === p.num / p.den);
+  const tuning = new JustIntonation(`Harmonic ${fromHarmonic}–${toHarmonic}`, classes.map(c => [c.num, c.den] as [number, number]), rootHz);
+  const steps = partials.map(p => p.octave * classes.length + classIndex(p));
+  const pattern = steps.slice(1).map((s, i) => s - steps[i]);
   return new Scale(`Harmonic Series ${fromHarmonic}–${toHarmonic}`, tuning, 0, pattern);
 }
 

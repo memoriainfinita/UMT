@@ -126,24 +126,24 @@ describe('SetTheory.getAllSubsets', () => {
 });
 
 describe('SetTheory.getZRelated', () => {
-  it('4-z15 [0,1,4,6] returns 4-z29 [0,1,3,7]', () => {
+  it('4-Z15 [0,1,4,6] returns 4-Z29 [0,1,3,7]', () => {
     const result = SetTheory.getZRelated([0, 1, 4, 6]);
     expect(result).toContainEqual([0, 1, 3, 7]);
     expect(result).toHaveLength(1);
   });
 
-  it('4-z29 [0,1,3,7] returns 4-z15 [0,1,4,6]', () => {
+  it('4-Z29 [0,1,3,7] returns 4-Z15 [0,1,4,6]', () => {
     const result = SetTheory.getZRelated([0, 1, 3, 7]);
     expect(result).toContainEqual([0, 1, 4, 6]);
     expect(result).toHaveLength(1);
   });
 
-  it('5-z17 [0,1,3,4,8] returns 5-z37 [0,3,4,5,8]', () => {
+  it('5-Z17 [0,1,3,4,8] returns 5-Z37 [0,3,4,5,8]', () => {
     const result = SetTheory.getZRelated([0, 1, 3, 4, 8]);
     expect(result).toContainEqual([0, 3, 4, 5, 8]);
   });
 
-  it('5-z18 [0,1,4,5,7] returns 5-z38 [0,1,2,5,8]', () => {
+  it('5-Z18 [0,1,4,5,7] returns 5-Z38 [0,1,2,5,8]', () => {
     const result = SetTheory.getZRelated([0, 1, 4, 5, 7]);
     expect(result).toContainEqual([0, 1, 2, 5, 8]);
   });

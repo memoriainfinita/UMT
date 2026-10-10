@@ -2,6 +2,7 @@
  * Universal Rhythm & Meter Module
  * Handles standard durations, complex tuplets, additive meters, and polyrhythms.
  */
+import { CLAVE_PATTERNS } from './clave-patterns';
 
 /** A note duration expressed as a fraction of a whole note, with optional augmentation dots. */
 export class Duration {
@@ -278,41 +279,29 @@ export class RhythmAnalysis {
    * Detects if the pattern matches the Tresillo (3+3+2 over 8 steps).
    */
   static detectTresillo(pattern: number[]): boolean {
-    if (pattern.length !== 8) return false;
-    const tresillo = [true, false, false, true, false, false, true, false];
-    return pattern.every((p, i) => Boolean(p) === tresillo[i]);
+    return matchesPattern(pattern, CLAVE_PATTERNS.tresillo.steps);
   }
 
   /**
-   * Detects if the pattern matches the Cinquillo (1+1+2+1+2+1+1 structure - 8 steps, 5 pulses).
+   * Detects if the pattern matches the Cinquillo (2+1+2+1+2 - 8 steps, 5 pulses: X.XX.XX.).
    */
   static detectCinquillo(pattern: number[]): boolean {
-    if (pattern.length !== 8) return false;
-    const cinquillo = [true, false, true, true, false, true, false, true];
-    return pattern.every((p, i) => Boolean(p) === cinquillo[i]);
+    return matchesPattern(pattern, CLAVE_PATTERNS.cinquillo.steps);
   }
 
   /**
-   * Identifies which clave pattern (if any) matches the input.
-   * @param pattern - Boolean array of 16 steps (one measure of 4/4 in 16th notes).
+   * Identifies which clave pattern (if any) matches the input, from `CLAVE_PATTERNS`.
+   * @param pattern - Onset array of 16 steps (two bars of 4/4 in eighth notes, or one in sixteenths).
    */
   static detectClave(pattern: number[]): 'son-3-2' | 'son-2-3' | 'rumba-3-2' | 'rumba-2-3' | 'bossa' | 'none' {
-    if (pattern.length !== 16) return 'none';
-    const toBool = pattern.map(Boolean);
-    const match = (ref: boolean[]) => ref.every((v, i) => v === toBool[i]);
-
-    // Son clave 3-2: X . . X . . X . . . X . X . . .
-    if (match([true,false,false,true,false,false,true,false,false,false,true,false,true,false,false,false])) return 'son-3-2';
-    // Son clave 2-3: X . . . X . X . . X . . X . . .
-    if (match([true,false,false,false,true,false,true,false,false,true,false,false,true,false,false,false])) return 'son-2-3';
-    // Rumba clave 3-2: X . . X . . . X . . X . X . . .
-    if (match([true,false,false,true,false,false,false,true,false,false,true,false,true,false,false,false])) return 'rumba-3-2';
-    // Rumba clave 2-3: X . . . X . X . . . X . . X . .
-    if (match([true,false,false,false,true,false,true,false,false,false,true,false,false,true,false,false])) return 'rumba-2-3';
-    // Bossa nova: X . . X . . X . . . X . . X . .
-    if (match([true,false,false,true,false,false,true,false,false,false,true,false,false,true,false,false])) return 'bossa';
-    return 'none';
+    const claves = ['son-3-2', 'son-2-3', 'rumba-3-2', 'rumba-2-3', 'bossa'] as const;
+    return claves.find(id => matchesPattern(pattern, CLAVE_PATTERNS[id].steps)) ?? 'none';
   }
+}
+
+/** True when `pattern` has onsets exactly where `ref` does (same length). */
+function matchesPattern(pattern: number[], ref: readonly boolean[]): boolean {
+  return pattern.length === ref.length && pattern.every((p, i) => Boolean(p) === ref[i]);
 }
 
 /**

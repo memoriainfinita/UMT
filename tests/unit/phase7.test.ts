@@ -105,7 +105,7 @@ describe('RhythmAnalysis.detectTresillo', () => {
 
 describe('RhythmAnalysis.detectCinquillo', () => {
   it('recognizes cinquillo pattern', () => {
-    const cinquillo = [1, 0, 1, 1, 0, 1, 0, 1];
+    const cinquillo = [1, 0, 1, 1, 0, 1, 1, 0];
     expect(RhythmAnalysis.detectCinquillo(cinquillo)).toBe(true);
   });
 
