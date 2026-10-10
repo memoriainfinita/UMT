@@ -2,9 +2,9 @@
 
 ## What is this
 
-A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 800 tests, zero runtime dependencies.
+A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 872 tests, zero runtime dependencies.
 
-The library compiles to a standalone IIFE (`dist/umt.js`, 120 kb) usable via script tag, CDN (jsDelivr), or ESM import.
+The library compiles to a standalone IIFE (`dist/umt.js`, 122 kb) usable via script tag, CDN (jsDelivr), or ESM import.
 
 The demo is a single vanilla HTML file (`index.html`) with 7 interactive sections. The original Next.js scaffolding and old demo versions are in `archive/` (gitignored).
 
@@ -90,7 +90,7 @@ All pitch positions are **steps from A4 = 0** within a `TuningSystem`. A4 = 440H
 - `TuningSystem` is abstract. Always use `EDO`, `JustIntonation`, `CentTuning`, or `NonOctaveTuning`.
 - `Chord.smoothTransition` handles voice leading automatically - use it for progressions.
 - Parser functions accept an optional `tuning: TuningSystem = TET12` parameter. Interval values from `CHORD_FORMULAS`/`SCALE_PATTERNS` are mapped to the target tuning via `tuning.getStepFromStandard()`.
-- `parseRomanProgression` supports: `ii7`, `V7`, `V7alt`, `V7/ii` (applied chords), `subV7` (tritone sub).
+- `parseRomanProgression` supports: `ii7`, `V7`, `V7alt`, `V7/ii` (applied chords), `subV7` (tritone sub), `Idom7` (explicit dominant; `I7` is the key's seventh, Cmaj7 in C).
 - `ScalaTuning` (from `.scl` files) requires the last entry to be the octave (`2/1` or `1200.0`).
 - `Harmony.detectChords` and `Harmony.getNegativeHarmony` are 12-TET only - they return early for other tunings.
 - All library strings are in English. No Spanish strings in library code.
