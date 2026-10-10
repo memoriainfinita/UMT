@@ -22,9 +22,9 @@ last_updated: 2026-10-10
 
 ## Dependencies
 
-- esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (112 kb)
+- esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (120 kb)
 - typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
-- vitest - tests unitarios (`npm run test:unit`) - 751 tests
+- vitest - tests unitarios (`npm run test:unit`) - 800 tests
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
 - Tailwind CDN - estilos en demo
@@ -44,7 +44,10 @@ last_updated: 2026-10-10
 - [harmony] En menor natural, V, V7, vii° y vii°7 con la sensible elevada son diatónicos (menor armónica), y el vii° se escribe sin alteración. Lo de la menor melódica (IV mayor) sigue prestado. Confirmed 2026-10.
 - [harmony] Acorde de sensible secundario: dim, dim7 o m7b5 cromático un semitono bajo un grado diatónico no disminuido → `vii°/x`, `vii°7/x`, `viiø7/x`. Los diatónicos conservan su lectura (ii° en menor). Confirmed 2026-10.
 - [harmony] El sustituto tritonal de V (bII7) es D. Una secundaria no se marca además como prestada (D7 en C es V7/V, no lidio). Confirmed 2026-10.
-- [spelling] `spelling.ts`: en una tonalidad, las notas de la escala con sus letras y las cromáticas por la escala cromática armónica (b2, b3, #4, b6, b7; en menor, 3, 6 y 7 elevados como #3, #6, #7). Las notas de un acorde se nombran por su intervalo sobre la fundamental (b5 sin quinta justa, #11 con ella; bb7 en dim7). Nota cromática suelta: si la convención da doble alteración y la otra letra tiene menos, la otra (La en Reb mayor). Fundamental de acorde: acorde de solo notas de la tonalidad, letra de la tonalidad (F##dim7 en Sol# menor); fundamental de la tonalidad en acorde cromático, su letra salvo que la otra ahorre 3 o más alteraciones (Gbm en Reb mayor; G en Sol# menor); fundamental cromática, la de menos alteraciones con la fundamental contada doble. `Chord.getNotes()` no cambia. Confirmed 2026-10.
+- [spelling] `spelling.ts`: en una tonalidad, las notas de la escala con sus letras y las cromáticas por la escala cromática armónica (b2, b3, #4, b6, b7; en menor, 3, 6 y 7 elevados como #3, #6, #7). Las notas de un acorde se nombran por su intervalo sobre la fundamental (b5 sin quinta justa, #11 con ella; bb7 en dim7). Nota cromática suelta: si la convención da doble alteración y la otra letra tiene menos, la otra (La en Reb mayor). Fundamental de acorde: acorde de solo notas de la tonalidad, letra de la tonalidad (F##dim7 en Sol# menor); fundamental de la tonalidad en acorde cromático, su letra salvo que la otra ahorre 3 o más alteraciones (Gbm en Reb mayor; G en Sol# menor); fundamental cromática, la de menos alteraciones con la fundamental contada doble. En menor, la tercera elevada (C# en La menor) conserva su letra como fundamental, igual que la 6ª y la 7ª elevadas. `Chord.getNotes()` nombra cada nota por su intervalo sobre la letra escrita de la fundamental (D#m → D# F# A#; Edim7 → E G Bb Db). Confirmed 2026-10.
+- [harmony] El numeral de una fundamental cromática sale de la letra con que la escribe `spellChordInKey`: F#dim7 en C es `#iv°7`. Confirmed 2026-10.
+- [roman] `parseRomanProgression`: la mayúscula o minúscula da la tercera; lo que el numeral no dice lo pone la tonalidad (`vii` en C = Bdim, `vii7` = Bm7b5, `I7` = Cmaj7, `V7` = G7). Si la tercera no es la de la tonalidad, el acorde simple del caso (`II` = D, `II7` = D7). Las alteraciones mueven el grado de la propia escala: en menor `VII` y `VI` son los naturales y `bVII` en La menor es Gb. En menor natural, `vii°`, `vii°7` y `viiø7` van sobre la sensible elevada. Sufijo desconocido → error. Confirmed 2026-10.
+- [interval] Calidad de intervalo por letras: `getIntervalBetween('C4', 'F#4')` = A4; `getIntervalName(semitonos, true, letras)`. Sin letras, 6 semitonos es d5. Confirmed 2026-10.
 - [substitution] Sustitutos diatónicos: el acorde de la escala a una tercera con la misma función (I → iii, vi; ii ↔ IV; V ↔ vii°), en mayor y menor natural, con la grafía y el tipo (tríada o cuatríada) de la escala. En mayor, IV y ii toman la subdominante menor (iv, bVII7, iiø7), y esta vuelve a IV. Confirmed 2026-10.
 
 ## TODO
@@ -58,9 +61,13 @@ last_updated: 2026-10-10
 - [x] ESLint — `typescript-eslint` instalado, parser configurado con tsconfig. 4 errores corregidos. Commit `84cdafa`.
 - [x] `SetTheory.getZRelated` — implementado via búsqueda dinámica en FORTE_TABLE por interval vector. 6 tests. Commit `d1e7d12`.
 - [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit `549920d`.
-- [ ] Auditoría 2026-10: arreglar fallos en 8 fases (0 fallos de MODUS, núcleo, datos, análisis, xen, exportadores, distribución, funciones de MODUS). Fase 0 hecha (`6750e23`); siguiente: fase 1. Detalle y plan en `docs/auditoria-2026-10.md`; peticiones de MODUS en `docs/notas-desde-modus-2026-10.md`
+- [ ] Auditoría 2026-10: arreglar fallos en 8 fases (0 fallos de MODUS, núcleo, datos, análisis, xen, exportadores, distribución, funciones de MODUS). Fases 0 (`6750e23`) y 1 (`a0494bd`…`e893bc3`) hechas; siguiente: `KeyDetection` por duración (fase 7, va justo tras la 1) y luego fase 2. Detalle y plan en `docs/auditoria-2026-10.md`; peticiones de MODUS en `docs/notas-desde-modus-2026-10.md`
 
 ## History
+
+### 2026-10-10 - `Chord.getNotes()` pasa a grafía por letras
+
+El pattern [spelling] decía "`Chord.getNotes()` no cambia" (grafía por pitch class y `preferFlats`). Lo supera la fase 1 de la auditoría: esa grafía daba D#m → Gb, C7#9 → Eb, Edim7 → A# C#.
 
 ### 2026-06-16 - Limpieza: carpetas vacías heredadas
 
