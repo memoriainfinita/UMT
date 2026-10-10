@@ -11,6 +11,7 @@ import { FormAnalyzer } from '../../lib/music-theory/form';
 import { getProgression } from '../../lib/music-theory/progressions';
 import { MelodyAnalysis } from '../../lib/music-theory/melody';
 import { getUpperStructures } from '../../lib/music-theory/upper-structures';
+import { Solfege } from '../../lib/music-theory/solfege';
 
 const pcSet = (pcs: number[]) => [...new Set(pcs)].sort((a, b) => a - b).join(',');
 
@@ -255,5 +256,22 @@ describe('getUpperStructures', () => {
     expect(getUpperStructures(parseChordSymbol('G13'))).toHaveLength(6);
     expect(getUpperStructures(parseChordSymbol('Cmaj7'))).toEqual([]);
     expect(getUpperStructures(parseChordSymbol('Dm7'))).toEqual([]);
+  });
+});
+
+describe('Solfege', () => {
+  it('movable do: la-based minor and church modes', () => {
+    expect(Solfege.movableDo(parseNote('A4'), 'A minor')).toBe('la');
+    expect(Solfege.movableDo(parseNote('C5'), 'A minor')).toBe('do');
+    expect(Solfege.movableDo(parseNote('D4'), 'D dorian')).toBe('re');
+    expect(Solfege.movableDo(parseNote('G4'), 'G major')).toBe('do');
+  });
+
+  it('fromSolfege in octave 4', () => {
+    expect(Solfege.fromSolfege('do', 'C major', 'fixed').name).toBe('C4');
+    expect(Solfege.fromSolfege('si', 'C major', 'fixed').stepsFromBase).toBe(2); // B4
+    expect(Solfege.fromSolfege('sol', 'C major').stepsFromBase).toBe(-2); // G4
+    expect(Solfege.fromSolfege('la', 'A minor').stepsFromBase).toBe(0); // A4
+    expect(Solfege.fromSolfege('do', 'A minor').stepsFromBase).toBe(3); // C5
   });
 });
