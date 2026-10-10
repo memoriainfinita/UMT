@@ -81,6 +81,8 @@ export interface ChordAnalysis {
   secondaryTarget?: string;
   cadenceWithNext?: string;
   substitutionCandidate?: string;
+  /** The key this chord was read in: the home key, or the key of the last modulation. */
+  key: string;
 }
 
 /**
@@ -715,7 +717,17 @@ export class Harmony {
   /**
    * Analyzes a progression in a given key, returning Roman-numeral-level info for
    * each chord (function, diatonicism, borrowed/secondary flags, cadence-with-next)
-   * and a list of detected modulations (3+ consecutive chords diatonic to a new key).
+   * and a list of detected modulations (see below). After a modulation, numerals and
+   * cadences are read in the new key, and each entry's `key` says which key it was read in.
+   *
+   * Modulation: a chord foreign to the current key starts a passage held by a new key;
+   * the new key is the one with an authentic cadence (V → I) in the passage, then with its
+   * tonic chord in it, then with the best Krumhansl-Schmuckler correlation. A passage of
+   * fewer than three chords is a tonicization, not a modulation (E7 → Am inside C major).
+   *
+   * Harmonic rhythm: with `durations` (in beats, one per chord), chord changes per bar of
+   * `beatsPerBar` (default 4); without them, chord changes per chord, which only says how
+   * often consecutive chords differ. `harmonicRhythmUnit` says which.
    *
    * Numerals read back with `parseRomanProgression` (`I7` is a dominant, `Imaj7` a major
    * seventh). A chromatic root takes its letter from the key by default (`spellChordInKey`:
@@ -723,16 +735,40 @@ export class Harmony {
    * its name when the name matches its pitch (Gb in C is `bV`), for chords that arrive
    * already named rather than detected.
    */
-  static analyzeProgression(chords: Chord[], keySymbol: string, options: { spelling?: 'key' | 'written' } = {}): {
+  static analyzeProgression(
+    chords: Chord[],
+    keySymbol: string,
+    options: { spelling?: 'key' | 'written'; durations?: readonly number[]; beatsPerBar?: number } = {},
+  ): {
     analysis: ChordAnalysis[];
     modulations: ModulationEvent[];
     harmonicRhythm: number;
+    harmonicRhythmUnit: 'per-bar' | 'per-chord';
   } {
-    if (chords.length === 0) return { analysis: [], modulations: [], harmonicRhythm: 0 };
+    const unit = options.durations ? 'per-bar' : 'per-chord';
+    if (chords.length === 0) return { analysis: [], modulations: [], harmonicRhythm: 0, harmonicRhythmUnit: unit };
+    if (options.durations && options.durations.length !== chords.length) {
+      throw new RangeError(`analyzeProgression: ${chords.length} chords but ${options.durations.length} durations`);
+    }
     const tuning = chords[0].tuningSystem;
-    const key = parseKey(keySymbol, tuning, options.spelling ?? 'key');
+    const spelling = options.spelling ?? 'key';
+    const homeKey = parseKey(keySymbol, tuning, spelling);
+
+    // The key each chord is read in: the home key, then each modulation's from its index
+    const modulations = detectModulations(chords, homeKey);
+    const keySymbols = chords.map((_, i) => {
+      const last = modulations.filter(m => m.atIndex <= i).pop();
+      return last ? last.toKey : keySymbol;
+    });
+    const keys = new Map<string, KeyInfo>([[keySymbol, homeKey]]);
+    const keyAt = (i: number) => {
+      const s = keySymbols[i];
+      if (!keys.has(s)) keys.set(s, parseKey(s, tuning, spelling));
+      return keys.get(s)!;
+    };
 
     const analysis: ChordAnalysis[] = chords.map((chord, i) => {
+      const key = keyAt(i);
       const { roman, degree, accidental, isDiatonic, quality } = getRomanForChord(chord, key);
       const degreeFn = getFunction(degree, quality, key.isMinor, accidental);
 
@@ -749,7 +785,8 @@ export class Harmony {
 
       let cadenceWithNext: string | undefined;
       if (i < chords.length - 1) {
-        const cad = Harmony.analyzeCadence(chord, chords[i + 1], keySymbol);
+        // read in the key of the chord it arrives at (D7 → G after a move to G major)
+        const cad = Harmony.analyzeCadence(chord, chords[i + 1], keySymbols[i + 1]);
         if (cad !== 'No standard cadence') cadenceWithNext = cad;
       }
 
@@ -771,13 +808,13 @@ export class Harmony {
         secondaryTarget: target,
         cadenceWithNext,
         substitutionCandidate,
+        key: keySymbols[i],
       };
     });
 
-    const modulations = detectModulations(chords, key);
-    const harmonicRhythm = computeHarmonicRhythm(chords);
+    const harmonicRhythm = computeHarmonicRhythm(chords, options.durations, options.beatsPerBar);
 
-    return { analysis, modulations, harmonicRhythm };
+    return { analysis, modulations, harmonicRhythm, harmonicRhythmUnit: unit };
   }
 
   /**
@@ -1245,8 +1282,13 @@ export class Harmony {
       return 'Phrygian Cadence (bII -> I)';
     }
 
-    // iv → V (classical Phrygian half cadence in minor)
-    if (isC1Subdominant && c1IsMinor && r2 === (t + ts.getStepFromStandard(7)) % oct) {
+    // iv6 → V (Phrygian half cadence in minor): the bass falls a semitone from the 6th
+    // degree to the 5th (F → E in A minor); iv in root position → V is a plain half cadence
+    const bassOf = (c: Chord) => c.bassStep ?? Math.min(...c.intervalsInSteps.map(s => c.rootStep + s));
+    const b1 = ((bassOf(chord1) % oct) + oct) % oct;
+    const b2 = ((bassOf(chord2) % oct) + oct) % oct;
+    const sixthBass = b1 === (t + ts.getStepFromStandard(8)) % oct && b2 === (t + ts.getStepFromStandard(7)) % oct;
+    if (isC1Subdominant && c1IsMinor && r2 === (t + ts.getStepFromStandard(7)) % oct && sixthBass) {
       return 'Phrygian Half Cadence (iv -> V)';
     }
 
@@ -1639,76 +1681,91 @@ export class Harmony {
 //  Module helpers (not exported)
 // ============================================================================
 
-function detectModulations(chords: Chord[], key: KeyInfo): ModulationEvent[] {
-  const events: ModulationEvent[] = [];
-  const tuning = key.tuning;
-  const oct = tuning.octaveSteps;
-  if (oct !== 12) return events;
+/** A key to modulate to: its pitch classes (minor keys include the raised leading tone). */
+interface CandidateKey { symbol: string; pcs: number[]; tonicPc: number; minor: boolean }
 
-  // Candidate keys to check modulation to: all 12 major and 12 minor keys except current.
-  const candidateKeys: { symbol: string; pcs: number[]; rootPc: number; mode: 'major' | 'minor' }[] = [];
+function candidateKeys(tuning: TuningSystem): CandidateKey[] {
+  const keys: CandidateKey[] = [];
   for (let pc = 0; pc < 12; pc++) {
     const flatName = NOTE_NAMES_12TET_FLAT[pc];
     const sharpName = NOTE_NAMES_12TET_SHARP[pc];
-    const pickMajor = preferFlatsForKey(flatName, 'major') ? flatName : sharpName;
-    const pickMinor = preferFlatsForKey(flatName, 'minor') ? flatName : sharpName;
-    const majScale = parseScaleSymbol(`${pickMajor} major`, tuning);
-    const minScale = parseScaleSymbol(`${pickMinor} minor`, tuning);
-    candidateKeys.push({ symbol: `${pickMajor} major`, pcs: majScale.getPitchClasses(), rootPc: pc, mode: 'major' });
-    candidateKeys.push({ symbol: `${pickMinor} minor`, pcs: minScale.getPitchClasses(), rootPc: pc, mode: 'minor' });
+    const major = `${preferFlatsForKey(flatName, 'major') ? flatName : sharpName} major`;
+    const minor = `${preferFlatsForKey(flatName, 'minor') ? flatName : sharpName} minor`;
+    const majPcs = parseScaleSymbol(major, tuning).getPitchClasses();
+    const minScale = parseScaleSymbol(minor, tuning).getPitchClasses();
+    keys.push({ symbol: major, pcs: majPcs, tonicPc: majPcs[0], minor: false });
+    // harmonic minor's leading tone belongs to the key (E7 → Am in A minor)
+    const leadingTone = pcMod(minScale[0] + 11, 12);
+    keys.push({ symbol: minor, pcs: [...minScale, leadingTone], tonicPc: minScale[0], minor: true });
   }
+  return keys;
+}
 
-  // Sliding window of 3: if 3 consecutive chords are fully diatonic to some candidate key
-  // that isn't the home key, mark a modulation at the start of that window.
-  let activeKeySymbol = `${key.rootName} ${key.mode}`;
-  let activeKeyPcs = key.scalePcs;
-  let i = 0;
-  while (i <= chords.length - 3) {
-    const windowPcs = [
-      ...chords[i].getPitchClasses(),
-      ...chords[i + 1].getPitchClasses(),
-      ...chords[i + 2].getPitchClasses(),
-    ];
-    const fitsActive = windowPcs.every(pc => activeKeyPcs.includes(pc));
-    if (fitsActive) { i++; continue; }
+/**
+ * Modulations: a chord foreign to the current key starts a passage that a new key holds.
+ * The new key is the one, among those holding the passage, with an authentic cadence
+ * (V or V7 → its tonic) in it, then with its tonic chord in it, then with the best
+ * Krumhansl-Schmuckler correlation. A passage of fewer than three chords is a
+ * tonicization (E7 → Am inside C major; B7 → Em at the end), not a modulation.
+ * The modulation is placed on the first foreign chord; it is a pivot modulation when the
+ * chord before belongs to both keys.
+ */
+function detectModulations(chords: Chord[], key: KeyInfo): ModulationEvent[] {
+  const events: ModulationEvent[] = [];
+  const tuning = key.tuning;
+  if (tuning.octaveSteps !== 12 || chords.length < 2) return events;
 
-    // Of the candidates (not active) that fit all three, the one the window's notes
-    // correlate with best (Krumhansl-Schmuckler): C-F-C fits C major, F major, A minor
-    // and D minor, and reads as C major.
-    const fitting = candidateKeys.filter(ck =>
-      ck.symbol !== activeKeySymbol &&
-      windowPcs.every(pc => ck.pcs.includes(pc))
-    );
+  const candidates = candidateKeys(tuning);
+  const pcsOf = chords.map(c => c.getPitchClasses());
+  const fits = (i: number, pcs: number[]) => pcsOf[i].every(pc => pcs.includes(pc));
+  const has = (c: Chord, semis: number) => c.intervalsInSteps.some(s => pcMod(s, 12) === semis);
+  const isTonic = (c: Chord, k: CandidateKey) =>
+    pcMod(c.rootStep, 12) === k.tonicPc && has(c, k.minor ? 3 : 4) && !has(c, k.minor ? 4 : 3);
+  const isDominant = (c: Chord, k: CandidateKey) => pcMod(c.rootStep, 12) === pcMod(k.tonicPc + 7, 12) && has(c, 4);
+
+  let active: { symbol: string; pcs: number[] } = { symbol: `${key.rootName} ${key.mode}`, pcs: key.scalePcs };
+  let i = 1;
+  while (i < chords.length) {
+    if (fits(i, active.pcs)) { i++; continue; }
+
+    // The passage each candidate holds from the foreign chord on
+    const options = candidates
+      .filter(k => k.symbol !== active.symbol && fits(i, k.pcs))
+      .map(k => {
+        let end = i;
+        while (end + 1 < chords.length && fits(end + 1, k.pcs)) end++;
+        const passage = chords.slice(i, end + 1);
+        const cadence = passage.some((c, j) => j + 1 < passage.length && isDominant(c, k) && isTonic(passage[j + 1], k));
+        const tonic = passage.some(c => isTonic(c, k));
+        const confirmed = end - i + 1 >= 3;
+        return { k, end, cadence, tonic, confirmed };
+      })
+      .filter(o => o.confirmed && (o.cadence || o.tonic));
+
+    if (options.length === 0) { i++; continue; }
+
     const histogram = new Array(12).fill(0);
-    for (const pc of windowPcs) histogram[(pc + 9) % 12] += 1; // A-based pitch class → C-based
-    const ranking = KeyDetection.detectFromHistogram(histogram).map(r => r.key.toLowerCase());
-    const rank = (ck: { symbol: string }) => {
-      const r = ranking.indexOf(ck.symbol.toLowerCase());
-      return r === -1 ? Infinity : r;
-    };
-    const hit = fitting.sort((a, b) => rank(a) - rank(b))[0];
-    if (hit) {
-      // Determine type: 'pivot' if chord at i-1 is diatonic to both keys, 'direct' otherwise
-      let modType: ModulationEvent['type'] = 'direct';
-      let pivot: Chord | undefined;
-      if (i > 0) {
-        const prevPcs = chords[i - 1].getPitchClasses();
-        const fitsOld = prevPcs.every(pc => activeKeyPcs.includes(pc));
-        const fitsNew = prevPcs.every(pc => hit.pcs.includes(pc));
-        if (fitsOld && fitsNew) { modType = 'pivot'; pivot = chords[i - 1]; }
-      }
-      events.push({ atIndex: i, fromKey: activeKeySymbol, toKey: hit.symbol, type: modType, pivotChord: pivot });
-      activeKeySymbol = hit.symbol;
-      activeKeyPcs = hit.pcs;
-      i += 3;
-    } else {
-      i++;
+    for (let j = Math.max(0, i - 1); j <= Math.max(...options.map(o => o.end)); j++) {
+      for (const pc of pcsOf[j]) histogram[(pc + 9) % 12] += 1; // A-based pitch class → C-based
     }
+    const ranking = KeyDetection.detectFromHistogram(histogram).map(r => r.key.toLowerCase());
+    const rank = (s: string) => { const r = ranking.indexOf(s.toLowerCase()); return r === -1 ? Infinity : r; };
+    const best = options.sort((a, b) =>
+      Number(b.cadence) - Number(a.cadence) || Number(b.tonic) - Number(a.tonic) || rank(a.k.symbol) - rank(b.k.symbol))[0];
+
+    const pivot = i > 0 && fits(i - 1, active.pcs) && fits(i - 1, best.k.pcs) ? chords[i - 1] : undefined;
+    events.push({ atIndex: i, fromKey: active.symbol, toKey: best.k.symbol, type: pivot ? 'pivot' : 'direct', pivotChord: pivot });
+    active = best.k;
+    i = best.end + 1;
   }
   return events;
 }
 
-function computeHarmonicRhythm(chords: Chord[]): number {
+/**
+ * Harmonic rhythm. With durations (in beats), chord changes per bar of `beatsPerBar`;
+ * without them, chord changes per chord (a repeated chord is not a change).
+ */
+function computeHarmonicRhythm(chords: Chord[], durations?: readonly number[], beatsPerBar = 4): number {
   if (chords.length <= 1) return chords.length === 0 ? 0 : 1;
   let changes = 0;
   for (let i = 1; i < chords.length; i++) {
@@ -1716,5 +1773,7 @@ function computeHarmonicRhythm(chords: Chord[]): number {
     const cur = chords[i];
     if (prev.rootStep !== cur.rootStep || prev.name !== cur.name) changes++;
   }
-  return changes / (chords.length - 1);
+  if (!durations) return changes / (chords.length - 1);
+  const bars = durations.reduce((a, b) => a + b, 0) / beatsPerBar;
+  return bars > 0 ? changes / bars : 0;
 }

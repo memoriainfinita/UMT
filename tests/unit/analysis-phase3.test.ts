@@ -35,8 +35,9 @@ describe('analyzeProgression numerals read back with parseRomanProgression', () 
 });
 
 describe('analyzeProgression spelling option', () => {
+  // one chord at a time: no progression context (modulations)
   const romans = (names: string[], key: string, spelling?: 'key' | 'written') =>
-    Harmony.analyzeProgression(names.map(n => parseChordSymbol(n)), key, { spelling }).analysis.map(a => a.roman);
+    names.map(n => Harmony.analyzeProgression([parseChordSymbol(n)], key, { spelling }).analysis[0].roman);
 
   it('key spelling (default) reads chromatic roots as the key writes them', () => {
     expect(romans(['Gb', 'C#'], 'C major')).toEqual(['#IV', 'bII']);
@@ -58,7 +59,7 @@ describe('harmony.ts analysis fixes', () => {
   const chords = (names: string[]) => names.map(n => parseChordSymbol(n));
 
   it('detectModulations picks the best-correlated key, not the first by pitch class', () => {
-    const { modulations } = Harmony.analyzeProgression(chords(['G', 'D', 'G', 'C', 'F', 'C']), 'G major');
+    const { modulations } = Harmony.analyzeProgression(chords(['G', 'D', 'G', 'C', 'F', 'C', 'F', 'G7', 'C']), 'G major');
     expect(modulations.map(m => m.toKey)).toEqual(['C major']);
   });
 
@@ -273,5 +274,41 @@ describe('Solfege', () => {
     expect(Solfege.fromSolfege('sol', 'C major').stepsFromBase).toBe(-2); // G4
     expect(Solfege.fromSolfege('la', 'A minor').stepsFromBase).toBe(0); // A4
     expect(Solfege.fromSolfege('do', 'A minor').stepsFromBase).toBe(3); // C5
+  });
+});
+
+describe('analyzeProgression after MODUS notes (modulation, local key, harmonic rhythm, Phrygian)', () => {
+  const run = (names: string, key: string, options = {}) =>
+    Harmony.analyzeProgression(names.split(' ').map(n => parseChordSymbol(n)), key, options);
+  const mods = (r: ReturnType<typeof run>) => r.modulations.map(m => [m.atIndex, m.toKey, m.type]);
+
+  it('modulates to the key confirmed by a cadence, at the first foreign chord', () => {
+    expect(mods(run('C F G C Am D7 G Em Am D7 G', 'C major'))).toEqual([[5, 'G major', 'pivot']]);
+    expect(mods(run('C F G7 C Eb Ab Bb7 Eb', 'C major'))).toEqual([[4, 'Eb major', 'direct']]);
+    expect(mods(run('C F G C Am Dm E7 Am Dm E7 Am', 'C major'))).toEqual([[6, 'A minor', 'pivot']]);
+  });
+
+  it('a tonicization of fewer than three chords is not a modulation', () => {
+    expect(mods(run('C Am Dm G7 C E7 Am D7 G', 'C major'))).toEqual([]);
+  });
+
+  it('numerals and cadences after a modulation are in the new key', () => {
+    const r = run('C F G C Am D7 G Em', 'C major');
+    expect(r.analysis.map(a => a.key)).toEqual(['C major', 'C major', 'C major', 'C major', 'C major', 'G major', 'G major', 'G major']);
+    expect(r.analysis[5].roman).toBe('V7');
+    expect(r.analysis[5].cadenceWithNext).toBe('Authentic Cadence (V -> I)');
+  });
+
+  it('harmonic rhythm per bar with durations', () => {
+    const r = run('C F G7 C', 'C major', { durations: [4, 2, 2, 4] });
+    expect(r.harmonicRhythmUnit).toBe('per-bar');
+    expect(r.harmonicRhythm).toBe(1); // 3 changes in 3 bars
+    expect(run('C F', 'C major').harmonicRhythmUnit).toBe('per-chord');
+    expect(() => run('C F', 'C major', { durations: [4] })).toThrow(RangeError);
+  });
+
+  it('Phrygian half cadence needs the bass falling from the 6th to the 5th', () => {
+    expect(run('Dm E7', 'A minor').analysis[0].cadenceWithNext).toBe('Half Cadence (-> V)');
+    expect(run('Dm/F E7', 'A minor').analysis[0].cadenceWithNext).toBe('Phrygian Half Cadence (iv -> V)');
   });
 });

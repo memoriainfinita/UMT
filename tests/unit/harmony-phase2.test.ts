@@ -280,10 +280,10 @@ describe('Harmony.analyzeCadence - new cadences', () => {
     expect(Harmony.analyzeCadence(cm, C, 'C minor')).toContain('Picardy');
   });
 
-  it('iv→V in minor = Phrygian Half Cadence', () => {
-    const iv = chord('Fm');
+  it('iv6→V in minor = Phrygian Half Cadence (bass Ab → G); iv in root position is a half cadence', () => {
     const V = chord('G');
-    expect(Harmony.analyzeCadence(iv, V, 'C minor')).toContain('Phrygian Half');
+    expect(Harmony.analyzeCadence(chord('Fm/Ab'), V, 'C minor')).toContain('Phrygian Half');
+    expect(Harmony.analyzeCadence(chord('Fm'), V, 'C minor')).toBe('Half Cadence (-> V)');
   });
 
   it('subV7→I = Tritone Sub Resolution', () => {
