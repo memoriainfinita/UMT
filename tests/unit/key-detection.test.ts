@@ -3,7 +3,7 @@
  * Krumhansl-Schmuckler key finding.
  */
 import { describe, it, expect } from 'vitest';
-import { KeyDetection } from '../../lib/music-theory/key-detection';
+import { KeyDetection, KEY_PROFILES, KeyProfileName } from '../../lib/music-theory/key-detection';
 import { parseNote } from '../../lib/music-theory/parser';
 import { EDO } from '../../lib/music-theory/tuning';
 import { Note } from '../../lib/music-theory/note';
@@ -56,5 +56,31 @@ describe('KeyDetection', () => {
     // 24-EDO steps from A4 doubled from the C major scale: same key.
     const cMajor = [-18, -14, -10, -8, -4, 0, 4].map(s => new Note(edo24, s));
     expect(top(KeyDetection.detect(cMajor))).toBe('C Major');
+  });
+});
+
+describe('KeyDetection profiles (Humdrum keycor presets)', () => {
+  // melodies that dwell on the tonic triad (a bare scale is ambiguous between relative keys)
+  const cMajor = notes(['C4', 'E4', 'G4', 'C5', 'B4', 'C5', 'G4', 'E4', 'F4', 'D4', 'C4', 'G4', 'C4']);
+  const aHarmonic = notes(['A3', 'C4', 'E4', 'A4', 'G#4', 'A4', 'E4', 'C4', 'D4', 'B3', 'A3', 'E4', 'A3']);
+
+  it('every preset finds C major and A minor in melodies on their tonic triads', () => {
+    for (const profile of Object.keys(KEY_PROFILES) as KeyProfileName[]) {
+      expect(top(KeyDetection.detect(cMajor, undefined, { profile })), profile).toBe('C Major');
+      expect(top(KeyDetection.detect(aHarmonic, undefined, { profile })), profile).toBe('A Minor');
+    }
+  });
+
+  it('default is Krumhansl-Kessler; profiles differ in confidence', () => {
+    expect(KeyDetection.majorProfile).toEqual([...KEY_PROFILES.krumhansl.major]);
+    const k = KeyDetection.detect(cMajor)[0].confidence;
+    const t = KeyDetection.detect(cMajor, undefined, { profile: 'temperley' })[0].confidence;
+    expect(k).not.toBeCloseTo(t, 3);
+  });
+
+  it('custom profiles, checked for 12 weights', () => {
+    const flat = { major: new Array(12).fill(1).map((_, i) => (i === 0 ? 2 : 1)), minor: new Array(12).fill(1), source: 'test' };
+    expect(KeyDetection.detectFromHistogram([5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], { profile: flat })[0].key).toBe('C Major');
+    expect(() => KeyDetection.detectFromHistogram([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], { profile: { major: [1], minor: [1], source: '' } })).toThrow(RangeError);
   });
 });
