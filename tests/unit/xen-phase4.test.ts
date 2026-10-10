@@ -11,6 +11,8 @@ import { Xen } from '../../lib/music-theory/xen';
 import { parseScala } from '../../lib/music-theory/scala';
 import { Spectral } from '../../lib/music-theory/spectral';
 import { Harmony } from '../../lib/music-theory/harmony';
+import { FiguredBass } from '../../lib/music-theory/figured-bass';
+import { Counterpoint } from '../../lib/music-theory/counterpoint';
 
 describe('Tonnetz', () => {
   it('every pitch class once in x 0..3, y 0..2, with pc = 7x + 4y', () => {
@@ -154,5 +156,22 @@ describe('getSuggestedScales root in other tunings', () => {
     const scales = Harmony.getSuggestedScales(g7).map(s => s.scale);
     expect(scales.length).toBeGreaterThan(0);
     expect(scales.every(s => s.startsWith('G '))).toBe(true);
+  });
+});
+
+describe('12-TET assumptions removed from figured bass and counterpoint', () => {
+  const e24 = new EDO(24);
+  it('FiguredBass.realize and voices in 24-EDO give the same notes as in 12-TET', () => {
+    const c12 = FiguredBass.realize(parseNote('E4'), '6', 'C major');
+    const c24 = FiguredBass.realize(new Note(e24, -10), '6', 'C major'); // E4 = -5 semitones = -10 quarter tones
+    expect(c24.intervalsInSteps).toEqual(c12.intervalsInSteps.map(i => i * 2));
+    const v = FiguredBass.voices(new Note(e24, -34), '', 'C major'); // C3
+    expect(v.map(n => Math.abs(n.stepsFromBase % 2))).toEqual([0, 0, 0, 0]); // whole semitones
+  });
+
+  it('checkSpecies reads intervals in semitones in 24-EDO', () => {
+    const q = (semis: number[]) => semis.map(s => new Note(e24, s * 2));
+    const issues = Counterpoint.checkSpecies(1, q([-9, -7, -9]), q([-5, -4, -2])); // C D C against E F G
+    expect(issues.filter(i => i.type.includes('Dissonance'))).toEqual([]);
   });
 });

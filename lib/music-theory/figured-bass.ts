@@ -5,6 +5,7 @@
 import { Note } from './note';
 import { Chord } from './chord';
 import { parseScaleSymbol } from './parser';
+import { EDO } from './tuning';
 
 // Default semitone offsets per figure numeral (when no accidental)
 const FIGURE_DEFAULT_SEMITONES: Record<number, number> = {
@@ -130,7 +131,11 @@ export class FiguredBass {
     const ts = bassNote.tuningSystem;
     const parts = this.completeFigures(this.parseFigureParts(figures)).sort((a, b) => a.num - b.num);
     const diatonicPCs = this.getDiatonicPCs(keySymbol);
-    const bassPcC0 = ((bassNote.stepsFromBase + 9) % 12 + 12) % 12;
+    // 12-TET pitch class of the bass (nearest semitone in other tunings)
+    const bassSemis = ts instanceof EDO && ts.divisions === 12
+      ? bassNote.stepsFromBase
+      : Math.round(12 * Math.log2(bassNote.frequency / 440));
+    const bassPcC0 = ((bassSemis + 9) % 12 + 12) % 12;
 
     const intervals = parts.map(({ num, acc }) => {
       const defaultSemitones = FIGURE_DEFAULT_SEMITONES[num] ?? (num - 1);
@@ -141,7 +146,7 @@ export class FiguredBass {
     });
 
     const name = `${bassNote.getName()}-${figures || '5/3'}`;
-    return new Chord(name, ts, bassNote.stepsFromBase, [0, ...intervals]);
+    return new Chord(name, ts, bassNote.stepsFromBase, [0, ...intervals.map(i => ts.getStepFromStandard(i))]);
   }
 
   /**
@@ -185,15 +190,17 @@ export class FiguredBass {
       if (remaining.length <= 3) {
         upperPcs = remaining;
       } else {
-        const fifth = ((bassPc + 7) % oct + oct) % oct;
+        const fifth = ((bassPc + ts.getStepFromStandard(7)) % oct + oct) % oct;
         upperPcs = remaining.filter(pc => pc !== fifth).slice(0, 3);
       }
     }
 
-    // Vocal ranges (stepsFromBase, A4=0, 12-TET: C4=-9, G5=10, G3=-14, C5=3, C3=-21, G4=-2)
-    const T_MIN = -21, T_MAX = -2;
-    const A_MIN = -14, A_MAX = 3;
-    const S_MIN = -9,  S_MAX = 10;
+    // Vocal ranges, in 12-TET semitones from A4 mapped to this tuning's steps
+    // (C4 = -9, G5 = 10, G3 = -14, C5 = 3, C3 = -21, G4 = -2)
+    const st = (semitones: number) => ts.getStepFromStandard(semitones);
+    const T_MIN = st(-21), T_MAX = st(-2);
+    const A_MIN = st(-14), A_MAX = st(3);
+    const S_MIN = st(-9),  S_MAX = st(10);
 
     // Returns all steps in [min, max] whose pitch class equals pc
     const stepsInRange = (pc: number, min: number, max: number): number[] => {
@@ -218,15 +225,15 @@ export class FiguredBass {
     for (const [tPc, aPc, sPc] of perms(upperPcs)) {
       for (const tStep of stepsInRange(tPc, T_MIN, T_MAX)) {
         if (tStep < bassStep) continue;               // tenor above bass
-        if (tStep - bassStep > 19) continue;          // T-B max 12th
+        if (tStep - bassStep > st(19)) continue;          // T-B max 12th
 
         for (const aStep of stepsInRange(aPc, A_MIN, A_MAX)) {
           if (aStep < tStep) continue;                // alto above tenor
-          if (aStep - tStep > 12) continue;           // A-T max octave
+          if (aStep - tStep > st(12)) continue;           // A-T max octave
 
           for (const sStep of stepsInRange(sPc, S_MIN, S_MAX)) {
             if (sStep < aStep) continue;              // soprano above alto
-            if (sStep - aStep > 12) continue;         // S-A max octave
+            if (sStep - aStep > st(12)) continue;         // S-A max octave
 
             // Score: prefer moderate total span and voices near middle of ranges
             const tMid = (T_MIN + T_MAX) / 2;

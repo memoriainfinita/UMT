@@ -3,6 +3,7 @@
  */
 import { Note } from './note';
 import { parseNoteToStep12TET } from './utils';
+import { EDO } from './tuning';
 
 /** A rule violation found during species counterpoint analysis. */
 export interface CounterpointIssue {
@@ -24,6 +25,12 @@ function motionType(cf1: number, cf2: number, ct1: number, ct2: number): 'contra
 
 const PERFECT_CONSONANCES = new Set([0, 7, 12]); // unison, P5, P8 (steps)
 const IMPERFECT_CONSONANCES = new Set([3, 4, 8, 9]); // m3, M3, m6, M6
+
+/** 12-TET semitones from A4 of a note: its step in 12-TET, else the nearest semitone to its frequency. */
+function semi(n: Note): number {
+  const ts = n.tuningSystem;
+  return ts instanceof EDO && ts.divisions === 12 ? n.stepsFromBase : Math.round(12 * Math.log2(n.frequency / 440));
+}
 
 // Pitch class (mod 12, steps from A4) of each mode's finalis on the white keys
 const MODE_FINALIS: Record<string, number> = {
@@ -48,7 +55,7 @@ function modalChecks(mode: string, cf: Note[], counter: Note[], issues: Counterp
   const { finalisPC } = parsed;
 
   // 1. Finalis: CF must start and end on the mode's finalis pitch class
-  const pc = (n: Note) => ((n.stepsFromBase % 12) + 12) % 12;
+  const pc = (n: Note) => ((semi(n) % 12) + 12) % 12;
   if (pc(cf[0]) !== finalisPC)
     issues.push({ type: 'Modal Finalis', description: `CF does not begin on the ${mode} finalis.` });
   if (pc(cf[cf.length - 1]) !== finalisPC)
@@ -56,16 +63,16 @@ function modalChecks(mode: string, cf: Note[], counter: Note[], issues: Counterp
 
   // 2. Ambitus: counterpoint must stay within [-7, +15] semitones of the finalis note
   // (covers authentic range up to a 10th above and plagal range down to a 5th below)
-  const finalisStep = cf[cf.length - 1].stepsFromBase;
+  const finalisStep = semi(cf[cf.length - 1]);
   for (let i = 0; i < counter.length; i++) {
-    const diff = counter[i].stepsFromBase - finalisStep;
+    const diff = semi(counter[i]) - finalisStep;
     if (diff < -7 || diff > 15)
       issues.push({ type: 'Modal Ambitus', beat: i + 1, description: `Beat ${i + 1}: note outside modal ambitus for ${mode}.` });
   }
 
   // 3. Melodic tritone: augmented 4th (6 semitones) in counterpoint motion is forbidden
   for (let i = 1; i < counter.length; i++) {
-    if (Math.abs(counter[i].stepsFromBase - counter[i - 1].stepsFromBase) === 6)
+    if (Math.abs(semi(counter[i]) - semi(counter[i - 1])) === 6)
       issues.push({ type: 'Melodic Tritone', beat: i + 1, description: `Beat ${i + 1}: melodic tritone (A4) in counterpoint.` });
   }
 }
@@ -76,7 +83,8 @@ const SLOTS: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 1, 2: 2, 3: 4, 4: 2, 5: 4 
 /**
  * Checks counterpoint rules for a given species.
  * `cf` = cantus firmus notes; `counter` = counterpoint notes.
- * Notes should be in the same tuning system. Intervals are read in 12-TET semitones.
+ * Notes should be in the same tuning system. Intervals are read in 12-TET semitones (notes
+ * of other tunings at their nearest semitone).
  */
 export class Counterpoint {
   /**
@@ -113,9 +121,9 @@ export class Counterpoint {
     if (cf.length === 0 || counter.length === 0) return issues;
 
     const slots = SLOTS[species];
-    const ic = (k: number) => Math.abs(cf[Math.floor(k / slots)].stepsFromBase - counter[k].stepsFromBase) % 12;
+    const ic = (k: number) => Math.abs(semi(cf[Math.floor(k / slots)]) - semi(counter[k])) % 12;
     const consonant = (k: number) => PERFECT_CONSONANCES.has(ic(k)) || IMPERFECT_CONSONANCES.has(ic(k));
-    const step = (from: number, to: number) => counter[to].stepsFromBase - counter[from].stepsFromBase;
+    const step = (from: number, to: number) => semi(counter[to]) - semi(counter[from]);
     const isStep = (d: number) => d !== 0 && Math.abs(d) <= 2;
     const total = Math.min(counter.length, cf.length * slots);
     const len = Math.ceil(total / slots);
@@ -140,8 +148,8 @@ export class Counterpoint {
       if (i > 0) {
         const prevCF = cf[i - 1];
         const prevCT = counter[k - slots];
-        const prevInterval = Math.abs(prevCF.stepsFromBase - prevCT.stepsFromBase) % 12;
-        const motion = motionType(prevCF.stepsFromBase, cfNote.stepsFromBase, prevCT.stepsFromBase, ctNote.stepsFromBase);
+        const prevInterval = Math.abs(semi(prevCF) - semi(prevCT)) % 12;
+        const motion = motionType(semi(prevCF), semi(cfNote), semi(prevCT), semi(ctNote));
 
         if ((interval === 7 || interval === 0) && prevInterval === interval && motion === 'parallel') {
           const label = interval === 7 ? 'Parallel 5th' : 'Parallel Octave';
