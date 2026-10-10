@@ -1,23 +1,20 @@
+/**
+ * Tests for lib/music-theory/harmony.ts (chromatic).
+ */
 import { describe, it, expect } from 'vitest';
 import { Harmony, BorrowedChord, PivotChord } from '../../lib/music-theory/harmony';
-import { CircleOfFifths, ModalKey } from '../../lib/music-theory/circle';
-import { getSubstitutions, SubstitutionOption } from '../../lib/music-theory/substitution';
 import { parseChordSymbol, parseRomanProgression } from '../../lib/music-theory/parser';
 import { Chord } from '../../lib/music-theory/chord';
-import { TET12 } from '../../lib/music-theory/tuning';
-import { EDO } from '../../lib/music-theory/tuning';
+import { TET12, EDO } from '../../lib/music-theory/tuning';
+import { Note } from '../../lib/music-theory/note';
+import { get12TETBaseName } from '../../lib/music-theory/utils';
 
 function chord(symbol: string): Chord {
   return parseChordSymbol(symbol);
 }
-
 function prog(roman: string, key: string): Chord[] {
   return parseRomanProgression(roman, key);
 }
-
-// ============================================================================
-// 3.1 - getBorrowedChords (breaking change: returns BorrowedChord[])
-// ============================================================================
 
 describe('Harmony.getBorrowedChords - shape', () => {
   it('returns BorrowedChord[] objects with required fields', () => {
@@ -101,10 +98,6 @@ describe('Harmony.getBorrowedChords - C major borrowed chords', () => {
   });
 });
 
-// ============================================================================
-// 3.2 - findPivotChords
-// ============================================================================
-
 describe('Harmony.findPivotChords', () => {
   it('returns PivotChord[] with required fields', () => {
     const pivots = Harmony.findPivotChords('C major', 'G major');
@@ -172,10 +165,6 @@ describe('Harmony.findPivotChords', () => {
   });
 });
 
-// ============================================================================
-// 3.3 - classifyModulation
-// ============================================================================
-
 describe('Harmony.classifyModulation', () => {
   it('returns pivot when transition chord is diatonic to both keys', () => {
     const chordsA = [chord('Cmaj7'), chord('Am7')]; // Am7 is diatonic to both C and G major
@@ -206,179 +195,6 @@ describe('Harmony.classifyModulation', () => {
   });
 });
 
-// ============================================================================
-// 3.4 - CircleOfFifths modal extension
-// ============================================================================
-
-describe('CircleOfFifths.getModalKey', () => {
-  it('D dorian → parent major key is C', () => {
-    const mk = CircleOfFifths.getModalKey('D', 'dorian');
-    expect(mk.root).toBe('D');
-    expect(mk.mode).toBe('dorian');
-    expect(mk.parentMajorKey).toBe('C');
-  });
-
-  it('E phrygian → parent major key is C', () => {
-    const mk = CircleOfFifths.getModalKey('E', 'phrygian');
-    expect(mk.parentMajorKey).toBe('C');
-  });
-
-  it('F lydian → parent major key is C', () => {
-    const mk = CircleOfFifths.getModalKey('F', 'lydian');
-    expect(mk.parentMajorKey).toBe('C');
-  });
-
-  it('A dorian → parent major key is G', () => {
-    const mk = CircleOfFifths.getModalKey('A', 'dorian');
-    expect(mk.parentMajorKey).toBe('G');
-  });
-
-  it('D mixolydian → parent major key is G', () => {
-    const mk = CircleOfFifths.getModalKey('D', 'mixolydian');
-    expect(mk.parentMajorKey).toBe('G');
-  });
-
-  it('C ionian → parent major key is C', () => {
-    const mk = CircleOfFifths.getModalKey('C', 'ionian');
-    expect(mk.parentMajorKey).toBe('C');
-  });
-});
-
-describe('CircleOfFifths.getModalDistance', () => {
-  it('same parent key → distance 0', () => {
-    const a = CircleOfFifths.getModalKey('D', 'dorian');   // parent C
-    const b = CircleOfFifths.getModalKey('E', 'phrygian'); // parent C
-    expect(CircleOfFifths.getModalDistance(a, b)).toBe(0);
-  });
-
-  it('parents 1 step apart → distance 1', () => {
-    const a = CircleOfFifths.getModalKey('D', 'dorian');   // parent C
-    const b = CircleOfFifths.getModalKey('A', 'dorian');   // parent G
-    expect(CircleOfFifths.getModalDistance(a, b)).toBe(1);
-  });
-
-  it('same modal key → distance 0', () => {
-    const a = CircleOfFifths.getModalKey('D', 'dorian');
-    const b = CircleOfFifths.getModalKey('D', 'dorian');
-    expect(CircleOfFifths.getModalDistance(a, b)).toBe(0);
-  });
-});
-
-describe('CircleOfFifths.getModalNeighbors', () => {
-  it('returns non-empty array', () => {
-    const mk = CircleOfFifths.getModalKey('D', 'dorian');
-    const neighbors = CircleOfFifths.getModalNeighbors(mk);
-    expect(neighbors.length).toBeGreaterThan(0);
-  });
-
-  it('D dorian radius=1: includes D mixolydian (1 step brighter)', () => {
-    const mk = CircleOfFifths.getModalKey('D', 'dorian');
-    const neighbors = CircleOfFifths.getModalNeighbors(mk, 1);
-    const modes = neighbors.map(n => n.mode);
-    expect(modes).toContain('mixolydian');
-  });
-
-  it('D dorian radius=1: includes D aeolian (1 step darker)', () => {
-    const mk = CircleOfFifths.getModalKey('D', 'dorian');
-    const neighbors = CircleOfFifths.getModalNeighbors(mk, 1);
-    const modes = neighbors.map(n => n.mode);
-    expect(modes).toContain('aeolian');
-  });
-
-  it('all neighbors have same root as input', () => {
-    const mk = CircleOfFifths.getModalKey('D', 'dorian');
-    const neighbors = CircleOfFifths.getModalNeighbors(mk, 2);
-    expect(neighbors.every(n => n.root === 'D')).toBe(true);
-  });
-});
-
-// ============================================================================
-// 3.5 - getSubstitutions
-// ============================================================================
-
-describe('getSubstitutions', () => {
-  it('returns SubstitutionOption[] with type and explanation', () => {
-    const opts = getSubstitutions(chord('G7'), 'C major');
-    expect(opts.length).toBeGreaterThan(0);
-    const first = opts[0];
-    expect(first).toHaveProperty('chord');
-    expect(first).toHaveProperty('type');
-    expect(first).toHaveProperty('explanation');
-    expect(first.chord).toBeInstanceOf(Chord);
-    expect(typeof first.explanation).toBe('string');
-  });
-
-  it('G7 in C major: tritone sub is Db7', () => {
-    const opts = getSubstitutions(chord('G7'), 'C major');
-    const tritone = opts.find(o => o.type === 'tritone');
-    expect(tritone).toBeDefined();
-    expect(tritone!.chord.name).toBe('Db7');
-  });
-
-  it('G7 in C major: sus4 substitution is Gsus4', () => {
-    const opts = getSubstitutions(chord('G7'), 'C major');
-    const sus = opts.find(o => o.type === 'sus4');
-    expect(sus).toBeDefined();
-    expect(sus!.chord.name).toBe('Gsus4');
-  });
-
-  it('Cmaj7 in C major: diatonic sub includes Em or Em7', () => {
-    const opts = getSubstitutions(chord('Cmaj7'), 'C major');
-    const diatonic = opts.filter(o => o.type === 'diatonic');
-    const names = diatonic.map(o => o.chord.name);
-    expect(names.some(n => n.startsWith('Em'))).toBe(true);
-  });
-
-  it('Cmaj7 in C major: diatonic sub includes Am or Am7', () => {
-    const opts = getSubstitutions(chord('Cmaj7'), 'C major');
-    const diatonic = opts.filter(o => o.type === 'diatonic');
-    const names = diatonic.map(o => o.chord.name);
-    expect(names.some(n => n.startsWith('Am'))).toBe(true);
-  });
-
-  it('G7 in C major: deceptive sub is Am or Am7', () => {
-    const opts = getSubstitutions(chord('G7'), 'C major');
-    const deceptive = opts.find(o => o.type === 'deceptive');
-    expect(deceptive).toBeDefined();
-    expect(deceptive!.chord.name).toMatch(/^Am/);
-  });
-
-  const names = (symbol: string, key: string, type?: string) =>
-    getSubstitutions(chord(symbol), key).filter(o => !type || o.type === type).map(o => o.chord.name);
-
-  it('ii takes IV, and the minor subdominant family', () => {
-    expect(names('Dm7', 'C major', 'diatonic')).toEqual(['Fmaj7']);
-    expect(names('Dm7', 'C major', 'modal')).toEqual(['Fm7', 'Bb7', 'Dm7b5']);
-  });
-
-  it('iv borrowed in major takes the rest of its family and IV', () => {
-    expect(names('Fm', 'C major')).toEqual(['Bb7', 'Dm7b5', 'F']);
-  });
-
-  it('V7 takes viiø7, and back', () => {
-    expect(names('G7', 'C major', 'diatonic')).toEqual(['Bm7b5']);
-    expect(names('Bm7b5', 'C major', 'diatonic')).toEqual(['G7']);
-  });
-
-  it('minor keys: i takes III and VI with the key spelling', () => {
-    expect(names('Am', 'A minor', 'diatonic')).toEqual(['C', 'F']);
-    expect(names('Am', 'A minor', 'modal')).toEqual([]);
-  });
-
-  it('sharp keys keep letter spelling: IV in F# major takes G#m7', () => {
-    expect(names('Bmaj7', 'F# major', 'diatonic')).toEqual(['G#m7']);
-    expect(names('Bmaj7', 'F# major', 'modal')).toContain('E7');   // bVII7 of F#
-  });
-
-  it('a chromatic chord gets no diatonic substitute', () => {
-    expect(names('Eb', 'C major', 'diatonic')).toEqual([]);
-  });
-});
-
-// ============================================================================
-// 3.6 - getNegativeProgression
-// ============================================================================
-
 describe('Harmony.getNegativeProgression', () => {
   it('returns empty array for empty input', () => {
     const result = Harmony.getNegativeProgression([], 'C major');
@@ -404,10 +220,6 @@ describe('Harmony.getNegativeProgression', () => {
     result.forEach(c => expect(c).toBeInstanceOf(Chord));
   });
 });
-
-// ============================================================================
-// 3.7 - Coltrane axis
-// ============================================================================
 
 describe('Harmony.getColtraneAxis', () => {
   it('getColtraneAxis("C") contains E and Ab as major-third-related roots', () => {
@@ -459,5 +271,76 @@ describe('Harmony.getColtraneSubstitutions', () => {
   it('each substitution is a Chord instance', () => {
     const subs = Harmony.getColtraneSubstitutions(chord('C7'), 'C major');
     subs.forEach(s => expect(s).toBeInstanceOf(Chord));
+  });
+});
+
+describe('Harmony.retrogradeProgression', () => {
+  it('reverses chord order', () => {
+    const chords = [chord('C'), chord('Am'), chord('F'), chord('G')];
+    const retro = Harmony.retrogradeProgression(chords);
+    expect(retro[0].name).toBe(chords[3].name);
+    expect(retro[1].name).toBe(chords[2].name);
+    expect(retro[2].name).toBe(chords[1].name);
+    expect(retro[3].name).toBe(chords[0].name);
+  });
+
+  it('returns Chord[] of same length', () => {
+    const chords = prog('I V vi IV', 'C major');
+    const retro = Harmony.retrogradeProgression(chords);
+    expect(retro.length).toBe(chords.length);
+    expect(retro.every(c => c instanceof Chord)).toBe(true);
+  });
+
+  it('empty input returns empty', () => {
+    expect(Harmony.retrogradeProgression([])).toEqual([]);
+  });
+});
+
+describe('Harmony.invertProgression', () => {
+  it('returns Chord[] of same length', () => {
+    const chords = prog('I V vi IV', 'C major');
+    const axis = new Note(TET12, 0); // A4
+    const inverted = Harmony.invertProgression(chords, axis);
+    expect(inverted.length).toBe(chords.length);
+    expect(inverted.every(c => c instanceof Chord)).toBe(true);
+  });
+
+  it('I → I when axis is the tonic root', () => {
+    // C major: C is at step -9 in TET12 (C4). Axis = C4 (-9).
+    const chords = [chord('C')];
+    const axis = new Note(TET12, -9); // C4
+    const inv = Harmony.invertProgression(chords, axis);
+    // Root of inverted C around C axis should still be C
+    expect(((inv[0].rootStep % 12) + 12) % 12).toBe(((chords[0].rootStep % 12) + 12) % 12);
+  });
+
+  it('empty input returns empty', () => {
+    expect(Harmony.invertProgression([], new Note(TET12, 0))).toEqual([]);
+  });
+});
+
+describe('Harmony.getNegativeHarmony', () => {
+  it('sets the root to the root of the chord it names', () => {
+    // C major triad in C: axis between E and Eb → C minor triad
+    const neg = Harmony.getNegativeHarmony(parseChordSymbol('C'), 'C major');
+    expect(neg.name).toBe('Cm');
+    expect(get12TETBaseName(neg.rootStep)).toBe('C');
+  });
+
+  it('a lowest note that is not the root becomes the bass', () => {
+    // C E G A in C → G Eb C Bb; lowest is Bb3, the chord is C minor seventh
+    const neg = Harmony.getNegativeHarmony(parseChordSymbol('C6'), 'C major');
+    expect(neg.name).toBe('Cm7/Bb');
+    expect(get12TETBaseName(neg.rootStep)).toBe('C');
+    expect(get12TETBaseName(neg.getNotes()[0].stepsFromBase, true)).toBe('Bb');
+  });
+
+  it('keeps every reflected pitch class', () => {
+    const neg = Harmony.getNegativeHarmony(parseChordSymbol('G7'), 'C major');
+    // G B D F → C Ab F D
+    expect(new Set(neg.getNotes().map(n => ((n.stepsFromBase % 12) + 12) % 12)))
+      .toEqual(new Set([3, 11, 8, 5]));
+    const pc = (s: number) => ((s % 12) + 12) % 12;
+    expect(pc(neg.rootStep)).toBe(pc(parseChordSymbol(neg.name).rootStep));
   });
 });

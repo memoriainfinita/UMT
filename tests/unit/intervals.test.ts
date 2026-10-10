@@ -1,3 +1,6 @@
+/**
+ * Tests for lib/music-theory/intervals.ts.
+ */
 import { describe, it, expect } from 'vitest';
 import { getIntervalName, getIntervalBetween, getSemanticIntervalName } from '../../lib/music-theory/utils';
 

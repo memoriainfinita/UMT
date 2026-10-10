@@ -1,3 +1,6 @@
+/**
+ * Tests for lib/music-theory/scale.ts (spelling).
+ */
 import { describe, it, expect } from 'vitest';
 import { parseScaleSymbol } from '../../lib/music-theory/parser';
 import { spellByLetter } from '../../lib/music-theory/utils';
@@ -52,5 +55,21 @@ describe('spellByLetter', () => {
 
   it('returns null beyond double accidentals', () => {
     expect(spellByLetter(-6, 'C', 0)).toBeNull();    // Eb as C###
+  });
+});
+
+describe('Scale.transpose and getMode - names', () => {
+  it('transpose keeps the type: C major +2 is D major', () => {
+    expect(parseScaleSymbol('C major').transpose(2).name).toBe('D major');
+    expect(parseScaleSymbol('D dorian').transpose(1).name).toBe('Eb dorian');
+  });
+  it('getMode names the mode of the family', () => {
+    expect(parseScaleSymbol('C major').getMode(2).name).toBe('D dorian');
+    expect(parseScaleSymbol('A minor').getMode(3).name).toBe('C ionian');
+    expect(parseScaleSymbol('A harmonic minor').getMode(5).name).toBe('E phrygian dominant');
+    expect(parseScaleSymbol('F# major').getMode(7).name).toBe('E# locrian');
+  });
+  it('a scale outside the families says which mode it is', () => {
+    expect(parseScaleSymbol('C pentatonic major').getMode(2).name).toBe('D (mode 2 of C pentatonic major)');
   });
 });

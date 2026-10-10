@@ -1,30 +1,144 @@
+/**
+ * Tests for lib/music-theory/harmony.ts (analysis).
+ */
 import { describe, it, expect } from 'vitest';
 import { Harmony } from '../../lib/music-theory/harmony';
 import { parseChordSymbol, parseRomanProgression, parseNote } from '../../lib/music-theory/parser';
+import { NOTE_NAMES_12TET_FLAT, parseNoteToStep12TET } from '../../lib/music-theory/utils';
 import { Chord } from '../../lib/music-theory/chord';
 import { Note } from '../../lib/music-theory/note';
 import { TET12 } from '../../lib/music-theory/tuning';
-import { parseNoteToStep12TET } from '../../lib/music-theory/utils';
 
-// ============================================================================
-// Helpers
-// ============================================================================
-
+const pcSet = (pcs: number[]) => [...new Set(pcs)].sort((a, b) => a - b).join(',');
 function step(name: string, octave = 4): Note {
   return new Note(TET12, parseNoteToStep12TET(name, octave));
 }
-
 function chord(symbol: string): Chord {
   return parseChordSymbol(symbol);
 }
-
 function prog(roman: string, key: string): Chord[] {
   return parseRomanProgression(roman, key);
 }
+const notes = (...names: string[]) => names.map(n => parseNote(n));
 
-// ============================================================================
-// analyzeProgression - 2.1
-// ============================================================================
+describe('analyzeProgression numerals read back with parseRomanProgression', () => {
+  const qualities = ['', 'm', 'dim', 'aug', '7', 'maj7', 'm7', 'm7b5', 'dim7', 'sus4'];
+  for (const key of ['C major', 'A minor', 'Eb major', 'F# minor']) {
+    it(key, () => {
+      const failures: string[] = [];
+      for (const root of NOTE_NAMES_12TET_FLAT) {
+        for (const q of qualities) {
+          const chord = parseChordSymbol(root + q);
+          const { roman } = Harmony.analyzeProgression([chord], key).analysis[0];
+          let back = '';
+          try { back = pcSet(parseRomanProgression(roman, key)[0].getPitchClasses()); } catch { back = 'error'; }
+          if (back !== pcSet(chord.getPitchClasses())) failures.push(`${root}${q} → ${roman}`);
+        }
+      }
+      expect(failures).toEqual([]);
+    });
+  }
+});
+
+describe('analyzeProgression spelling option', () => {
+  // one chord at a time: no progression context (modulations)
+  const romans = (names: string[], key: string, spelling?: 'key' | 'written') =>
+    names.map(n => Harmony.analyzeProgression([parseChordSymbol(n)], key, { spelling }).analysis[0].roman);
+
+  it('key spelling (default) reads chromatic roots as the key writes them', () => {
+    expect(romans(['Gb', 'C#'], 'C major')).toEqual(['#IV', 'bII']);
+  });
+
+  it('written spelling keeps the letter of the name', () => {
+    expect(romans(['Gb', 'C#', 'D#m', 'A#m', 'Bbdim', 'Ebdim'], 'C major', 'written'))
+      .toEqual(['bV', '#I', '#ii', '#vi', 'bvii°', 'biii°']);
+    expect(romans(['Ab', 'Eb', 'Ebm', 'Db', 'Gb'], 'A minor', 'written'))
+      .toEqual(['bI', 'bV', 'bv', 'bIV', 'bVII']);
+  });
+
+  it('written spelling leaves diatonic chords as they are', () => {
+    expect(romans(['C', 'Dm7', 'G7', 'F#m7b5'], 'G major', 'written')).toEqual(['IV', 'vm7', 'I7', 'viiø7']);
+  });
+});
+
+describe('harmony.ts analysis fixes', () => {
+  const chords = (names: string[]) => names.map(n => parseChordSymbol(n));
+
+  it('detectModulations picks the best-correlated key, not the first by pitch class', () => {
+    const { modulations } = Harmony.analyzeProgression(chords(['G', 'D', 'G', 'C', 'F', 'C', 'F', 'G7', 'C']), 'G major');
+    expect(modulations.map(m => m.toKey)).toEqual(['C major']);
+  });
+
+  it('detectSequence: rising steps ascend; diatonic circle with a tritone', () => {
+    expect(Harmony.detectSequence(chords(['D', 'E', 'F#', 'G#'])).type).toBe('parallel-ascending');
+    expect(Harmony.detectSequence(chords(['D', 'C', 'Bb', 'Ab'])).type).toBe('parallel-descending');
+    expect(Harmony.detectSequence(chords(['C', 'F', 'Bdim', 'Em', 'Am', 'Dm', 'G', 'C'])).type)
+      .toBe('diatonic-circle-of-fifths-descending');
+  });
+
+  it('respellChord keeps extensions and slash bass', () => {
+    expect(Harmony.respellChord(parseChordSymbol('C#9'), { direction: 'descending' }).name).toBe('Db9');
+    expect(Harmony.respellChord(parseChordSymbol('C#/G#'), { direction: 'descending' }).name).toBe('Db/Ab');
+    expect(Harmony.respellChord(parseChordSymbol('C9'), { keySymbol: 'C major' }).name).toBe('C9');
+    expect(Harmony.respellChord(parseChordSymbol('C#m7'), { keySymbol: 'Db major' }).name).toBe('Dbm7');
+  });
+
+  it('respellNote in a key uses the key spelling', () => {
+    expect(Harmony.respellNote(parseNote('F#4'), { keySymbol: 'Db major' }).name).toBe('Gb4');
+    expect(Harmony.respellNote(parseNote('Gb4'), { keySymbol: 'C major' }).name).toBe('F#4');
+  });
+
+  it('voiceLeadingSmoothness counts every voice, not just the root', () => {
+    const toRelative = Harmony.voiceLeadingSmoothness(chords(['C', 'Am']));
+    const toTritone = Harmony.voiceLeadingSmoothness(chords(['C', 'F#']));
+    expect(toRelative).toBeGreaterThan(toTritone);
+    expect(Harmony.voiceLeadingSmoothness(chords(['C', 'C']))).toBe(1);
+  });
+
+  it('voice overlap is checked between adjacent voices only', () => {
+    const a = ['C3', 'E3', 'G3', 'C4'].map(n => parseNote(n));
+    const b = ['A3', 'C4', 'E4', 'G4'].map(n => parseNote(n));
+    const overlaps = Harmony.checkVoiceLeading(a, b, 'contemporary').filter(i => i.type === 'Voice Overlap');
+    expect(overlaps.every(o => o.voices[1] - o.voices[0] === 1)).toBe(true);
+    expect(overlaps).toHaveLength(3);
+  });
+});
+
+describe('analyzeProgression after MODUS notes (modulation, local key, harmonic rhythm, Phrygian)', () => {
+  const run = (names: string, key: string, options = {}) =>
+    Harmony.analyzeProgression(names.split(' ').map(n => parseChordSymbol(n)), key, options);
+  const mods = (r: ReturnType<typeof run>) => r.modulations.map(m => [m.atIndex, m.toKey, m.type]);
+
+  it('modulates to the key confirmed by a cadence, at the first foreign chord', () => {
+    expect(mods(run('C F G C Am D7 G Em Am D7 G', 'C major'))).toEqual([[5, 'G major', 'pivot']]);
+    expect(mods(run('C F G7 C Eb Ab Bb7 Eb', 'C major'))).toEqual([[4, 'Eb major', 'direct']]);
+    expect(mods(run('C F G C Am Dm E7 Am Dm E7 Am', 'C major'))).toEqual([[6, 'A minor', 'pivot']]);
+  });
+
+  it('a tonicization of fewer than three chords is not a modulation', () => {
+    expect(mods(run('C Am Dm G7 C E7 Am D7 G', 'C major'))).toEqual([]);
+  });
+
+  it('numerals and cadences after a modulation are in the new key', () => {
+    const r = run('C F G C Am D7 G Em', 'C major');
+    expect(r.analysis.map(a => a.key)).toEqual(['C major', 'C major', 'C major', 'C major', 'C major', 'G major', 'G major', 'G major']);
+    expect(r.analysis[5].roman).toBe('V7');
+    expect(r.analysis[5].cadenceWithNext).toBe('Authentic Cadence (V -> I)');
+  });
+
+  it('harmonic rhythm per bar with durations', () => {
+    const r = run('C F G7 C', 'C major', { durations: [4, 2, 2, 4] });
+    expect(r.harmonicRhythmUnit).toBe('per-bar');
+    expect(r.harmonicRhythm).toBe(1); // 3 changes in 3 bars
+    expect(run('C F', 'C major').harmonicRhythmUnit).toBe('per-chord');
+    expect(() => run('C F', 'C major', { durations: [4] })).toThrow(RangeError);
+  });
+
+  it('Phrygian half cadence needs the bass falling from the 6th to the 5th', () => {
+    expect(run('Dm E7', 'A minor').analysis[0].cadenceWithNext).toBe('Half Cadence (-> V)');
+    expect(run('Dm/F E7', 'A minor').analysis[0].cadenceWithNext).toBe('Phrygian Half Cadence (iv -> V)');
+  });
+});
 
 describe('Harmony.analyzeProgression - basic', () => {
   it('C major I-IV-V-I: all diatonic, correct roman numerals', () => {
@@ -234,10 +348,6 @@ describe('Harmony.analyzeProgression - modulations', () => {
   });
 });
 
-// ============================================================================
-// analyzeCadence - 2.2 (new cadences)
-// ============================================================================
-
 describe('Harmony.analyzeCadence - existing cadences', () => {
   it('V→I = Authentic', () => {
     const [v, i] = prog('V I', 'C major');
@@ -299,243 +409,6 @@ describe('Harmony.analyzeCadence - new cadences', () => {
   });
 });
 
-// ============================================================================
-// checkVoiceLeading - 2.3 rewrite
-// ============================================================================
-
-describe('Harmony.checkVoiceLeading - existing behavior preserved', () => {
-  it('parallel 5ths detected in strict mode', () => {
-    // C-G → D-A (both move up a step with a 5th between)
-    const cA = [step('C'), step('G')];
-    const cB = [step('D'), step('A')];
-    const issues = Harmony.checkVoiceLeading(cA, cB, 'strict');
-    expect(issues.some(i => i.type === 'Parallel 5th')).toBe(true);
-  });
-
-  it('parallel octaves detected in strict mode', () => {
-    const cA = [step('C', 3), step('C', 4)];
-    const cB = [step('D', 3), step('D', 4)];
-    const issues = Harmony.checkVoiceLeading(cA, cB, 'strict');
-    expect(issues.some(i => i.type === 'Parallel Octave')).toBe(true);
-  });
-
-  it('contemporary mode does not flag parallel 5ths', () => {
-    const cA = [step('C'), step('G')];
-    const cB = [step('D'), step('A')];
-    const issues = Harmony.checkVoiceLeading(cA, cB, 'contemporary');
-    expect(issues.some(i => i.type === 'Parallel 5th')).toBe(false);
-  });
-
-  it('voice crossing detected', () => {
-    const cA = [step('C', 4), step('E', 4)];
-    const cB = [step('G', 4), step('D', 4)]; // bass crosses above tenor
-    const issues = Harmony.checkVoiceLeading(cA, cB, 'strict');
-    expect(issues.some(i => i.type === 'Voice Crossing')).toBe(true);
-  });
-
-  it('voice overlap detected', () => {
-    const cA = [step('C', 4), step('G', 4)];
-    const cB = [step('A', 4), step('E', 4)]; // bass rises above previous tenor
-    const issues = Harmony.checkVoiceLeading(cA, cB, 'strict');
-    expect(issues.some(i => i.type === 'Voice Overlap')).toBe(true);
-  });
-
-  it('clean voice leading returns no issues', () => {
-    const cA = [step('C', 3), step('E', 4), step('G', 4)];
-    const cB = [step('C', 3), step('F', 4), step('A', 4)]; // C→C, E→F, G→A
-    const issues = Harmony.checkVoiceLeading(cA, cB, 'strict');
-    const serious = issues.filter(i => i.type === 'Parallel 5th' || i.type === 'Parallel Octave');
-    expect(serious).toHaveLength(0);
-  });
-});
-
-describe('Harmony.checkVoiceLeading - new issue types', () => {
-  it('leading tone unresolved detected in V→IV context', () => {
-    // G7 → F: B (leading tone) does not resolve to C
-    const chordA = [step('G', 3), step('B', 3), step('D', 4), step('F', 4)]; // G7
-    const chordB = [step('F', 3), step('A', 3), step('C', 4), step('F', 4)]; // F major
-    const issues = Harmony.checkVoiceLeading(chordA, chordB, 'strict', {
-      keySymbol: 'C major',
-      chordA: chord('G7'),
-    });
-    expect(issues.some(i => i.type === 'Leading Tone Unresolved')).toBe(true);
-  });
-
-  it('leading tone resolved: no issue when B→C', () => {
-    // G7 → C: B resolves to C correctly
-    const chordA = [step('G', 3), step('B', 3), step('D', 4), step('F', 4)]; // G7
-    const chordB = [step('C', 3), step('C', 4), step('E', 4), step('G', 4)]; // C major
-    const issues = Harmony.checkVoiceLeading(chordA, chordB, 'strict', {
-      keySymbol: 'C major',
-      chordA: chord('G7'),
-    });
-    expect(issues.some(i => i.type === 'Leading Tone Unresolved')).toBe(false);
-  });
-
-  it('7th unresolved detected in dom7 chord', () => {
-    // G7 → C: F (7th) should resolve down by step to E
-    const chordA = [step('G', 3), step('B', 3), step('D', 4), step('F', 4)]; // G7
-    const chordB = [step('C', 3), step('E', 3), step('G', 4), step('C', 5)]; // C - F→C leaps, not step down
-    const issues = Harmony.checkVoiceLeading(chordA, chordB, 'strict', {
-      keySymbol: 'C major',
-      chordA: chord('G7'),
-    });
-    expect(issues.some(i => i.type === '7th Unresolved')).toBe(true);
-  });
-
-  it('7th resolved correctly: no issue when F→E', () => {
-    // Soprano carries the 7th (F4) and resolves down by step to E4
-    const chordA = [step('G', 3), step('B', 3), step('D', 4), step('F', 4)]; // G7
-    const chordB = [step('C', 3), step('G', 3), step('C', 4), step('E', 4)]; // C - voice 3: F→E (−1 semitone)
-    const issues = Harmony.checkVoiceLeading(chordA, chordB, 'strict', {
-      keySymbol: 'C major',
-      chordA: chord('G7'),
-    });
-    expect(issues.some(i => i.type === '7th Unresolved')).toBe(false);
-  });
-
-  it('forbidden leap > octave detected', () => {
-    // Voice leaps a 9th
-    const cA = [step('C', 3), step('E', 4)];
-    const cB = [step('C', 3), step('G', 5)]; // top voice leaps a 10th (17 semitones)
-    const issues = Harmony.checkVoiceLeading(cA, cB, 'strict');
-    expect(issues.some(i => i.type === 'Forbidden Leap')).toBe(true);
-  });
-
-  it('hidden fifth flagged in outer voices under strict', () => {
-    // Outer voices move same direction by leap in top voice into a 5th
-    const cA = [step('C', 3), step('E', 4)];
-    const cB = [step('G', 3), step('D', 5)]; // both up, top leaps into P5
-    const issues = Harmony.checkVoiceLeading(cA, cB, 'strict');
-    expect(issues.some(i => i.type === 'Hidden Fifth' || i.type === 'Direct Fifth')).toBe(true);
-  });
-
-  it('species ruleset: parallel 5ths still flagged', () => {
-    const cA = [step('C'), step('G')];
-    const cB = [step('D'), step('A')];
-    const issues = Harmony.checkVoiceLeading(cA, cB, 'species');
-    expect(issues.some(i => i.type === 'Parallel 5th')).toBe(true);
-  });
-
-  it('context optional: no crash without keySymbol', () => {
-    const cA = [step('G', 3), step('B', 3), step('D', 4)];
-    const cB = [step('C', 3), step('E', 4), step('G', 4)];
-    expect(() => Harmony.checkVoiceLeading(cA, cB, 'strict')).not.toThrow();
-  });
-});
-
-// ============================================================================
-// checkDoubling - 2.4
-// ============================================================================
-
-describe('Harmony.checkDoubling', () => {
-  it('no issues for correctly voiced C major triad', () => {
-    const voicing = [step('C', 3), step('E', 4), step('G', 4), step('C', 5)];
-    const issues = Harmony.checkDoubling(voicing, chord('C'), 'C major');
-    expect(issues).toHaveLength(0);
-  });
-
-  it('missing third flagged when 3rd absent', () => {
-    const voicing = [step('C', 3), step('G', 4), step('C', 5)]; // no E
-    const issues = Harmony.checkDoubling(voicing, chord('C'));
-    expect(issues.some(i => i.type === 'Missing Third')).toBe(true);
-  });
-
-  it('missing root flagged when root absent', () => {
-    const voicing = [step('E', 4), step('G', 4), step('B', 4)]; // no C
-    const issues = Harmony.checkDoubling(voicing, chord('C'));
-    expect(issues.some(i => i.type === 'Missing Root')).toBe(true);
-  });
-
-  it('doubled leading tone flagged', () => {
-    // In C major, B is the leading tone. Two voices on B.
-    const voicing = [step('G', 3), step('B', 3), step('D', 4), step('B', 4)];
-    const issues = Harmony.checkDoubling(voicing, chord('G'), 'C major');
-    expect(issues.some(i => i.type === 'Doubled Leading Tone')).toBe(true);
-  });
-
-  it('no doubled leading tone when only one B', () => {
-    const voicing = [step('G', 3), step('B', 3), step('D', 4), step('G', 4)];
-    const issues = Harmony.checkDoubling(voicing, chord('G'), 'C major');
-    expect(issues.some(i => i.type === 'Doubled Leading Tone')).toBe(false);
-  });
-
-  it('doubled third in major triad flagged in strict context', () => {
-    // C major with two E's
-    const voicing = [step('C', 3), step('E', 3), step('E', 4), step('G', 4)];
-    const issues = Harmony.checkDoubling(voicing, chord('C'), 'C major');
-    expect(issues.some(i => i.type === 'Improper Doubling')).toBe(true);
-  });
-
-  it('doubled root in major triad is fine', () => {
-    const voicing = [step('C', 3), step('E', 4), step('G', 4), step('C', 5)];
-    const issues = Harmony.checkDoubling(voicing, chord('C'), 'C major');
-    expect(issues.some(i => i.type === 'Improper Doubling')).toBe(false);
-  });
-});
-
-// ============================================================================
-// analyzeSixFour - 2.5
-// ============================================================================
-
-describe('Harmony.analyzeSixFour', () => {
-  function chordWithBass(symbol: string, bassNote: string): Chord {
-    const c = parseChordSymbol(symbol);
-    const bassStep = parseNoteToStep12TET(bassNote, 3);
-    return new Chord(c.name, c.tuningSystem, c.rootStep, c.intervalsInSteps, bassStep, c.preferFlats);
-  }
-
-  it('returns none when chord is not in 2nd inversion', () => {
-    // C/E (1st inversion, not 2nd)
-    const c = chordWithBass('C', 'E');
-    const prog = [chord('G'), c, chord('F')];
-    const result = Harmony.analyzeSixFour(prog, 'C major', 1);
-    expect(result.type).toBe('none');
-  });
-
-  it('cadential 6/4 detected: I6/4 → V → I', () => {
-    // C/G (2nd inversion) → G → C
-    const c64 = chordWithBass('C', 'G');
-    const G = chord('G');
-    const C = chord('C');
-    const progression = [chord('F'), c64, G, C];
-    const result = Harmony.analyzeSixFour(progression, 'C major', 1);
-    expect(result.type).toBe('cadential');
-    expect(result.resolution?.name).toContain('C');
-  });
-
-  it('arpeggiated 6/4 detected when same chord appears in different inversion', () => {
-    // C root pos → C/G → C root pos
-    const c64 = chordWithBass('C', 'G');
-    const C = chord('C');
-    const progression = [C, c64, C];
-    const result = Harmony.analyzeSixFour(progression, 'C major', 1);
-    expect(result.type).toBe('arpeggiated');
-  });
-
-  it('returns none for out-of-range index', () => {
-    const chords = [chord('C'), chord('G')];
-    expect(Harmony.analyzeSixFour(chords, 'C major', 5).type).toBe('none');
-    expect(Harmony.analyzeSixFour(chords, 'C major', -1).type).toBe('none');
-  });
-
-  it('returns none when no bassStep set (root position assumed)', () => {
-    const c = chord('C'); // no bassStep
-    const result = Harmony.analyzeSixFour([chord('F'), c, chord('G')], 'C major', 1);
-    expect(result.type).toBe('none');
-  });
-});
-
-// ============================================================================
-// Total count verification - plan requires ≥ 50 tests
-// ============================================================================
-
-describe('Meta', () => {
-  it('Fase 2 test suite present', () => {
-    expect(true).toBe(true);
-  });
-});
-
 describe('Harmony.analyzeProgression - numeral from the written letter', () => {
   const roman = (sym: string, key: string) => Harmony.analyzeProgression([parseChordSymbol(sym)], key).analysis[0];
   it('F#dim7 in C is #iv°7 (F#, as spelled in the key), not bv°7', () => {
@@ -550,5 +423,54 @@ describe('Harmony.analyzeProgression - numeral from the written letter', () => {
   it('lowered roots in E major: F is bII, C is bVI', () => {
     expect(roman('F', 'E major').roman).toBe('bII');
     expect(roman('C', 'E major').roman).toBe('bVI');
+  });
+});
+
+describe('Harmony.detectSequence', () => {
+  it('detects circle-of-fifths descending (descending fifths: C F Bb Eb Ab Db)', () => {
+    // Each root a perfect fourth higher (= descending fifth)
+    const chords = [chord('C'), chord('F'), chord('Bb'), chord('Eb'), chord('Ab'), chord('Db')];
+    const result = Harmony.detectSequence(chords);
+    expect(result).toBeDefined();
+    expect(result.type).toBe('circle-of-fifths-descending');
+  });
+
+  it('detects pachelbel sequence', () => {
+    const chords = prog('I V vi iii IV I IV V', 'C major');
+    const result = Harmony.detectSequence(chords);
+    expect(result).toBeDefined();
+    expect(result.type).toBe('pachelbel');
+  });
+
+  it('returns unknown for random progression', () => {
+    const chords = [chord('C'), chord('Eb'), chord('Ab'), chord('Db')];
+    const result = Harmony.detectSequence(chords);
+    expect(result.type).toBe('unknown');
+  });
+
+  it('returns confidence between 0 and 1', () => {
+    const chords = prog('I IV viio III vi ii V I', 'C major');
+    const result = Harmony.detectSequence(chords);
+    expect(result.confidence).toBeGreaterThanOrEqual(0);
+    expect(result.confidence).toBeLessThanOrEqual(1);
+  });
+
+  it('detects descending parallel motion (consistent whole-step descent)', () => {
+    // G→F→Eb→Db: each root descends by 2 semitones (whole step)
+    const chords = [chord('G'), chord('F'), chord('Eb'), chord('Db')];
+    const result = Harmony.detectSequence(chords);
+    expect(result.type).toBe('parallel-descending');
+  });
+});
+
+describe('Harmony.analyzeCadence', () => {
+  it('V → VI in a minor key is deceptive', () => {
+    const cad = Harmony.analyzeCadence(parseChordSymbol('E'), parseChordSymbol('F'), 'A minor');
+    expect(cad).toContain('Deceptive');
+  });
+
+  it('V → vi in a major key stays deceptive', () => {
+    const cad = Harmony.analyzeCadence(parseChordSymbol('G'), parseChordSymbol('Am'), 'C major');
+    expect(cad).toContain('Deceptive');
   });
 });

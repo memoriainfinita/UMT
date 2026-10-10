@@ -1,10 +1,36 @@
+/**
+ * Tests for lib/music-theory/figured-bass.ts.
+ */
 import { describe, it, expect } from 'vitest';
+import { parseChordSymbol, parseNote } from '../../lib/music-theory/parser';
 import { FiguredBass } from '../../lib/music-theory/figured-bass';
-import { parseNote, parseChordSymbol } from '../../lib/music-theory/parser';
+import { Note } from '../../lib/music-theory/note';
+import { EDO } from '../../lib/music-theory/tuning';
+import { Chord } from '../../lib/music-theory/chord';
 
-// ============================================================================
-// FiguredBass.parse
-// ============================================================================
+describe('FiguredBass.realize completes abbreviations', () => {
+  const iv = (bass: string, fig: string, key = 'C major') => FiguredBass.realize(parseNote(bass), fig, key).intervalsInSteps;
+  it.each([
+    ['E4', '6', [0, 3, 8]],        // E G C
+    ['G4', '7', [0, 4, 7, 10]],    // G B D F
+    ['B3', '6/5', [0, 3, 6, 8]],   // B D F G
+    ['D4', '4/3', [0, 3, 5, 9]],   // D F G B
+    ['F4', '4/2', [0, 2, 6, 9]],   // F G B D
+    ['F4', '2', [0, 2, 6, 9]],
+    ['G4', '6/4', [0, 5, 9]],      // G C E
+  ])('%s %s', (bass, fig, expected) => {
+    expect(iv(bass, fig)).toEqual(expected);
+  });
+
+  it('a bare accidental alters the third', () => {
+    expect(iv('E4', '#', 'A minor')).toEqual([0, 4, 7]); // E G# B
+  });
+
+  it('parse still reads the figures as written', () => {
+    expect(FiguredBass.parse('6').intervals).toEqual([9]);
+    expect(FiguredBass.parse('#').intervals).toEqual([5]);
+  });
+});
 
 describe('FiguredBass.parse', () => {
   it('empty string returns root position intervals [4,7]', () => {
@@ -32,10 +58,6 @@ describe('FiguredBass.parse', () => {
   });
 });
 
-// ============================================================================
-// FiguredBass.realize — default (no key context)
-// ============================================================================
-
 describe('FiguredBass.realize (default key)', () => {
   it('empty figure builds root position triad', () => {
     const bass = parseNote('C4');
@@ -50,10 +72,6 @@ describe('FiguredBass.realize (default key)', () => {
     expect(chord.intervalsInSteps).toContain(8);
   });
 });
-
-// ============================================================================
-// FiguredBass.realize — diatonic key resolution
-// ============================================================================
 
 describe('FiguredBass.realize — diatonic resolution', () => {
   it('G major, bass=D, "7" → minor 7th (10 st), not major 7th (11 st)', () => {
@@ -104,10 +122,6 @@ describe('FiguredBass.realize — diatonic resolution', () => {
   });
 });
 
-// ============================================================================
-// FiguredBass.fromChord
-// ============================================================================
-
 describe('FiguredBass.fromChord', () => {
   it('root position returns empty string', () => {
     const bass = parseNote('C4');
@@ -142,10 +156,6 @@ describe('FiguredBass.fromChord', () => {
     expect(figure('C6', 'C3')).toBe('');
   });
 });
-
-// ============================================================================
-// FiguredBass.voices — SATB realization
-// ============================================================================
 
 describe('FiguredBass.voices', () => {
   // Soprano: C4–G5 (steps -9 to 10)
@@ -251,5 +261,77 @@ describe('FiguredBass.voices', () => {
     const [s, a, t, b] = FiguredBass.voices(bass, '', 'G major');
     expect([s, a, t, b]).toHaveLength(4);
     expect(t.stepsFromBase).toBeGreaterThanOrEqual(b.stepsFromBase);
+  });
+});
+
+describe('FiguredBass.parse', () => {
+  it('empty symbol = root position', () => {
+    const result = FiguredBass.parse('');
+    expect(result.intervals).toEqual([4, 7]);
+  });
+
+  it('6 = first inversion', () => {
+    const result = FiguredBass.parse('6');
+    expect(result.intervals).toContain(9); // M6 = 9 semitones
+  });
+
+  it('6/4 = second inversion', () => {
+    const result = FiguredBass.parse('6/4');
+    expect(result.intervals).toContain(9);
+    expect(result.intervals).toContain(5);
+  });
+
+  it('7 = seventh chord', () => {
+    const result = FiguredBass.parse('7');
+    expect(result.intervals).toContain(10); // minor 7th
+  });
+
+  it('#6 adds sharp accidental', () => {
+    const result = FiguredBass.parse('#6');
+    expect(result.accidentals.get(0)).toBe('#');
+  });
+
+  it('returns intervals as array', () => {
+    expect(Array.isArray(FiguredBass.parse('6/5').intervals)).toBe(true);
+  });
+});
+
+describe('FiguredBass.realize', () => {
+  it('returns a Chord', () => {
+    const bassNote = parseNote('C4');
+    const chord = FiguredBass.realize(bassNote, '');
+    expect(chord).toBeDefined();
+    expect(Array.isArray(chord.intervalsInSteps)).toBe(true);
+  });
+
+  it('root position chord includes bass as first interval', () => {
+    const bassNote = parseNote('C4');
+    const chord = FiguredBass.realize(bassNote, '');
+    expect(chord.intervalsInSteps[0]).toBe(0); // bass = root
+  });
+
+  it('sixth chord has 6th interval', () => {
+    const bassNote = parseNote('E4');
+    const chord = FiguredBass.realize(bassNote, '6');
+    expect(chord.intervalsInSteps.length).toBeGreaterThan(1);
+  });
+});
+
+describe('FiguredBass.fromChord', () => {
+  it('root position returns empty string', () => {
+    const c = parseChordSymbol('C');
+    const bassNote = parseNote('C4');
+    expect(FiguredBass.fromChord(c, bassNote)).toBe('');
+  });
+});
+
+describe('12-TET assumptions removed from figured bass and counterpoint', () => {
+  const e24 = new EDO(24);
+  it('FiguredBass.realize and voices in 24-EDO give the same notes as in 12-TET', () => {
+    const c12 = FiguredBass.realize(parseNote('E4'), '6', 'C major');
+    const c24 = FiguredBass.realize(new Note(e24, -10), '6', 'C major'); // E4 = -5 semitones = -10 quarter tones
+    expect(c24.intervalsInSteps).toEqual(c12.intervalsInSteps.map(i => i * 2));
+    const v = FiguredBass.voices(new Note(e24, -34), '', 'C major'); // C3
+    expect(v.map(n => Math.abs(n.stepsFromBase % 2))).toEqual([0, 0, 0, 0]); // whole semitones
   });
 });

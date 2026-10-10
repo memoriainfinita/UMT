@@ -1,10 +1,13 @@
+/**
+ * Tests for lib/music-theory/spelling.ts.
+ */
 import { describe, it, expect } from 'vitest';
 import { spellPitchInKey, spellChord, spellChordInKey } from '../../lib/music-theory/spelling';
 import { parseChordSymbol, parseNote } from '../../lib/music-theory/parser';
 import { EDO } from '../../lib/music-theory/tuning';
 
-const step = (name: string) => parseNote(name).stepsFromBase;
 const inKey = (names: string[], key: string) => names.map(n => spellPitchInKey(step(n), key));
+const step = (name: string) => parseNote(name).stepsFromBase;
 
 describe('spellPitchInKey', () => {
   it('scale notes take the scale letters', () => {

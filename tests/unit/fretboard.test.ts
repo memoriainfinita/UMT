@@ -1,22 +1,9 @@
+/**
+ * Tests for lib/music-theory/fretboard.ts.
+ */
 import { describe, it, expect } from 'vitest';
-import {
-  getFretboardVoicings,
-  getFretboardScale,
-  getFretboardScalePositions,
-  GUITAR_STANDARD,
-  GUITAR_DROPPED_D,
-  GUITAR_OPEN_G,
-  UKULELE_STANDARD,
-  BASS_STANDARD,
-  BANJO_OPEN_G,
-  FretboardVoicingResult,
-  FretboardScaleResult,
-} from '../../lib/music-theory/fretboard';
+import { getFretboardVoicings, getFretboardScale, getFretboardScalePositions, GUITAR_STANDARD, GUITAR_DROPPED_D, GUITAR_OPEN_G, UKULELE_STANDARD, BASS_STANDARD, BANJO_OPEN_G, FretboardVoicingResult } from '../../lib/music-theory/fretboard';
 import { parseChordSymbol, parseScaleSymbol } from '../../lib/music-theory/parser';
-
-// ============================================================================
-// Tuning presets
-// ============================================================================
 
 describe('tuning presets', () => {
   it('GUITAR_STANDARD has 6 strings', () => {
@@ -47,10 +34,6 @@ describe('tuning presets', () => {
     expect(BANJO_OPEN_G[0]).toBe(-2);
   });
 });
-
-// ============================================================================
-// getFretboardVoicings
-// ============================================================================
 
 describe('getFretboardVoicings', () => {
   const cmaj = parseChordSymbol('C');
@@ -183,10 +166,6 @@ describe('getFretboardVoicings', () => {
   });
 });
 
-// ============================================================================
-// getFretboardScale
-// ============================================================================
-
 describe('getFretboardScale', () => {
   const cmajScale = parseScaleSymbol('C major');
 
@@ -245,10 +224,6 @@ describe('getFretboardScale', () => {
     expect(result.frets.some(s => s.length > 0)).toBe(true);
   });
 });
-
-// ============================================================================
-// getFretboardScalePositions
-// ============================================================================
 
 describe('getFretboardScalePositions', () => {
   const cmajScale = parseScaleSymbol('C major');
@@ -311,10 +286,6 @@ describe('getFretboardScalePositions', () => {
     }
   });
 });
-
-// ============================================================================
-// stringOffset — banjo drone support
-// ============================================================================
 
 describe('stringOffset', () => {
   const banjoOffset = [5, 0, 0, 0, 0];

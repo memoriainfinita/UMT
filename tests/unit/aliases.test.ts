@@ -1,15 +1,11 @@
+/**
+ * Tests for lib/music-theory/aliases.ts.
+ */
 import { describe, it, expect } from 'vitest';
-import {
-  translateSymbol,
-  SOLFEGE_ROOTS,
-  QUALITY_ALIASES_ES,
-  QUALITY_ALIASES_FR,
-  QUALITY_ALIASES_IT,
-} from '../../lib/music-theory/aliases';
+import { translateSymbol, SOLFEGE_ROOTS, QUALITY_ALIASES_ES, QUALITY_ALIASES_FR, QUALITY_ALIASES_IT } from '../../lib/music-theory/aliases';
 import { parseChordSymbol, parseScaleSymbol } from '../../lib/music-theory/parser';
 
 // ── translateSymbol mechanics ─────────────────────────────────────────────────
-
 describe('translateSymbol', () => {
 
   describe('basic substitution', () => {
@@ -65,7 +61,6 @@ describe('translateSymbol', () => {
 });
 
 // ── SOLFEGE_ROOTS map ─────────────────────────────────────────────────────────
-
 describe('SOLFEGE_ROOTS', () => {
   it('maps all 7 solfège notes to English', () => {
     expect(SOLFEGE_ROOTS['Do']).toBe('C');
@@ -79,7 +74,6 @@ describe('SOLFEGE_ROOTS', () => {
 });
 
 // ── QUALITY_ALIASES_ES ────────────────────────────────────────────────────────
-
 describe('QUALITY_ALIASES_ES', () => {
   it('maps mayor → major', () => expect(QUALITY_ALIASES_ES['mayor']).toBe('major'));
   it('maps menor → minor', () => expect(QUALITY_ALIASES_ES['menor']).toBe('minor'));
@@ -90,7 +84,6 @@ describe('QUALITY_ALIASES_ES', () => {
 });
 
 // ── QUALITY_ALIASES_FR ────────────────────────────────────────────────────────
-
 describe('QUALITY_ALIASES_FR', () => {
   it('maps majeur → major', () => expect(QUALITY_ALIASES_FR['majeur']).toBe('major'));
   it('maps mineur → minor', () => expect(QUALITY_ALIASES_FR['mineur']).toBe('minor'));
@@ -99,7 +92,6 @@ describe('QUALITY_ALIASES_FR', () => {
 });
 
 // ── QUALITY_ALIASES_IT ────────────────────────────────────────────────────────
-
 describe('QUALITY_ALIASES_IT', () => {
   it('maps maggiore → major', () => expect(QUALITY_ALIASES_IT['maggiore']).toBe('major'));
   it('maps minore → minor', () => expect(QUALITY_ALIASES_IT['minore']).toBe('minor'));
@@ -108,7 +100,6 @@ describe('QUALITY_ALIASES_IT', () => {
 });
 
 // ── Integration: translateSymbol + parseChordSymbol ───────────────────────────
-
 describe('integration with parseChordSymbol', () => {
   const aliases = { ...SOLFEGE_ROOTS, ...QUALITY_ALIASES_ES };
 
@@ -139,7 +130,6 @@ describe('integration with parseChordSymbol', () => {
 });
 
 // ── Integration: translateSymbol + parseScaleSymbol ──────────────────────────
-
 describe('integration with parseScaleSymbol', () => {
   const aliases = { ...SOLFEGE_ROOTS, ...QUALITY_ALIASES_ES };
 

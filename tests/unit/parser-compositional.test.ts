@@ -1,9 +1,46 @@
+/**
+ * Tests for lib/music-theory/parser.ts (compositional).
+ */
 import { describe, it, expect } from 'vitest';
-import { parseChordSymbol } from '../../lib/music-theory/parser';
+import { parseChordSymbol, parsePolychord } from '../../lib/music-theory/parser';
+import { Chord } from '../../lib/music-theory/chord';
 
+function chord(symbol: string): Chord { return parseChordSymbol(symbol); }
 function ivs(symbol: string): readonly number[] {
   return parseChordSymbol(symbol).intervalsInSteps;
 }
+
+describe('parsePolychord', () => {
+  it('parses pipe-separated polychord', () => {
+    const pc = parsePolychord('Fmaj7|G7');
+    expect(pc.upper.name).toBe('Fmaj7');
+    expect(pc.lower.name).toBe('G7');
+  });
+
+  it('parses slash-separated polychord', () => {
+    const pc = parsePolychord('D/C');
+    expect(pc.upper.name).toMatch(/D/);
+    expect(pc.lower.name).toMatch(/C/);
+  });
+
+  it('upper and lower are Chord instances', () => {
+    const pc = parsePolychord('Abmaj7|Bb7');
+    expect(pc.upper).toBeInstanceOf(Chord);
+    expect(pc.lower).toBeInstanceOf(Chord);
+  });
+
+  it('throws on unrecognized format', () => {
+    expect(() => parsePolychord('something weird')).toThrow();
+  });
+
+  it('upper chord has correct intervals for Cmaj7|G7', () => {
+    const pc = parsePolychord('Cmaj7|G7');
+    // Cmaj7 = [0,4,7,11]
+    expect(pc.upper.intervalsInSteps).toEqual([0, 4, 7, 11]);
+    // G7 = [0,4,7,10]
+    expect(pc.lower.intervalsInSteps).toEqual([0, 4, 7, 10]);
+  });
+});
 
 describe('slash in a chord type', () => {
   it('6/9 is a chord type, not a bass note', () => expect(ivs('C6/9')).toEqual([0,4,7,9,14]));
@@ -73,5 +110,14 @@ describe('compositional chord parser', () => {
     it('throws for partial match', () => {
       expect(() => parseChordSymbol('C7zz')).toThrow();
     });
+  });
+});
+
+describe('parsePolychord - slash', () => {
+  it('a bass that is a chord tone is an inversion, not a polychord', () => {
+    expect(() => parsePolychord('C/E')).toThrow(/inversion/);
+  });
+  it('a bass outside the chord gives the lower triad', () => {
+    expect(parsePolychord('D/C').lower.name).toBe('C');
   });
 });

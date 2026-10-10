@@ -1,3 +1,6 @@
+/**
+ * Tests for lib/music-theory/scale.ts (diatonic).
+ */
 import { describe, it, expect } from 'vitest';
 import { parseScaleSymbol } from '../../lib/music-theory/parser';
 import { EDO } from '../../lib/music-theory/tuning';

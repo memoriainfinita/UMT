@@ -1,3 +1,7 @@
+/**
+ * Tests for lib/music-theory/key-detection.ts.
+ * Krumhansl-Schmuckler key finding.
+ */
 import { describe, it, expect } from 'vitest';
 import { KeyDetection } from '../../lib/music-theory/key-detection';
 import { parseNote } from '../../lib/music-theory/parser';

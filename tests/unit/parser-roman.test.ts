@@ -1,5 +1,8 @@
+/**
+ * Tests for lib/music-theory/parser.ts (roman).
+ */
 import { describe, it, expect } from 'vitest';
-import { parseRomanProgression, parsePolychord } from '../../lib/music-theory/parser';
+import { parseRomanProgression } from '../../lib/music-theory/parser';
 import { getProgression } from '../../lib/music-theory/progressions';
 import { EDO } from '../../lib/music-theory/tuning';
 
@@ -55,15 +58,6 @@ describe('parseRomanProgression - applied chords and substitutes', () => {
   it('other tunings map the chord by its 12-TET intervals', () => {
     const c = parseRomanProgression('V7/ii', 'C major', new EDO(24))[0];
     expect(c.intervalsInSteps).toEqual([0, 8, 14, 20]);
-  });
-});
-
-describe('parsePolychord - slash', () => {
-  it('a bass that is a chord tone is an inversion, not a polychord', () => {
-    expect(() => parsePolychord('C/E')).toThrow(/inversion/);
-  });
-  it('a bass outside the chord gives the lower triad', () => {
-    expect(parsePolychord('D/C').lower.name).toBe('C');
   });
 });
 

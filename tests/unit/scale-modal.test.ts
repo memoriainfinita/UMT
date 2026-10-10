@@ -1,5 +1,19 @@
+/**
+ * Tests for lib/music-theory/scale.ts (modal).
+ */
 import { describe, it, expect } from 'vitest';
 import { parseScaleSymbol } from '../../lib/music-theory/parser';
+import { preferFlatsForKey } from '../../lib/music-theory/utils';
+
+describe('core fixes (audit 2026-10, phase 1)', () => {
+  it('modes of harmonic and melodic minor take the parent minor key', () => {
+    expect(preferFlatsForKey('E', 'phrygian dominant')).toBe(false);   // A minor
+    expect(preferFlatsForKey('G', 'lydian dominant')).toBe(true);      // D minor
+    expect(preferFlatsForKey('B', 'altered')).toBe(true);              // C minor
+    expect(preferFlatsForKey('G#', 'altered')).toBe(false);            // A minor
+    expect(preferFlatsForKey('A#', 'minor')).toBe(false);
+  });
+});
 
 describe('Scale.getModalCharacteristics - brightness', () => {
   it('Lydian is brightest (+1)', () => {

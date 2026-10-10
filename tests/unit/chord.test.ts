@@ -1,5 +1,10 @@
+/**
+ * Tests for lib/music-theory/chord.ts.
+ */
 import { describe, it, expect } from 'vitest';
 import { parseChordSymbol } from '../../lib/music-theory/parser';
+import { TET12 } from '../../lib/music-theory/tuning';
+import { Chord } from '../../lib/music-theory/chord';
 
 describe('chord note spelling', () => {
   it('C7: b7 = Bb not A#', () => {
@@ -55,5 +60,28 @@ describe('chord notes named by interval above the written root', () => {
   it('inversions keep the letters', () => {
     const inv = parseChordSymbol('D#m').getInversion(1).map(n => n.name);
     expect(inv).toEqual(['F#4', 'A#4', 'D#5']);
+  });
+});
+
+describe('core fixes (audit 2026-10, phase 1)', () => {
+  it('a Chord must start at the root', () => {
+    expect(() => new Chord('x', TET12, 0, [4, 7])).toThrow(/start with 0/);
+  });
+
+  it('rootless keeps a slash bass and drops the root', () => {
+    const names = parseChordSymbol('Cmaj7/E').getVoicing('rootless').map(n => n.name);
+    expect(names).toEqual(['E3', 'E4', 'G4', 'B4']);
+    expect(parseChordSymbol('Cmaj7').getVoicing('rootless').map(n => n.name)).toEqual(['E4', 'G4', 'B4']);
+  });
+});
+
+describe('Chord.transpose - names', () => {
+  it('moves the slash bass with the root', () => {
+    expect(parseChordSymbol('C/E').transpose(2).name).toBe('D/F#');
+    expect(parseChordSymbol('C/Bb').transpose(2).name).toBe('D/C');
+    expect(parseChordSymbol('Cmaj7/G').transpose(5).name).toBe('Fmaj7/C');
+  });
+  it('keeps the name by whole octaves', () => {
+    expect(parseChordSymbol('D#m').transpose(12).name).toBe('D#m');
   });
 });

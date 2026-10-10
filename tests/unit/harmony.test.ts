@@ -1,9 +1,170 @@
+/**
+ * Tests for lib/music-theory/harmony.ts.
+ */
 import { describe, it, expect } from 'vitest';
 import { Harmony } from '../../lib/music-theory/harmony';
 import { parseChordSymbol, parseNote } from '../../lib/music-theory/parser';
-import { get12TETBaseName } from '../../lib/music-theory/utils';
+import { Chord } from '../../lib/music-theory/chord';
+import { Note } from '../../lib/music-theory/note';
+import { TET12, EDO } from '../../lib/music-theory/tuning';
 
+function chord(symbol: string): Chord { return parseChordSymbol(symbol); }
 const notes = (...names: string[]) => names.map(n => parseNote(n));
+
+describe('Harmony.analyzeSlash', () => {
+  it('C/E is an inversion', () => {
+    const c_e = chord('C/E');
+    const result = Harmony.analyzeSlash(c_e);
+    expect(result.type).toBe('inversion');
+  });
+
+  it('Cmaj7/E is an inversion', () => {
+    const c = chord('Cmaj7/E');
+    expect(Harmony.analyzeSlash(c).type).toBe('inversion');
+  });
+
+  it('chord without bass returns inversion type', () => {
+    const c = chord('Cmaj7');
+    expect(Harmony.analyzeSlash(c).type).toBe('inversion');
+  });
+
+  it('analyzes a polychord type for foreign bass', () => {
+    // D major over C: D F# A over C - D is not a chord tone of C
+    const d_c = chord('D/C');
+    const result = Harmony.analyzeSlash(d_c);
+    // D root over C bass: D(2) F#(6) A(9) vs C bass → foreign, should be polychord or upper-structure
+    expect(['polychord', 'upper-structure', 'hybrid']).toContain(result.type);
+    expect(result.lowerRoot).toBeDefined();
+  });
+
+  it('resultingTensions is an array when bass is foreign', () => {
+    const d_c = chord('D/C');
+    const result = Harmony.analyzeSlash(d_c);
+    if (result.type !== 'inversion') {
+      expect(Array.isArray(result.resultingTensions)).toBe(true);
+    }
+  });
+});
+
+describe('Harmony.getAllContainingScales', () => {
+  it('returns scales that contain Cmaj7 pitch classes', () => {
+    const c = chord('Cmaj7');
+    const results = Harmony.getAllContainingScales(c);
+    expect(results.length).toBeGreaterThan(0);
+    const names = results.map(r => r.scale.name);
+    // C major, G major, F major should contain Cmaj7 (C E G B)
+    expect(names.some(n => n.toLowerCase().includes('major'))).toBe(true);
+  });
+
+  it('C major scale is among containing scales for Cmaj7', () => {
+    const c = chord('Cmaj7');
+    const results = Harmony.getAllContainingScales(c);
+    const found = results.find(r => r.scale.name.toLowerCase() === 'c major');
+    expect(found).toBeDefined();
+  });
+
+  it('completeness is between 0 and 1 exclusive', () => {
+    const c = chord('Cmaj7');
+    const results = Harmony.getAllContainingScales(c);
+    for (const r of results) {
+      expect(r.completeness).toBeGreaterThan(0);
+      expect(r.completeness).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('results sorted by completeness descending', () => {
+    const c = chord('C7');
+    const results = Harmony.getAllContainingScales(c);
+    for (let i = 1; i < results.length; i++) {
+      expect(results[i - 1].completeness).toBeGreaterThanOrEqual(results[i].completeness);
+    }
+  });
+
+  it('pentatonic scale is in results for a power chord (2 notes)', () => {
+    const c5 = chord('C5'); // power chord C + G
+    const results = Harmony.getAllContainingScales(c5);
+    expect(results.length).toBeGreaterThan(0);
+  });
+
+  it('returns empty array for non-12-TET', () => {
+    const edo19 = new EDO(19, 440);
+    const c = new Chord('Cmaj7', edo19, 0, [0, 6, 11, 17]);
+    expect(Harmony.getAllContainingScales(c)).toHaveLength(0);
+  });
+
+  it('whole tone scale contains C augmented triad', () => {
+    const cAug = chord('Caug');
+    const results = Harmony.getAllContainingScales(cAug);
+    const wt = results.find(r => r.scale.name.toLowerCase().includes('whole tone'));
+    expect(wt).toBeDefined();
+  });
+});
+
+describe('Harmony.respellNote', () => {
+  it('respells A# to Bb in flat key context', () => {
+    const note = new Note(TET12, 1, 'A#4'); // A# = step 1 from A4
+    const result = Harmony.respellNote(note, { keySymbol: 'Bb major' });
+    expect(result.name).toBe('Bb4');
+  });
+
+  it('respells Bb to A# in ascending direction', () => {
+    const note = new Note(TET12, 1, 'Bb4');
+    const result = Harmony.respellNote(note, { direction: 'ascending' });
+    expect(result.name).toBe('A#4');
+  });
+
+  it('respells in descending direction uses flats', () => {
+    const note = new Note(TET12, 1, 'A#4');
+    const result = Harmony.respellNote(note, { direction: 'descending' });
+    expect(result.name).toBe('Bb4');
+  });
+
+  it('returns same note without context', () => {
+    const note = new Note(TET12, 1, 'A#4');
+    const result = Harmony.respellNote(note, {});
+    expect(result).toBe(note);
+  });
+
+  it('preserves stepsFromBase after respelling', () => {
+    // F#4 = step -3 from A4 (A4=0, G4=-2, F#4=-3)
+    const note = new Note(TET12, -3, 'F#4');
+    const result = Harmony.respellNote(note, { keySymbol: 'Gb major' });
+    expect(result.stepsFromBase).toBe(-3);
+    expect(result.name).toBe('Gb4');
+  });
+
+  it('non-12-TET returns original note', () => {
+    const edo19 = new EDO(19, 440);
+    const note = new Note(edo19, 3);
+    expect(Harmony.respellNote(note, { direction: 'ascending' })).toBe(note);
+  });
+});
+
+describe('Harmony.respellChord', () => {
+  it('respells C#M to Db in flat context', () => {
+    const c_sharp = chord('C#');
+    const result = Harmony.respellChord(c_sharp, { keySymbol: 'Db major' });
+    expect(result.name).toContain('Db');
+    expect(result.rootStep).toBe(c_sharp.rootStep);
+  });
+
+  it('respells to sharps in ascending direction', () => {
+    const db = chord('Db');
+    const result = Harmony.respellChord(db, { direction: 'ascending' });
+    expect(result.name).toContain('C#');
+  });
+
+  it('preserves intervals after respelling', () => {
+    const c_sharp = chord('C#maj7');
+    const result = Harmony.respellChord(c_sharp, { keySymbol: 'Db major' });
+    expect([...result.intervalsInSteps]).toEqual([...c_sharp.intervalsInSteps]);
+  });
+
+  it('returns original chord with no context', () => {
+    const c = chord('Cmaj7');
+    expect(Harmony.respellChord(c, {})).toBe(c);
+  });
+});
 
 describe('Harmony.detectChords', () => {
   it('names a major triad without a suffix', () => {
@@ -20,18 +181,6 @@ describe('Harmony.detectChords', () => {
   });
 });
 
-describe('Harmony.analyzeCadence', () => {
-  it('V → VI in a minor key is deceptive', () => {
-    const cad = Harmony.analyzeCadence(parseChordSymbol('E'), parseChordSymbol('F'), 'A minor');
-    expect(cad).toContain('Deceptive');
-  });
-
-  it('V → vi in a major key stays deceptive', () => {
-    const cad = Harmony.analyzeCadence(parseChordSymbol('G'), parseChordSymbol('Am'), 'C major');
-    expect(cad).toContain('Deceptive');
-  });
-});
-
 describe('Harmony.getSuggestedScales', () => {
   it('V7 into a minor chord offers phrygian dominant, not a b13 hint on the diminished scale', () => {
     const scales = Harmony.getSuggestedScales(parseChordSymbol('E7'), parseChordSymbol('Am'));
@@ -41,28 +190,11 @@ describe('Harmony.getSuggestedScales', () => {
   });
 });
 
-describe('Harmony.getNegativeHarmony', () => {
-  it('sets the root to the root of the chord it names', () => {
-    // C major triad in C: axis between E and Eb → C minor triad
-    const neg = Harmony.getNegativeHarmony(parseChordSymbol('C'), 'C major');
-    expect(neg.name).toBe('Cm');
-    expect(get12TETBaseName(neg.rootStep)).toBe('C');
-  });
-
-  it('a lowest note that is not the root becomes the bass', () => {
-    // C E G A in C → G Eb C Bb; lowest is Bb3, the chord is C minor seventh
-    const neg = Harmony.getNegativeHarmony(parseChordSymbol('C6'), 'C major');
-    expect(neg.name).toBe('Cm7/Bb');
-    expect(get12TETBaseName(neg.rootStep)).toBe('C');
-    expect(get12TETBaseName(neg.getNotes()[0].stepsFromBase, true)).toBe('Bb');
-  });
-
-  it('keeps every reflected pitch class', () => {
-    const neg = Harmony.getNegativeHarmony(parseChordSymbol('G7'), 'C major');
-    // G B D F → C Ab F D
-    expect(new Set(neg.getNotes().map(n => ((n.stepsFromBase % 12) + 12) % 12)))
-      .toEqual(new Set([3, 11, 8, 5]));
-    const pc = (s: number) => ((s % 12) + 12) % 12;
-    expect(pc(neg.rootStep)).toBe(pc(parseChordSymbol(neg.name).rootStep));
+describe('getSuggestedScales root in other tunings', () => {
+  it('a G7 in 24-EDO suggests scales on G', () => {
+    const g7 = parseChordSymbol('G7', new EDO(24));
+    const scales = Harmony.getSuggestedScales(g7).map(s => s.scale);
+    expect(scales.length).toBeGreaterThan(0);
+    expect(scales.every(s => s.startsWith('G '))).toBe(true);
   });
 });

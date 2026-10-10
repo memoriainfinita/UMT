@@ -1,10 +1,31 @@
+/**
+ * Tests for lib/music-theory/rhythm.ts.
+ * Meters, rhythm transforms, Euclidean rhythms and clave patterns.
+ */
 import { describe, it, expect } from 'vitest';
-import { RhythmTransform, RhythmAnalysis, Polymeter, MetricModulation, Isorhythm, TimeSignature } from '../../lib/music-theory/rhythm';
+import { MetricModulation, RhythmAnalysis, TimeSignature, RhythmTransform, Polymeter, Isorhythm } from '../../lib/music-theory/rhythm';
 import { CLAVE_PATTERNS } from '../../lib/music-theory/clave-patterns';
 
-// ============================================================================
-// 7.1 - RhythmTransform
-// ============================================================================
+describe('rhythm.ts fixes', () => {
+  it('metric modulation uses the given tempo: dotted quarter = new beat at 120 → 80', () => {
+    const four = new TimeSignature([4], 4);
+    expect(MetricModulation.equivalence(four, four, 0.375).newTempo).toBeCloseTo(80);
+    expect(MetricModulation.equivalence(four, new TimeSignature([6], 8), 0.125, 90).newTempo).toBeCloseTo(180);
+  });
+
+  it('strong beats follow the meter', () => {
+    expect(RhythmAnalysis.strongBeats(new TimeSignature([4], 4))).toEqual([0, 2]);
+    expect(RhythmAnalysis.strongBeats(new TimeSignature([3], 4))).toEqual([0]);
+    expect(RhythmAnalysis.strongBeats(new TimeSignature([6], 8))).toEqual([0, 3]);
+    expect(RhythmAnalysis.strongBeats(new TimeSignature([3, 2, 2], 8))).toEqual([0, 3, 5]);
+    expect(RhythmAnalysis.detectSyncopation([0, 2], new TimeSignature([3], 4))).toBe(0.5);
+  });
+
+  it('hemiola: 2+2+2 accents over two bars of 3/4', () => {
+    expect(RhythmAnalysis.detectHemiola([0, 2, 4], new TimeSignature([3], 4))).toBe(true);
+    expect(RhythmAnalysis.detectHemiola([0, 3], new TimeSignature([3], 4))).toBe(false);
+  });
+});
 
 describe('RhythmTransform.augmentation', () => {
   it('doubles durations by default', () => {
@@ -55,10 +76,6 @@ describe('RhythmTransform.retrogradeInversion', () => {
     expect(RhythmTransform.retrogradeInversion([])).toEqual([]);
   });
 });
-
-// ============================================================================
-// 7.2 - RhythmAnalysis
-// ============================================================================
 
 describe('RhythmAnalysis.detectSyncopation', () => {
   it('returns 0 for all strong-beat onsets', () => {
@@ -135,10 +152,6 @@ describe('RhythmAnalysis.detectClave', () => {
   });
 });
 
-// ============================================================================
-// 7.3 - Clave pattern presets
-// ============================================================================
-
 describe('CLAVE_PATTERNS', () => {
   it('exports at least 8 patterns', () => {
     expect(Object.keys(CLAVE_PATTERNS).length).toBeGreaterThanOrEqual(8);
@@ -171,10 +184,6 @@ describe('CLAVE_PATTERNS', () => {
     expect(RhythmAnalysis.detectClave(steps)).toBe('bossa');
   });
 });
-
-// ============================================================================
-// 7.4 - Polymeter
-// ============================================================================
 
 describe('Polymeter', () => {
   it('creates with multiple meters', () => {
@@ -250,10 +259,6 @@ describe('Polymeter', () => {
   });
 });
 
-// ============================================================================
-// 7.5 - MetricModulation
-// ============================================================================
-
 describe('MetricModulation.calculate', () => {
   it('dotted quarter = quarter → tempo × 3/2', () => {
     // fromTempo=120, old dotted quarter (3/8 of whole) maps to new quarter (1/4 of whole)
@@ -284,10 +289,6 @@ describe('MetricModulation.equivalence', () => {
   });
 });
 
-// ============================================================================
-// 7.6 - Isorhythm
-// ============================================================================
-
 describe('Isorhythm', () => {
   it('generates events within totalBeats', () => {
     const iso = new Isorhythm([1, 2, 1], [60, 62, 64, 65]);
@@ -315,5 +316,32 @@ describe('Isorhythm', () => {
   it('returns empty for totalBeats=0', () => {
     const iso = new Isorhythm([1, 2], [60, 62]);
     expect(iso.generate(0)).toHaveLength(0);
+  });
+});
+
+describe('Clave patterns', () => {
+  const onsets = (id: string) => CLAVE_PATTERNS[id].steps.flatMap((on, i) => (on ? [i] : []));
+
+  it.each([
+    ['son-3-2', [0, 3, 6, 10, 12]], ['son-2-3', [2, 4, 8, 11, 14]],
+    ['rumba-3-2', [0, 3, 7, 10, 12]], ['rumba-2-3', [2, 4, 8, 11, 15]],
+    ['bossa', [0, 3, 6, 10, 13]], ['tresillo', [0, 3, 6]], ['cinquillo', [0, 2, 3, 5, 6]], ['habanera', [0, 3, 4, 6]],
+  ])('%s onsets', (id, expected) => {
+    expect(onsets(id)).toEqual(expected);
+  });
+
+  it('2-3 claves are the 3-2 claves starting from the second half', () => {
+    for (const kind of ['son', 'rumba']) {
+      const threeTwo = CLAVE_PATTERNS[`${kind}-3-2`].steps;
+      expect([...threeTwo.slice(8), ...threeTwo.slice(0, 8)]).toEqual([...CLAVE_PATTERNS[`${kind}-2-3`].steps]);
+    }
+  });
+
+  it('detectClave and detectCinquillo recognise the stored patterns', () => {
+    for (const id of ['son-3-2', 'son-2-3', 'rumba-3-2', 'rumba-2-3', 'bossa']) {
+      expect(RhythmAnalysis.detectClave(CLAVE_PATTERNS[id].steps.map(Number))).toBe(id);
+    }
+    expect(RhythmAnalysis.detectCinquillo([1, 0, 1, 1, 0, 1, 1, 0])).toBe(true);
+    expect(RhythmAnalysis.detectCinquillo([1, 0, 1, 1, 0, 1, 0, 1])).toBe(false);
   });
 });
