@@ -166,3 +166,25 @@ describe('Counterpoint and Canon', () => {
     expect(follower.map(x => x?.stepsFromBase ?? null)).toEqual([null, -2, 0, 2]);
   });
 });
+
+describe('ToneRow', () => {
+  const berg = [7, 10, 2, 6, 9, 0, 4, 8, 11, 1, 3, 5]; // Berg Violin Concerto: G Bb D F# A C E G# B C# D# F
+
+  it('labels forms by their first pitch class; the row is P(row[0])', () => {
+    const row = new ToneRow(berg);
+    expect(row.P(7)).toEqual(berg);
+    expect(row.R()).toEqual([...berg].reverse());
+  });
+
+  it('standard matrix: first row the row, first column its inversion, columns are I forms', () => {
+    const row = new ToneRow(berg);
+    const m = row.getMatrix();
+    expect(m[0]).toEqual(berg);
+    for (let j = 0; j < 12; j++) expect(m.map(r => r[j])).toEqual(row.I(m[0][j]));
+  });
+
+  it('isCombinatorial finds real hexachordal combinatoriality', () => {
+    expect(new ToneRow([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).isCombinatorial()).toBe('P'); // P(6) opens with 6..11
+    expect(new ToneRow([0, 1, 3, 2, 6, 4, 5, 7, 8, 9, 10, 11]).isCombinatorial()).toBe(null);
+  });
+});
