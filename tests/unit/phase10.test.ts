@@ -96,8 +96,8 @@ describe('streamToLilyPond', () => {
     expect(streamToLilyPond(makeStream())).toContain('\\version');
   });
 
-  it('contains relative block', () => {
-    expect(streamToLilyPond(makeStream())).toContain('\\relative');
+  it('writes absolute pitches (no relative block)', () => {
+    expect(streamToLilyPond(makeStream())).not.toContain('\\relative');
   });
 
   it('contains note names', () => {
@@ -201,8 +201,6 @@ describe('ABCBridge.tuplet', () => {
   it('contains all note pitches', () => {
     const notes = [parseNote('C4'), parseNote('E4'), parseNote('G4')];
     const result = ABCBridge.tuplet(notes, 3, 2, 0.5);
-    expect(result).toContain('c');
-    expect(result).toContain('e');
-    expect(result).toContain('g');
+    expect(result).toBe('(3:2:3 C/2 E/2 G/2');
   });
 });

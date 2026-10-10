@@ -817,13 +817,13 @@ function runNotation() {
     if (type === 'scale') {
       const scale   = UMT.parseScaleSymbol(input);
       const keyNote = scale.getNotes()[0].name.replace(/\d+/, '');
-      const body    = UMT.ABCBridge.scaleToABC(scale, 1);
+      const body    = UMT.ABCBridge.scaleToABC(scale, 1, keyNote);
       abc  = UMT.ABCBridge.wrapInHeaders(body + ' |]', input, '4/4', keyNote);
       lily = UMT.scaleToLilyPond(scale);
       xml  = UMT.scaleToMusicXML(scale, 1, { title: input });
     } else {
       const chord  = UMT.parseChordSymbol(input);
-      const body   = '[' + UMT.ABCBridge.chordToABC(chord) + ']4 |]';
+      const body   = UMT.ABCBridge.chordToABC(chord) + '4 |]';
       abc  = UMT.ABCBridge.wrapInHeaders(body, input, '4/4', 'C');
       lily = UMT.chordToLilyPond(chord);
       xml  = UMT.chordToMusicXML(chord);

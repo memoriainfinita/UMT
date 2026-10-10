@@ -1,12 +1,16 @@
 /**
  * MusicXML export bridge.
- * Generates MusicXML 4.0-compatible strings from UMT objects.
- * Supports key signatures, time signatures, clefs, and basic dynamics/articulation.
+ * Generates MusicXML 4.0-compatible strings from UMT objects: key and time signatures,
+ * dots, triplets, and ties across barlines. Notes of other tunings keep their exact pitch
+ * as a decimal `<alter>` (a quarter-tone sharp is 0.5).
  */
-import { Note } from './note';
 import { Chord } from './chord';
 import { Scale } from './scale';
 import { MusicStream, Duration } from './rhythm';
+import {
+  spellPitch, parseKey, signatureAlters, MeasureAccidentals,
+  layoutMeasures, LaidEvent, TICKS_PER_WHOLE,
+} from './notation-layout';
 
 /** Optional metadata fields for MusicXML score headers. */
 export interface MusicXMLMetadata {
@@ -15,30 +19,49 @@ export interface MusicXMLMetadata {
   partName?: string;
 }
 
-// Map step offset from A4 to MusicXML step/octave/alter
-function noteToXMLParts(note: Note): { step: string; octave: number; alter: number } {
-  const name = note.getName();
-  const match = name.match(/^([A-G])([#b]*)(\d+)$/);
-  if (!match) throw new Error(`musicxml-bridge: cannot represent note "${name}".`);
-  const step = match[1];
-  const accStr = match[2];
-  const octave = parseInt(match[3], 10);
-  let alter = 0;
-  for (const ch of accStr) {
-    if (ch === '#') alter += 1;
-    if (ch === 'b') alter -= 1;
-  }
-  return { step, octave, alter };
+/** Options for writing a stream in MusicXML. */
+export interface MusicXMLOptions {
+  /** Key of the music (e.g. `'D major'`, `'E dorian'`): sets `<key>` and the written accidentals. Default `'C major'`. */
+  key?: string;
 }
 
-function noteToXML(note: Note, duration = 4, type = 'quarter'): string {
-  const { step, octave, alter } = noteToXMLParts(note);
-  const alterXML = alter !== 0 ? `<alter>${alter}</alter>` : '';
-  return `        <note>
-          <pitch><step>${step}</step>${alterXML}<octave>${octave}</octave></pitch>
-          <duration>${duration}</duration>
-          <type>${type}</type>
-        </note>`;
+const TYPE_BY_TICKS: Record<number, string> = {
+  384: 'whole', 192: 'half', 96: 'quarter', 48: 'eighth', 24: '16th', 12: '32nd', 6: '64th', 3: '128th',
+};
+const ACCIDENTAL_NAME: Record<number, string> = { [-2]: 'flat-flat', [-1]: 'flat', 0: 'natural', 1: 'sharp', 2: 'double-sharp' };
+
+/** Escapes text for XML content and attributes. */
+function xmlText(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function noteXML(ev: LaidEvent, unit: number, acc: MeasureAccidentals): string {
+  const v = ev.value;
+  const ties = [ev.tiedFrom && 'stop', ev.tie && 'start'].filter(Boolean) as string[];
+  const after = [
+    `<duration>${v.ticks / unit}</duration>`,
+    ...ties.map(t => `<tie type="${t}"/>`),
+    `<type>${TYPE_BY_TICKS[v.base]}</type>`,
+    ...Array.from({ length: v.dots }, () => '<dot/>'),
+  ];
+  const modification = v.triplet
+    ? '<time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>'
+    : '';
+  const notations = ties.length ? `<notations>${ties.map(t => `<tied type="${t}"/>`).join('')}</notations>` : '';
+
+  if (ev.notes.length === 0) {
+    return `        <note><rest/>${after.join('')}${modification}</note>\n`;
+  }
+  return ev.notes.map((n, i) => {
+    const p = spellPitch(n);
+    const alter = p.alter + p.cents / 100;
+    const alterXML = alter !== 0 ? `<alter>${Math.round(alter * 100) / 100}</alter>` : '';
+    // the written accidental, for pitches of the 12-TET spelling
+    const shown = p.cents === 0 ? acc.mark(p) : null;
+    const accidental = shown !== null && ACCIDENTAL_NAME[shown] ? `<accidental>${ACCIDENTAL_NAME[shown]}</accidental>` : '';
+    return `        <note>${i > 0 ? '<chord/>' : ''}<pitch><step>${p.letter}</step>${alterXML}<octave>${p.octave}</octave></pitch>`
+      + `${after.join('')}${accidental}${modification}${notations}</note>\n`;
+  }).join('');
 }
 
 function xmlHeader(meta: MusicXMLMetadata): string {
@@ -46,105 +69,55 @@ function xmlHeader(meta: MusicXMLMetadata): string {
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN"
   "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise version="4.0">
-  <work><work-title>${meta.title ?? ''}</work-title></work>
-  <identification><creator type="composer">${meta.composer ?? ''}</creator></identification>
+  <work><work-title>${xmlText(meta.title ?? '')}</work-title></work>
+  <identification><creator type="composer">${xmlText(meta.composer ?? '')}</creator></identification>
   <part-list>
-    <score-part id="P1"><part-name>${meta.partName ?? 'Music'}</part-name></score-part>
+    <score-part id="P1"><part-name>${xmlText(meta.partName ?? 'Music')}</part-name></score-part>
   </part-list>`;
 }
 
 /**
- * Converts a MusicStream to a MusicXML string.
- * Each event becomes a note or chord; rests are inferred from gaps.
+ * Converts a MusicStream to a MusicXML string. Gaps between events become rests; notes
+ * that cross a barline, or have no single written value, are split into tied values.
+ * `<divisions>` is the fewest per quarter note that count every value whole.
  */
-export function streamToMusicXML(stream: MusicStream, metadata: MusicXMLMetadata = {}): string {
+export function streamToMusicXML(stream: MusicStream, metadata: MusicXMLMetadata = {}, options: MusicXMLOptions = {}): string {
   const ts = stream.timeSignature;
-  const beats = ts.totalBeats;
-  const beatType = ts.denominator;
+  const key = parseKey(options.key ?? 'C major');
+  const measures = layoutMeasures(stream);
 
-  let measures = '';
-  let measureNum = 1;
-  let measureBeats = 0;
-  let measureNotes = '';
-  const divisions = 4; // quarter note = 4 divisions
+  // ticks per division: the largest that divides a quarter and every value
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+  const quarter = TICKS_PER_WHOLE / 4;
+  const unit = measures.flat().reduce((g, ev) => gcd(g, ev.value.ticks), quarter);
 
-  for (const event of stream.events) {
-    const durBeats = event.duration;
-    const durDivisions = Math.round(durBeats * divisions);
-    const typeStr = durBeats >= 4 ? 'whole' : durBeats >= 2 ? 'half' : durBeats >= 1 ? 'quarter' : durBeats >= 0.5 ? 'eighth' : 'sixteenth';
-
-    if (event.notes.length === 0) {
-      // Rest
-      measureNotes += `        <note><rest/><duration>${durDivisions}</duration><type>${typeStr}</type></note>\n`;
-    } else if (event.notes.length === 1) {
-      measureNotes += noteToXML(event.notes[0], durDivisions, typeStr) + '\n';
-    } else {
-      // Chord: first note normal, rest with <chord/>
-      measureNotes += noteToXML(event.notes[0], durDivisions, typeStr) + '\n';
-      for (let i = 1; i < event.notes.length; i++) {
-        const { step, octave, alter } = noteToXMLParts(event.notes[i]);
-        const alterXML = alter !== 0 ? `<alter>${alter}</alter>` : '';
-        measureNotes += `        <note>
-          <chord/>
-          <pitch><step>${step}</step>${alterXML}<octave>${octave}</octave></pitch>
-          <duration>${durDivisions}</duration>
-          <type>${typeStr}</type>
-        </note>\n`;
-      }
-    }
-
-    measureBeats += durBeats;
-
-    if (measureBeats >= beats) {
-      const isFirst = measureNum === 1;
-      const attributesXML = isFirst
-        ? `      <attributes>
-        <divisions>${divisions}</divisions>
-        <key><fifths>0</fifths></key>
-        <time><beats>${beats}</beats><beat-type>${beatType}</beat-type></time>
+  const attributes = `      <attributes>
+        <divisions>${quarter / unit}</divisions>
+        <key><fifths>${key.fifths}</fifths><mode>${key.mode}</mode></key>
+        <time><beats>${ts.numerators.join('+')}</beats><beat-type>${ts.denominator}</beat-type></time>
         <clef><sign>G</sign><line>2</line></clef>
-      </attributes>\n`
-        : '';
-      measures += `    <measure number="${measureNum}">\n${attributesXML}${measureNotes}    </measure>\n`;
-      measureNum++;
-      measureNotes = '';
-      measureBeats = 0;
-    }
-  }
+      </attributes>\n`;
 
-  // Final incomplete measure
-  if (measureNotes) {
-    const isFirst = measureNum === 1;
-    const attributesXML = isFirst
-      ? `      <attributes><divisions>${divisions}</divisions><key><fifths>0</fifths></key><time><beats>${beats}</beats><beat-type>${beatType}</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>\n`
-      : '';
-    measures += `    <measure number="${measureNum}">\n${attributesXML}${measureNotes}    </measure>\n`;
-  }
+  const acc = new MeasureAccidentals(signatureAlters(key.fifths));
+  const body = (measures.length ? measures : [[]]).map((m, i) => {
+    acc.reset();
+    const notes = m.map(ev => noteXML(ev, unit, acc)).join('');
+    return `    <measure number="${i + 1}">\n${i === 0 ? attributes : ''}${notes}    </measure>\n`;
+  }).join('');
 
-  return `${xmlHeader(metadata)}\n  <part id="P1">\n${measures}  </part>\n</score-partwise>`;
+  return `${xmlHeader(metadata)}\n  <part id="P1">\n${body}  </part>\n</score-partwise>`;
 }
 
-/** Converts a single Chord to a one-measure MusicXML snippet. */
+/** Converts a single Chord to a one-measure MusicXML snippet (a whole-note chord in 4/4). */
 export function chordToMusicXML(chord: Chord, metadata: MusicXMLMetadata = {}): string {
-  const notes = chord.getNotes();
-  let notesXML = noteToXML(notes[0], 16, 'whole') + '\n';
-  for (let i = 1; i < notes.length; i++) {
-    const { step, octave, alter } = noteToXMLParts(notes[i]);
-    const alterXML = alter !== 0 ? `<alter>${alter}</alter>` : '';
-    notesXML += `        <note><chord/><pitch><step>${step}</step>${alterXML}<octave>${octave}</octave></pitch><duration>16</duration><type>whole</type></note>\n`;
-  }
-  const measure = `    <measure number="1">
-      <attributes><divisions>4</divisions><key><fifths>0</fifths></key><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>
-${notesXML}    </measure>`;
-  return `${xmlHeader({ title: chord.name, ...metadata })}\n  <part id="P1">\n${measure}\n  </part>\n</score-partwise>`;
+  const stream = new MusicStream();
+  stream.addEvent(chord.getNotes(), Duration.Whole);
+  return streamToMusicXML(stream, { title: chord.name, ...metadata });
 }
 
-/** Converts a Scale to ascending MusicXML. */
+/** Converts a Scale to ascending MusicXML quarter notes in 4/4. */
 export function scaleToMusicXML(scale: Scale, octaves = 1, metadata: MusicXMLMetadata = {}): string {
   const stream = new MusicStream();
-  const notes = scale.getNotes(octaves);
-  for (const n of notes) {
-    stream.addEvent([n], Duration.Quarter);
-  }
+  for (const n of scale.getNotes(octaves)) stream.addEvent([n], Duration.Quarter);
   return streamToMusicXML(stream, { title: scale.name, ...metadata });
 }

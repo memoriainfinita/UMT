@@ -1,12 +1,14 @@
 /**
  * LilyPond export bridge.
- * Generates LilyPond syntax strings from UMT objects.
+ * Generates LilyPond syntax strings from UMT objects, with pitches in absolute mode
+ * (c' = middle C). Notes of other tunings are written at the nearest 12-TET pitch.
  * Compatible with LilyPond 2.24+.
  */
 import { Note } from './note';
 import { Chord } from './chord';
 import { Scale } from './scale';
-import { MusicStream } from './rhythm';
+import { MusicStream, Duration } from './rhythm';
+import { spellPitch, parseKey, layoutMeasures, LaidEvent, TICKS_PER_WHOLE } from './notation-layout';
 
 /** Optional metadata fields for LilyPond header block. */
 export interface LPMetadata {
@@ -15,94 +17,83 @@ export interface LPMetadata {
   opus?: string;
 }
 
-// Convert a note's step offset to LilyPond pitch string
-function noteToLP(note: Note): string {
-  const name = note.getName();
-  const match = name.match(/^([A-G])([#b]*)(\d+)$/);
-  if (!match) throw new Error(`lilypond-bridge: cannot represent note "${name}".`);
-
-  const base = match[1].toLowerCase();
-  const accStr = match[2];
-  const octave = parseInt(match[3], 10);
-
-  // LilyPond accidentals: # -> is, ## -> isis, b -> es, bb -> eses
-  const accMap: Record<string, string> = { '#': 'is', '##': 'isis', 'b': 'es', 'bb': 'eses' };
-  const acc = accMap[accStr] ?? '';
-
-  // LilyPond octave marks: c' = C4, c'' = C5, c = C3, c, = C2
-  const baseOctave = 3; // c without mark = C3 in LilyPond
-  let octMark = '';
-  if (octave > baseOctave) octMark = "'".repeat(octave - baseOctave);
-  else if (octave < baseOctave) octMark = ','.repeat(baseOctave - octave);
-
-  return `${base}${acc}${octMark}`;
+/** Options for writing a stream in LilyPond. */
+export interface LPOptions {
+  /** Key of the music (e.g. `'D major'`, `'E dorian'`): sets `\key`. Default: none (C major). */
+  key?: string;
 }
 
-function durationToLP(beats: number): string {
-  if (beats >= 4) return '1';
-  if (beats >= 3) return '2.';
-  if (beats >= 2) return '2';
-  if (beats >= 1.5) return '4.';
-  if (beats >= 1) return '4';
-  if (beats >= 0.75) return '8.';
-  if (beats >= 0.5) return '8';
-  if (beats >= 0.25) return '16';
-  return '32';
+const LP_ACCIDENTAL: Record<number, string> = { [-2]: 'eses', [-1]: 'es', 0: '', 1: 'is', 2: 'isis' };
+
+/** Pitch in absolute mode: c' = C4, c = C3, c, = C2, c'' = C5. */
+function noteToLP(note: Note): string {
+  const p = spellPitch(note);
+  const marks = p.octave >= 3 ? "'".repeat(p.octave - 3) : ','.repeat(3 - p.octave);
+  return `${p.letter.toLowerCase()}${LP_ACCIDENTAL[p.alter] ?? ''}${marks}`;
+}
+
+function lpEvent(ev: LaidEvent): string {
+  const v = ev.value;
+  const length = `${TICKS_PER_WHOLE / v.base}${'.'.repeat(v.dots)}`;
+  const body = ev.notes.length === 0 ? 'r'
+    : ev.notes.length === 1 ? noteToLP(ev.notes[0])
+    : `<${ev.notes.map(noteToLP).join(' ')}>`;
+  const written = `${body}${length}${ev.tie ? '~' : ''}`;
+  return v.triplet ? `\\tuplet 3/2 { ${written} }` : written;
+}
+
+/** A LilyPond string literal. */
+function lpString(s: string): string {
+  return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
 function lpHeader(meta: LPMetadata): string {
   return `\\version "2.24.0"
 
 \\header {
-  title = "${meta.title ?? ''}"
-  composer = "${meta.composer ?? ''}"
-  opus = "${meta.opus ?? ''}"
+  title = ${lpString(meta.title ?? '')}
+  composer = ${lpString(meta.composer ?? '')}
+  opus = ${lpString(meta.opus ?? '')}
 }
 
 `;
 }
 
-/** Converts a MusicStream to a LilyPond string. */
-export function streamToLilyPond(stream: MusicStream, metadata: LPMetadata = {}): string {
+/**
+ * Converts a MusicStream to a LilyPond string. Measures end in bar checks (`|`); notes that
+ * cross a barline, or have no single written value, are split into tied values. An additive
+ * meter is written `\time 3,2,2 7/8`.
+ */
+export function streamToLilyPond(stream: MusicStream, metadata: LPMetadata = {}, options: LPOptions = {}): string {
   const ts = stream.timeSignature;
-  let notes = '';
-
-  for (const event of stream.events) {
-    const dur = durationToLP(event.duration);
-    if (event.notes.length === 0) {
-      notes += `r${dur} `;
-    } else if (event.notes.length === 1) {
-      notes += `${noteToLP(event.notes[0])}${dur} `;
-    } else {
-      const chordNotes = event.notes.map(noteToLP).join(' ');
-      notes += `<${chordNotes}>${dur} `;
-    }
+  const time = ts.numerators.length > 1
+    ? `\\time ${ts.numerators.join(',')} ${ts.totalBeats}/${ts.denominator}`
+    : `\\time ${ts.totalBeats}/${ts.denominator}`;
+  const lines = [time];
+  if (options.key) {
+    const { tonic, mode } = parseKey(options.key);
+    const lpTonic = tonic[0].toLowerCase() + tonic.slice(1).replace(/#/g, 'is').replace(/b/g, 'es');
+    lines.push(`\\key ${lpTonic} \\${mode === 'ionian' ? 'major' : mode === 'aeolian' ? 'minor' : mode}`);
   }
-
-  const tsStr = `\\time ${ts.numerators.join('+')}/${ts.denominator}`;
-  return `${lpHeader(metadata)}\\relative {
-  ${tsStr}
-  ${notes.trim()}
+  const measures = layoutMeasures(stream);
+  const barTicks = (ts.totalBeats / ts.denominator) * TICKS_PER_WHOLE;
+  measures.forEach(m => {
+    const full = m.reduce((sum, ev) => sum + ev.value.ticks, 0) === barTicks;
+    lines.push(m.map(lpEvent).join(' ') + (full ? ' |' : ''));
+  });
+  return `${lpHeader(metadata)}{\n  ${lines.join('\n  ')}\n}\n`;
 }
-`;
-}
 
-/** Converts a Chord to a LilyPond snippet (whole note chord). */
+/** Converts a Chord to a LilyPond snippet (one whole-note chord in 4/4). */
 export function chordToLilyPond(chord: Chord, metadata: LPMetadata = {}): string {
-  const notes = chord.getNotes();
-  const lpNotes = notes.map(noteToLP).join(' ');
-  return `${lpHeader({ title: chord.name, ...metadata })}\\relative {
-  <${lpNotes}>1
-}
-`;
+  const stream = new MusicStream();
+  stream.addEvent(chord.getNotes(), Duration.Whole);
+  return streamToLilyPond(stream, { title: chord.name, ...metadata });
 }
 
-/** Converts a Scale to an ascending LilyPond sequence. */
+/** Converts a Scale to an ascending LilyPond sequence of quarter notes in 4/4. */
 export function scaleToLilyPond(scale: Scale, metadata: LPMetadata = {}): string {
-  const notes = scale.getNotes(1);
-  const lpNotes = notes.map(n => `${noteToLP(n)}4`).join(' ');
-  return `${lpHeader({ title: scale.name, ...metadata })}\\relative {
-  ${lpNotes}
-}
-`;
+  const stream = new MusicStream();
+  for (const n of scale.getNotes(1)) stream.addEvent([n], Duration.Quarter);
+  return streamToLilyPond(stream, { title: scale.name, ...metadata });
 }
