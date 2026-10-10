@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Harmony } from '../../lib/music-theory/harmony';
 import { parseChordSymbol, parseRomanProgression, parseNote } from '../../lib/music-theory/parser';
 import { NOTE_NAMES_12TET_FLAT } from '../../lib/music-theory/utils';
+import { FiguredBass } from '../../lib/music-theory/figured-bass';
 
 const pcSet = (pcs: number[]) => [...new Set(pcs)].sort((a, b) => a - b).join(',');
 
@@ -84,5 +85,29 @@ describe('harmony.ts analysis fixes', () => {
     const overlaps = Harmony.checkVoiceLeading(a, b, 'contemporary').filter(i => i.type === 'Voice Overlap');
     expect(overlaps.every(o => o.voices[1] - o.voices[0] === 1)).toBe(true);
     expect(overlaps).toHaveLength(3);
+  });
+});
+
+describe('FiguredBass.realize completes abbreviations', () => {
+  const iv = (bass: string, fig: string, key = 'C major') => FiguredBass.realize(parseNote(bass), fig, key).intervalsInSteps;
+  it.each([
+    ['E4', '6', [0, 3, 8]],        // E G C
+    ['G4', '7', [0, 4, 7, 10]],    // G B D F
+    ['B3', '6/5', [0, 3, 6, 8]],   // B D F G
+    ['D4', '4/3', [0, 3, 5, 9]],   // D F G B
+    ['F4', '4/2', [0, 2, 6, 9]],   // F G B D
+    ['F4', '2', [0, 2, 6, 9]],
+    ['G4', '6/4', [0, 5, 9]],      // G C E
+  ])('%s %s', (bass, fig, expected) => {
+    expect(iv(bass, fig)).toEqual(expected);
+  });
+
+  it('a bare accidental alters the third', () => {
+    expect(iv('E4', '#', 'A minor')).toEqual([0, 4, 7]); // E G# B
+  });
+
+  it('parse still reads the figures as written', () => {
+    expect(FiguredBass.parse('6').intervals).toEqual([9]);
+    expect(FiguredBass.parse('#').intervals).toEqual([5]);
   });
 });

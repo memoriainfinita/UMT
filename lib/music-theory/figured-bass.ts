@@ -11,25 +11,44 @@ const FIGURE_DEFAULT_SEMITONES: Record<number, number> = {
   2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 10, 8: 12, 9: 14,
 };
 
-function applyAccidental(semitones: number, acc: '#' | 'b' | 'n' | undefined): number {
+type Accidental = '#' | 'b' | 'n';
+type FigurePart = { num: number; acc: Accidental | undefined };
+
+function applyAccidental(semitones: number, acc: Accidental | undefined): number {
   if (acc === '#') return semitones + 1;
   if (acc === 'b') return semitones - 1;
   return semitones;
 }
 
+/**
+ * Figures left implicit by continuo convention, by the written numbers: `6` is 6/3,
+ * `7` is 7/5/3, `6/5` is 6/5/3, `4/3` is 6/4/3, `2` and `4/2` are 6/4/2, `9` is 9/5/3.
+ */
+const IMPLIED_FIGURES: Record<string, number[]> = {
+  '': [3, 5], '3': [5], '5': [3], '3,5': [], '6': [3], '3,6': [], '4,6': [], '7': [3, 5],
+  '3,7': [5], '5,7': [3], '5,6': [3], '3,4': [6], '2': [4, 6], '2,4': [6], '2,4,6': [], '9': [3, 5],
+};
+
 export class FiguredBass {
-  /** Parses figure string into raw {num, acc} parts (reused by parse and realize). */
-  private static parseFigureParts(symbol: string): { num: number; acc: '#' | 'b' | 'n' | undefined }[] {
-    if (symbol === '' || symbol === '5' || symbol === '5/3' || symbol === '3') {
-      return [{ num: 3, acc: undefined }, { num: 5, acc: undefined }];
-    }
-    const results: { num: number; acc: '#' | 'b' | 'n' | undefined }[] = [];
-    for (const part of symbol.split('/').filter(Boolean)) {
-      const m = part.trim().match(/^([#bn]?)(\d+)$/);
-      if (!m) continue;
-      results.push({ num: parseInt(m[2], 10), acc: (m[1] as '#' | 'b' | 'n') || undefined });
+  /**
+   * Reads a figure string into {num, acc} parts as written (`'6/4'`, `'#6'`, `'b7'`). A bare
+   * accidental (`'#'`, `'b'`, `'n'`) is the third with that accidental. Empty → no parts.
+   */
+  private static parseFigureParts(symbol: string): FigurePart[] {
+    const results: FigurePart[] = [];
+    for (const part of symbol.split('/').map(p => p.trim()).filter(Boolean)) {
+      const m = part.match(/^([#bn]?)(\d*)$/);
+      if (!m || (m[1] === '' && m[2] === '')) continue;
+      results.push({ num: m[2] === '' ? 3 : parseInt(m[2], 10), acc: (m[1] as Accidental) || undefined });
     }
     return results;
+  }
+
+  /** Written parts plus the figures the abbreviation leaves implicit (`'6'` → 6 and 3). */
+  private static completeFigures(parts: FigurePart[]): FigurePart[] {
+    const key = [...new Set(parts.map(p => p.num))].sort((a, b) => a - b).join(',');
+    const implied = IMPLIED_FIGURES[key] ?? [];
+    return [...parts, ...implied.map(num => ({ num, acc: undefined }))];
   }
 
   /**
@@ -68,41 +87,33 @@ export class FiguredBass {
 
 
   /**
-   * Parses a figured bass symbol into interval offsets and accidentals.
+   * Parses a figured bass symbol into interval offsets and accidentals, as written
+   * (no key, no implied figures: `'6'` → [9]). A plain triad (`''`, `'5'`, `'3'`, `'5/3'`)
+   * gives [4, 7].
    *
    * Supported formats: `'6'`, `'6/4'`, `'7'`, `'6/5'`, `'4/3'`, `'4/2'`,
-   * `'9'`, `'#6'`, `'b7'`, `'6/4/2'`, empty string (= root position triad).
+   * `'9'`, `'#6'`, `'b7'`, `'6/4/2'`, `'#'` (raised third), empty string (= root position triad).
    *
    * @returns Object with `intervals` (semitone offsets above bass) and
    *   `accidentals` (Map from interval index to accidental).
    */
-  static parse(symbol: string): { intervals: number[]; accidentals: Map<number, '#' | 'b' | 'n'> } {
-    const accidentals = new Map<number, '#' | 'b' | 'n'>();
-
-    if (symbol === '' || symbol === '5' || symbol === '5/3' || symbol === '3') {
-      return { intervals: [4, 7], accidentals };
-    }
-
-    const parts = symbol.split('/').filter(Boolean);
-    const intervals: number[] = [];
-
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i].trim();
-      const accMatch = part.match(/^([#bn]?)(\d+)$/);
-      if (!accMatch) continue;
-      const [, acc, numStr] = accMatch;
-      const num = parseInt(numStr, 10);
-      const semitones = FIGURE_DEFAULT_SEMITONES[num] ?? (num - 1);
-      const adjusted = applyAccidental(semitones, (acc as '#' | 'b' | 'n') || undefined);
-      intervals.push(adjusted);
-      if (acc) accidentals.set(i, acc as '#' | 'b' | 'n');
-    }
-
+  static parse(symbol: string): { intervals: number[]; accidentals: Map<number, Accidental> } {
+    const written = this.parseFigureParts(symbol);
+    const plainTriad = written.every(p => (p.num === 3 || p.num === 5) && p.acc === undefined);
+    const parts = plainTriad ? this.completeFigures(written).sort((a, b) => a.num - b.num) : written;
+    const accidentals = new Map<number, Accidental>();
+    const intervals = parts.map(({ num, acc }, i) => {
+      if (acc) accidentals.set(i, acc);
+      return applyAccidental(FIGURE_DEFAULT_SEMITONES[num] ?? (num - 1), acc);
+    });
     return { intervals, accidentals };
   }
 
   /**
    * Realizes a figured bass symbol above a bass note, returning a Chord.
+   *
+   * Abbreviations are completed as in continuo practice: `6` is 6/3, `7` is 7/5/3, `6/5` is
+   * 6/5/3, `4/3` is 6/4/3, `2` and `4/2` are 6/4/2. A bare accidental alters the third.
    *
    * When `keySymbol` is provided, numerals without explicit accidentals are resolved
    * diatonically: the interval is adjusted to the nearest scale degree in the key.
@@ -117,15 +128,16 @@ export class FiguredBass {
    */
   static realize(bassNote: Note, figures: string, keySymbol = 'C major', _voices = 4): Chord {
     const ts = bassNote.tuningSystem;
-    const parts = this.parseFigureParts(figures);
+    const parts = this.completeFigures(this.parseFigureParts(figures)).sort((a, b) => a.num - b.num);
     const diatonicPCs = this.getDiatonicPCs(keySymbol);
     const bassPcC0 = ((bassNote.stepsFromBase + 9) % 12 + 12) % 12;
 
     const intervals = parts.map(({ num, acc }) => {
       const defaultSemitones = FIGURE_DEFAULT_SEMITONES[num] ?? (num - 1);
-      if (acc !== undefined) return applyAccidental(defaultSemitones, acc);
-      if (diatonicPCs) return this.diatonicOffset(num, bassPcC0, diatonicPCs);
-      return defaultSemitones;
+      // An explicit accidental alters the diatonic note (#6 in D minor over F: D#)
+      const diatonic = diatonicPCs ? this.diatonicOffset(num, bassPcC0, diatonicPCs) : defaultSemitones;
+      if (acc === '#' || acc === 'b') return diatonicPCs ? applyAccidental(diatonic, acc) : applyAccidental(defaultSemitones, acc);
+      return diatonic;
     });
 
     const name = `${bassNote.getName()}-${figures || '5/3'}`;
