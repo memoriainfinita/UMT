@@ -96,10 +96,15 @@ export class Note {
 
   /**
    * Returns a new note transposed by the given number of steps in the same tuning system.
-   * Propagates the flat/sharp preference: derived from `_name` if set, otherwise from `_preferFlats`.
-   * The transposed note never carries an explicit `_name` - its name is always computed.
+   * By whole octaves an explicit name keeps its letter (D#4 → D#5). Otherwise the name is
+   * computed again, with the flat/sharp preference of `_name` or `_preferFlats`.
    */
   transpose(steps: number): Note {
+    const os = this.tuningSystem.octaveSteps;
+    const named = this._name?.match(/^(.*?)(-?\d+)$/);
+    if (named && steps % os === 0) {
+      return new Note(this.tuningSystem, this.stepsFromBase + steps, `${named[1]}${parseInt(named[2], 10) + steps / os}`);
+    }
     const pf = this._preferFlats ?? (this._name ? /[A-G]b/.test(this._name) : undefined);
     return new Note(this.tuningSystem, this.stepsFromBase + steps, undefined, pf);
   }

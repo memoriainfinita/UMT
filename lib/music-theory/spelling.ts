@@ -5,7 +5,7 @@
  */
 import { Chord } from './chord';
 import { parseScaleSymbol, parseChordSymbol } from './parser';
-import { spellByLetter, get12TETName } from './utils';
+import { spellByLetter, get12TETName, chordToneOffset } from './utils';
 import { EDO } from './tuning';
 
 const pc12 = (step: number) => ((step % 12) + 12) % 12;
@@ -71,26 +71,6 @@ export function spellPitchInKey(stepsFromA4: number, keySymbol: string): string 
     .sort((a, b) => accidentalCount(a) - accidentalCount(b))[0];
   return [chosen, other].filter((n): n is string => n !== null)
     .sort((a, b) => accidentalCount(a) - accidentalCount(b))[0] ?? get12TETName(stepsFromA4, true);
-}
-
-/**
- * Letter offset of a chord tone above the root, from its interval and the rest of the
- * chord: 6 semitones is b5 without a perfect fifth and #11 with one; 8 is #5 or b13;
- * 3 is #9 when the chord has a major third; 9 is the bb7 of a diminished seventh.
- */
-function chordToneOffset(semitones: number, pcs: Set<number>): number {
-  switch (semitones) {
-    case 0: return 0;
-    case 1: case 2: return 1;
-    case 3: return pcs.has(4) ? 1 : 2;
-    case 4: return 2;
-    case 5: return 3;
-    case 6: return pcs.has(7) ? 3 : 4;
-    case 7: return 4;
-    case 8: return pcs.has(7) ? 5 : 4;
-    case 9: return pcs.has(3) && pcs.has(6) && !pcs.has(10) && !pcs.has(11) ? 6 : 5;
-    default: return 6;   // 10, 11: the seventh
-  }
 }
 
 /**

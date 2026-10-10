@@ -1,6 +1,6 @@
 import { TuningSystem, EDO } from './tuning';
 import { Note } from './note';
-import { get12TETBaseName, usesFlats, preferFlatsForKey } from './utils';
+import { get12TETBaseName, usesFlats, preferFlatsForKey, spellByLetter, chordToneOffset, writtenRoot } from './utils';
 
 // m2 (1), m3 (3), m7 (10) are always flat-side intervals in tonal context regardless of key.
 // d5/A4 (6) and m6/A5 (8) are genuinely ambiguous - defer to chord-level preference.
@@ -40,8 +40,8 @@ export class Chord {
   ) {}
 
   /**
-   * Returns the notes of the chord in root position, with accidental spelling
-   * matching the chord root (e.g. Bb chords use flat note names).
+   * Returns the notes of the chord in root position. In 12-TET each tone is named by its
+   * interval above the written root (D#m → D# F# A#; Cm7b5 → C Eb Gb Bb; C7#11 has F#).
    * For slash chords, the bass note is prepended below the root.
    */
   getNotes(): Note[] {
@@ -55,11 +55,20 @@ export class Chord {
       chordPf = usesFlats(rootFlatName);
     }
 
+    const is12TET = this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12;
+    // Each tone is named by its interval above the written root: D#m is D# F# A#,
+    // C7#9 has D#, Edim7 is E G Bb Db. The root letter comes from the name when it
+    // matches the root pitch (Cb, E#), else from the flat/sharp preference.
+    const [mainName, slashName] = this.name.split('/');
+    const rootLetter = (writtenRoot(mainName, this.rootStep) ?? get12TETBaseName(this.rootStep, chordPf))[0];
+    const pcs = new Set(this.intervalsInSteps.map(i => ((i % 12) + 12) % 12));
+
+    const fallback = (step: number, intervalFromRoot: number): Note =>
+      new Note(this.tuningSystem, step, undefined, intervalPreferFlats(intervalFromRoot, chordPf));
     const createNote = (step: number, intervalFromRoot: number): Note => {
-      if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
-        return new Note(this.tuningSystem, step, undefined, intervalPreferFlats(intervalFromRoot, chordPf));
-      }
-      return new Note(this.tuningSystem, step);
+      if (!is12TET) return new Note(this.tuningSystem, step);
+      const spelled = spellByLetter(step, rootLetter, chordToneOffset(intervalFromRoot, pcs));
+      return spelled ? new Note(this.tuningSystem, step, spelled) : fallback(step, intervalFromRoot);
     };
 
     const notes = this.intervalsInSteps.map(interval =>
@@ -71,7 +80,12 @@ export class Chord {
       while (actualBassStep >= this.rootStep) {
         actualBassStep -= this.tuningSystem.octaveSteps;
       }
-      notes.unshift(createNote(actualBassStep, actualBassStep - this.rootStep));
+      const above = actualBassStep - this.rootStep;
+      // A bass outside the chord keeps the letter it is written with (C/Bb, not C/A#)
+      const written = is12TET && !pcs.has(((above % 12) + 12) % 12) && slashName !== undefined
+        ? writtenRoot(slashName.trim(), actualBassStep) : null;
+      const spelledBass = written ? spellByLetter(actualBassStep, written[0], 0) : null;
+      notes.unshift(spelledBass ? new Note(this.tuningSystem, actualBassStep, spelledBass) : createNote(actualBassStep, above));
     }
 
     return notes;

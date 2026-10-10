@@ -65,6 +65,38 @@ export function spellByLetter(stepsFromA4: number, rootLetter: string, degree: n
   return `${letter}${acc}${octave}`;
 }
 
+/**
+ * Letter offset of a chord tone above the root, from its interval in semitones and the
+ * rest of the chord (`pcs`: the chord's intervals mod 12): 6 is b5 without a perfect fifth
+ * and #11 with one; 8 is #5 or b13; 3 is #9 when the chord has a major third; 9 is the
+ * bb7 of a diminished seventh.
+ */
+export function chordToneOffset(semitones: number, pcs: ReadonlySet<number>): number {
+  switch (((semitones % 12) + 12) % 12) {
+    case 0: return 0;
+    case 1: case 2: return 1;
+    case 3: return pcs.has(4) ? 1 : 2;
+    case 4: return 2;
+    case 5: return 3;
+    case 6: return pcs.has(7) ? 3 : 4;
+    case 7: return 4;
+    case 8: return pcs.has(7) ? 5 : 4;
+    case 9: return pcs.has(3) && pcs.has(6) && !pcs.has(10) && !pcs.has(11) ? 6 : 5;
+    default: return 6;   // 10, 11: the seventh
+  }
+}
+
+/**
+ * The written root of a symbol (`"Cb"` from `"Cbmaj7"`, `"E#"` from `"E# major"`) when it
+ * names the pitch of `stepsFromA4` in 12-TET; otherwise null.
+ */
+export function writtenRoot(symbol: string, stepsFromA4: number): string | null {
+  const root = symbol.match(/^([A-G][#b]*)/)?.[1];
+  if (!root) return null;
+  const pc = (n: number) => ((n % 12) + 12) % 12;
+  return pc(parseNoteToStep12TET(root)) === pc(stepsFromA4) ? root : null;
+}
+
 /** Returns just the note letter+accidental without octave number (e.g. "C#", "Bb"). */
 export function get12TETBaseName(stepsFromA4: number, preferFlats: boolean = false): string {
   const normalizedStep = ((stepsFromA4 % 12) + 12) % 12;
