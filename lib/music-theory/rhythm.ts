@@ -3,6 +3,7 @@
  * Handles standard durations, complex tuplets, additive meters, and polyrhythms.
  */
 import { CLAVE_PATTERNS } from './clave-patterns';
+import { Note } from './note';
 
 /** A note duration expressed as a fraction of a whole note, with optional augmentation dots. */
 export class Duration {
@@ -132,8 +133,6 @@ export class Polyrhythm {
 
 // ── MusicStream ────────────────────────────────────────────────────────────────
 
-import { Note } from './note';
-
 /** A single timed event in a MusicStream: onset, duration, notes, and velocity. */
 export interface StreamEvent {
   time: number;     // Start time in beats
@@ -211,7 +210,7 @@ export class MusicStream {
 }
 
 // ============================================================================
-//  Phase 7 - Rhythmic transformations and analysis
+//  Rhythmic transformations and analysis
 // ============================================================================
 
 /**
@@ -233,7 +232,11 @@ export class RhythmTransform {
     return [...durations].reverse();
   }
 
-  /** Retrograde inversion: reverse the array and negate each value relative to the mean. */
+  /**
+   * Reverses the array and reflects each duration around the mean (2·mean − d, floored at 0).
+   * @deprecated Not an established rhythmic operation: durations have no inversion as
+   *   pitches do. Kept for compatibility; use `retrograde` for the standard transformation.
+   */
   static retrogradeInversion(durations: number[]): number[] {
     const rev = [...durations].reverse();
     if (rev.length === 0) return [];
@@ -247,17 +250,34 @@ export class RhythmTransform {
  */
 export class RhythmAnalysis {
   /**
-   * Detects hemiola: a pattern where 3 groups of 2 beats overlay a 2 groups of 3 beats context.
-   * Checks if the pattern's accent grouping conflicts with the time signature's grouping.
+   * Detects hemiola: accents grouping six beats as 2+2+2 where the meter groups them 3+3
+   * (two bars of a triple meter such as 3/4, or one bar of 6/8 or 6/4).
+   * @param pattern - Accent positions in beats from the start (0-indexed), over one span of
+   *   six beats (two bars of 3, one bar of 6); later spans repeat modulo 6.
+   * @param timeSignature - A meter of 3 or 6 beats; others return false.
+   * @returns True when accents fall on beats 0, 2 and 4 of the span and not on beat 3.
    */
   static detectHemiola(pattern: number[], timeSignature: TimeSignature): boolean {
     const beats = timeSignature.totalBeats;
     if (beats !== 6 && beats !== 3) return false;
-    // Simple hemiola check: if pattern length = 6 and groups of 3 appear where 2 expected
-    if (pattern.length !== beats) return false;
-    const pairSum = pattern[0] + pattern[1];
-    const tripletSum = pattern[0] + pattern[1] + pattern[2];
-    return pairSum === tripletSum / 1.5; // heuristic
+    const accents = new Set(pattern.map(p => ((p % 6) + 6) % 6));
+    return accents.has(0) && accents.has(2) && accents.has(4) && !accents.has(3);
+  }
+
+  /**
+   * Strong beats of a meter, 0-indexed: the start of each group in an additive meter
+   * (3+2+2 → 0, 3, 5); every third beat in a compound meter (6/8 → 0, 3; 9/8; 12/8);
+   * every other beat in a duple or quadruple one (2/4, 4/4 → 0, 2); only the downbeat in
+   * a triple one (3/4) or an irregular one.
+   */
+  static strongBeats(timeSignature: TimeSignature): number[] {
+    const { numerators, denominator } = timeSignature;
+    const beats = timeSignature.totalBeats;
+    if (numerators.length > 1) {
+      return numerators.reduce<number[]>((acc, n, i) => [...acc, i === 0 ? 0 : acc[i - 1] + numerators[i - 1]], []);
+    }
+    const every = denominator >= 8 && beats > 3 && beats % 3 === 0 ? 3 : beats % 2 === 0 ? 2 : beats;
+    return Array.from({ length: Math.ceil(beats / every) }, (_, i) => i * every);
   }
 
   /**
@@ -268,10 +288,8 @@ export class RhythmAnalysis {
   static detectSyncopation(pattern: number[], timeSignature: TimeSignature): number {
     if (pattern.length === 0) return 0;
     const beats = timeSignature.totalBeats;
-    const strongBeats = new Set(
-      Array.from({ length: Math.ceil(beats / 2) }, (_, i) => i * 2) // even beats = strong
-    );
-    const onWeakBeat = pattern.filter(p => !strongBeats.has(p % beats));
+    const strong = new Set(this.strongBeats(timeSignature));
+    const onWeakBeat = pattern.filter(p => !strong.has(((p % beats) + beats) % beats));
     return onWeakBeat.length / pattern.length;
   }
 
@@ -373,19 +391,22 @@ export class MetricModulation {
   }
 
   /**
-   * Computes the new tempo for a metric modulation where a given note value
-   * becomes the new beat unit.
+   * Computes the new tempo for a metric modulation where a note value of the old meter
+   * becomes the beat of the new one: in 4/4 at 120, a dotted quarter (0.375) as the new
+   * beat gives 80.
+   * @param fromMeter - Meter before the modulation (its denominator is the old beat).
+   * @param toMeter - Meter after the modulation; its beat is the pivot note value.
+   * @param pivotDuration - The pivot as a fraction of a whole note, measured in the old meter.
+   * @param fromTempo - Old tempo in beats per minute (default 120).
    */
   static equivalence(
     fromMeter: TimeSignature,
     toMeter: TimeSignature,
-    pivotDuration: number
+    pivotDuration: number,
+    fromTempo = 120
   ): { newTempo: number } {
-    const fromBeatDuration = 1 / fromMeter.denominator;
-    const toBeatDuration = 1 / toMeter.denominator;
-    const ratio = fromBeatDuration / toBeatDuration;
-    const newTempo = 120 * ratio * (pivotDuration / fromBeatDuration);
-    return { newTempo };
+    // The pivot lasts pivotDuration · denominator old beats; one new beat lasts as long.
+    return { newTempo: fromTempo / (pivotDuration * fromMeter.denominator) };
   }
 }
 

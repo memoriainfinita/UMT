@@ -6,6 +6,7 @@ import { FiguredBass } from '../../lib/music-theory/figured-bass';
 import { Schenker } from '../../lib/music-theory/schenker';
 import { Counterpoint, Canon } from '../../lib/music-theory/counterpoint';
 import { ToneRow } from '../../lib/music-theory/twelve-tone';
+import { MetricModulation, RhythmAnalysis, TimeSignature } from '../../lib/music-theory/rhythm';
 
 const pcSet = (pcs: number[]) => [...new Set(pcs)].sort((a, b) => a - b).join(',');
 
@@ -189,5 +190,26 @@ describe('ToneRow', () => {
     expect(new ToneRow([0, 1, 3, 2, 6, 4, 5, 7, 8, 9, 10, 11]).isCombinatorial()).toBe('I');
     // a Z hexachord (6-Z36) is not its own complement's transform: never combinatorial
     expect(new ToneRow([0, 1, 2, 3, 4, 7, 5, 6, 8, 9, 10, 11]).isCombinatorial()).toBe(null);
+  });
+});
+
+describe('rhythm.ts fixes', () => {
+  it('metric modulation uses the given tempo: dotted quarter = new beat at 120 → 80', () => {
+    const four = new TimeSignature([4], 4);
+    expect(MetricModulation.equivalence(four, four, 0.375).newTempo).toBeCloseTo(80);
+    expect(MetricModulation.equivalence(four, new TimeSignature([6], 8), 0.125, 90).newTempo).toBeCloseTo(180);
+  });
+
+  it('strong beats follow the meter', () => {
+    expect(RhythmAnalysis.strongBeats(new TimeSignature([4], 4))).toEqual([0, 2]);
+    expect(RhythmAnalysis.strongBeats(new TimeSignature([3], 4))).toEqual([0]);
+    expect(RhythmAnalysis.strongBeats(new TimeSignature([6], 8))).toEqual([0, 3]);
+    expect(RhythmAnalysis.strongBeats(new TimeSignature([3, 2, 2], 8))).toEqual([0, 3, 5]);
+    expect(RhythmAnalysis.detectSyncopation([0, 2], new TimeSignature([3], 4))).toBe(0.5);
+  });
+
+  it('hemiola: 2+2+2 accents over two bars of 3/4', () => {
+    expect(RhythmAnalysis.detectHemiola([0, 2, 4], new TimeSignature([3], 4))).toBe(true);
+    expect(RhythmAnalysis.detectHemiola([0, 3], new TimeSignature([3], 4))).toBe(false);
   });
 });
