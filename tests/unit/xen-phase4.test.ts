@@ -10,6 +10,7 @@ import { Chord } from '../../lib/music-theory/chord';
 import { Xen } from '../../lib/music-theory/xen';
 import { parseScala } from '../../lib/music-theory/scala';
 import { Spectral } from '../../lib/music-theory/spectral';
+import { Harmony } from '../../lib/music-theory/harmony';
 
 describe('Tonnetz', () => {
   it('every pitch class once in x 0..3, y 0..2, with pc = 7x + 4y', () => {
@@ -144,5 +145,14 @@ describe('getStepFromStandard: nearest step in cents for every tuning', () => {
   it('12-step tunings stay one to one', () => {
     expect(FiveLimitJI.getStepFromStandard(6)).toBe(6);
     expect(new EDO(24).getStepFromStandard(7)).toBe(14);
+  });
+});
+
+describe('getSuggestedScales root in other tunings', () => {
+  it('a G7 in 24-EDO suggests scales on G', () => {
+    const g7 = parseChordSymbol('G7', new EDO(24));
+    const scales = Harmony.getSuggestedScales(g7).map(s => s.scale);
+    expect(scales.length).toBeGreaterThan(0);
+    expect(scales.every(s => s.startsWith('G '))).toBe(true);
   });
 });

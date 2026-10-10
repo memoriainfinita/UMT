@@ -1313,7 +1313,9 @@ export class Harmony {
     const ts = chord.tuningSystem;
     const oct = ts.octaveSteps;
     const rootPf = chord.preferFlats ?? false;
-    const root = get12TETBaseName(chord.rootStep, rootPf);
+    // the root as written, or the nearest 12-TET name (steps of other tunings are not semitones)
+    const rootSemitones = oct === 12 ? chord.rootStep : Math.round(12 * Math.log2(new Note(ts, chord.rootStep).frequency / 440));
+    const root = writtenRoot(chord.name.split('/')[0], rootSemitones) ?? get12TETBaseName(rootSemitones, rootPf);
 
     const pcs = chord.intervalsInSteps.map(i => ((i % oct) + oct) % oct);
     const has = (semitone: number) => pcs.includes(ts.getStepFromStandard(semitone));
