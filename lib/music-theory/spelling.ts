@@ -27,23 +27,50 @@ function keyLetters(keySymbol: string): KeyLetters | null {
     const tonicPc = pc12(notes[0].stepsFromBase);
     // semitones above the tonic → letter offset, as the scale spells each degree
     const scaleOffsets = new Map(notes.map((n, degree) => [pc12(n.stepsFromBase - tonicPc), degree]));
+    // A minor key's raised 6th and 7th belong to it (melodic / harmonic minor): they keep
+    // their letter even when it needs a double sharp (F## in G# minor)
+    if (/\b(minor|aeolian)\b/i.test(keySymbol) && !/harmonic|melodic/i.test(keySymbol)) {
+      scaleOffsets.set(9, 5);
+      scaleOffsets.set(11, 6);
+    }
     return { tonicLetter: notes[0].name[0], tonicPc, scaleOffsets };
   } catch { return null; }
 }
 
+/** Accidentals a key-note root must save before it gives up its letter (G in G# minor, not F##). */
+const KEY_LETTER_MARGIN = 2;
+
+const accidentalCount = (name: string) => (baseName(name).match(/[#b]/g) ?? []).length;
+
+/** True when `stepsFromA4` is one of the key's own notes (scale, or raised 6th / 7th in minor). */
+function inKey(stepsFromA4: number, key: KeyLetters): boolean {
+  return key.scaleOffsets.has(pc12(stepsFromA4 - key.tonicPc));
+}
+
 /**
  * Names a 12-TET step (A4 = 0) as it is written in `keySymbol` ("E major", "C minor",
- * "D dorian"). Scale notes take the scale's letters (G# in E major, E# in F# major);
- * the rest follow the harmonic chromatic scale (in C major: Db, Eb, F#, Ab, Bb; in A
- * minor: Bb, C#, D#, F#, G#). An unknown key falls back to flats.
+ * "D dorian"). The key's notes take the scale's letters (G# in E major, E# in F# major,
+ * F## in G# minor). The rest follow the harmonic chromatic scale (in C major: Db, Eb,
+ * F#, Ab, Bb; in A minor: Bb, C#, D#, F#, G#), unless that needs a double accidental and
+ * the neighbouring letter needs fewer (A natural in Db major, not Bbb). An unknown key
+ * falls back to flats.
  * @returns Name with octave; the octave follows the letter (B#3 is the pitch of C4).
  */
 export function spellPitchInKey(stepsFromA4: number, keySymbol: string): string {
   const key = keyLetters(keySymbol);
   if (!key) return get12TETName(stepsFromA4, true);
   const fromTonic = pc12(stepsFromA4 - key.tonicPc);
-  const offset = key.scaleOffsets.get(fromTonic) ?? CHROMATIC_LETTER_OFFSET[fromTonic];
-  return spellByLetter(stepsFromA4, key.tonicLetter, offset) ?? get12TETName(stepsFromA4, true);
+  const own = key.scaleOffsets.get(fromTonic);
+  if (own !== undefined) return spellByLetter(stepsFromA4, key.tonicLetter, own) ?? get12TETName(stepsFromA4, true);
+  const offset = CHROMATIC_LETTER_OFFSET[fromTonic];
+  const chosen = spellByLetter(stepsFromA4, key.tonicLetter, offset);
+  if (chosen && accidentalCount(chosen) < 2) return chosen;
+  // the other letter the pitch can take: one above or one below
+  const other = [offset + 1, offset + 6].map(o => spellByLetter(stepsFromA4, key.tonicLetter, o % 7))
+    .filter((n): n is string => n !== null)
+    .sort((a, b) => accidentalCount(a) - accidentalCount(b))[0];
+  return [chosen, other].filter((n): n is string => n !== null)
+    .sort((a, b) => accidentalCount(a) - accidentalCount(b))[0] ?? get12TETName(stepsFromA4, true);
 }
 
 /**
@@ -88,17 +115,35 @@ export function spellChord(chord: Chord, rootName?: string): string[] {
 }
 
 /**
- * Renames a chord as it is written in `keySymbol`: the root by the key (`spellPitchInKey`),
- * a slash bass by its interval in the chord, or by the key when it is not a chord tone.
- * Ab7 in A major is G#7; F#m7b5 in C major stays F#m7b5; C/E in E major stays C/E.
+ * Renames a chord as it is written in `keySymbol`. A root that is a note of the key takes
+ * the key's letter (Ab7 in A major is G#7) unless the other letter saves 3 or more
+ * accidentals (a G major chord in G# minor is G, not F## A## C###); a chord made only of
+ * key notes always keeps it (F##dim7 in G# minor). A chromatic root takes whichever of its two
+ * letters leaves fewer accidentals across the chord tones, the root's counted twice (C in
+ * F# major, not B# with D## F##); on a tie, the key's spelling (`spellPitchInKey`). A slash bass is named by
+ * its interval in the chord, or by the key when it is not a chord tone.
  * Returns the chord unchanged when the key is unknown or the tuning is not 12-TET.
  */
 export function spellChordInKey(chord: Chord, keySymbol: string): Chord {
   const ts = chord.tuningSystem;
-  if (!(ts instanceof EDO && ts.divisions === 12) || !keyLetters(keySymbol)) return chord;
+  const key = keyLetters(keySymbol);
+  if (!(ts instanceof EDO && ts.divisions === 12) || !key) return chord;
   const [main, slash] = chord.name.split('/');
   const suffix = main.replace(/^[A-G][#b]*/, '');
-  const root = baseName(spellPitchInKey(chord.rootStep, keySymbol));
+  const keyRoot = baseName(spellPitchInKey(chord.rootStep, keySymbol));
+  let root = keyRoot;
+  // accidentals across the chord, the root's counted twice: it is the name read first
+  const cost = (r: string) => spellChord(chord, r).reduce((n, t) => n + accidentalCount(t), 0) + accidentalCount(r);
+  // a root that is a note of the key keeps its letter unless the other saves 3 or more
+  const margin = inKey(chord.rootStep, key) ? KEY_LETTER_MARGIN : 0;
+  const letterIdx = 'CDEFGAB'.indexOf(keyRoot[0]);
+  const alternatives = [1, 6].map(o => spellByLetter(chord.rootStep, 'CDEFGAB'[letterIdx], o))
+    .filter((n): n is string => n !== null && accidentalCount(n) <= 2).map(baseName);
+  // a chord made only of key notes (F##°7 in G# minor) is spelled as the key spells it
+  const pcs = new Set(chord.intervalsInSteps.map(pc12));
+  const writable = chord.intervalsInSteps.every(i => spellByLetter(chord.rootStep + i, keyRoot[0], chordToneOffset(pc12(i), pcs)) !== null);
+  const diatonic = writable && chord.intervalsInSteps.every(i => inKey(chord.rootStep + i, key));
+  if (!diatonic) for (const alt of alternatives) if (cost(alt) + margin < cost(root)) root = alt;
   let bass = '';
   if (slash !== undefined && chord.bassStep !== undefined) {
     const above = pc12(chord.bassStep - chord.rootStep);

@@ -22,6 +22,12 @@ describe('spellPitchInKey', () => {
     expect(inKey(['G4'], 'G# minor')).toEqual(['F##4']);   // leading tone of G# minor
   });
 
+  it('a chromatic note avoids a double accidental when the other letter needs fewer', () => {
+    expect(inKey(['A4'], 'Db major')).toEqual(['A4']);     // not Bbb
+    expect(inKey(['D4'], 'Db major')).toEqual(['D4']);     // not Ebb
+    expect(inKey(['E4'], 'Db major')).toEqual(['Fb4']);    // b3, a single flat: kept
+  });
+
   it('modes keep their own scale letters', () => {
     expect(inKey(['Gb4'], 'C lydian')).toEqual(['F#4']);
     expect(inKey(['F#4'], 'C locrian')).toEqual(['Gb4']);
@@ -64,6 +70,23 @@ describe('spellChordInKey', () => {
     expect(inKeyName('Abdim7', 'A minor')).toBe('G#dim7');
   });
 
+  it('a chromatic root takes the letter that leaves fewer accidentals in the chord', () => {
+    expect(inKeyName('C', 'F# major')).toBe('C');          // not B# D## F##
+    expect(inKeyName('Db7', 'C major')).toBe('Db7');       // tie: the key's spelling
+    expect(inKeyName('Eb', 'C major')).toBe('Eb');
+  });
+
+  it('a key-note root keeps its letter unless the other saves 3 or more accidentals', () => {
+    expect(inKeyName('Gbm', 'Db major')).toBe('Gbm');        // borrowed iv: Gb Bbb Db
+    expect(inKeyName('G', 'G# minor')).toBe('G');            // not F## A## C###
+    expect(inKeyName('Ebmaj7', 'D# minor')).toBe('Ebmaj7');  // not D# F## A# C##
+  });
+
+  it('a chord made only of key notes is spelled as the key spells it', () => {
+    expect(inKeyName('Gdim7', 'G# minor')).toBe('F##dim7');  // vii°7
+    expect(inKeyName('Cdim7', 'C major')).toBe('Cdim7');
+  });
+
   it('a slash bass follows the chord, or the key when it is not a chord tone', () => {
     expect(inKeyName('Ab/C', 'E major')).toBe('G#/B#');
     expect(inKeyName('C/E', 'E major')).toBe('C/E');
@@ -71,9 +94,9 @@ describe('spellChordInKey', () => {
   });
 
   it('keeps the chord type and pitches', () => {
-    const before = parseChordSymbol('Ebmaj7');
+    const before = parseChordSymbol('Ebm7');
     const after = spellChordInKey(before, 'D# minor');
-    expect(after.name).toBe('D#maj7');
+    expect(after.name).toBe('D#m7');
     expect(after.intervalsInSteps).toEqual(before.intervalsInSteps);
   });
 
