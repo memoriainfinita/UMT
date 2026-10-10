@@ -1,12 +1,12 @@
 # UMT
 
-[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/dist/umt.js)
+[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.2.0/dist/umt.js)
 [![Live demo](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://memoriainfinita.github.io/UMT)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
 A TypeScript library for music theory computation that works across any tuning system -
 12-TET, microtonal, historical temperaments, world music traditions, and post-tonal systems.
-Zero runtime dependencies. 112 kb compiled bundle.
+Zero runtime dependencies. 130 kb compiled bundle (IIFE), plus an ESM build with bundled types.
 
 **[Live demo](https://memoriainfinita.github.io/UMT)** · **[API docs](https://memoriainfinita.github.io/UMT/api-docs/)**
 
@@ -43,9 +43,11 @@ SetTheory.getZRelated([0, 1, 4, 6]);      // Z-related sets
 
 ## Installation
 
+Releases are git tags (`v0.2.0`); pin one, since `main` may change. Breaking changes are listed in `CHANGELOG.md`.
+
 **Browser - CDN (jsDelivr)**
 ```html
-<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/dist/umt.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.2.0/dist/umt.js"></script>
 <script>
   const chord = UMT.parseChordSymbol('Cmaj9');
   console.log(chord.getNotes().map(n => n.name));
@@ -57,15 +59,25 @@ SetTheory.getZRelated([0, 1, 4, 6]);      // Z-related sets
 <script src="umt.js"></script>
 ```
 
-**TypeScript / ESM**
+**npm (from GitHub) - ESM with types**
+```bash
+npm install github:memoriainfinita/UMT#v0.2.0
+```
 ```typescript
-import { parseChordSymbol, TET12, Harmony, SetTheory } from './lib/music-theory';
+import { parseChordSymbol, TET12, Harmony, SetTheory } from 'universal-music-theory-library';
+```
+
+**Browser - ESM from the CDN**
+```html
+<script type="module">
+  import { parseChordSymbol } from 'https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.2.0/dist/umt.mjs';
+</script>
 ```
 
 **Build from source**
 ```bash
 npm install
-npm run build:umt   # lib/music-theory/umt.ts -> dist/umt.js
+npm run build   # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
 ```
 
 ---
@@ -146,6 +158,7 @@ npm run build:umt   # lib/music-theory/umt.ts -> dist/umt.js
 | `abc-bridge.ts` | Export scales, chords, and streams to ABC notation |
 | `lilypond-bridge.ts` | Export scales, chords, and streams to LilyPond |
 | `musicxml-bridge.ts` | Export scales, chords, and streams to MusicXML |
+| `notation-layout.ts` | Shared by the exporters: spelling, key signatures, measures, ties and triplets |
 
 ---
 
@@ -256,7 +269,7 @@ import { parseScaleSymbol, ABCBridge, scaleToLilyPond, scaleToMusicXML } from '.
 
 const scale = parseScaleSymbol('D dorian');
 
-ABCBridge.scaleToABC(scale, 1);   // ABC notation string
+ABCBridge.scaleToABC(scale, 1, 'D dorian');   // ABC notation, accidentals against K:Ddor
 scaleToLilyPond(scale);            // LilyPond source
 scaleToMusicXML(scale);            // MusicXML document
 ```
@@ -276,7 +289,7 @@ scaleToMusicXML(scale);            // MusicXML document
 ## Tests
 
 ```bash
-npm run test:unit    # 751 unit tests via vitest
+npm run test:unit    # 961 unit tests via vitest, one file per module
 npm run typecheck    # TypeScript type checking
 ```
 

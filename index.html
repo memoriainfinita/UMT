@@ -118,10 +118,10 @@
       world music traditions, and post-tonal systems. All from a single zero-dependency bundle.
     </p>
     <div class="flex flex-wrap gap-2 mb-5">
-      <span class="pill">104 kb bundle</span>
+      <span class="pill">130 kb bundle</span>
       <span class="pill">zero dependencies</span>
       <span class="pill">40+ modules</span>
-      <span class="pill">524 tests</span>
+      <span class="pill">961 tests</span>
     </div>
     <p class="text-neutral-700 text-xs mb-6 leading-loose">
       12-TET <span class="dot">·</span>
@@ -179,7 +179,7 @@
     <div class="flex flex-wrap gap-2 mb-4">
       <button onclick="runTuning()" class="btn">Compare tunings</button>
       <button onclick="playTuningBtn(UMT.TET12)" class="btn-sm">Play 12-TET</button>
-      <button onclick="playTuningBtn(UMT.PtolemaicJI)" class="btn-sm">Play JI</button>
+      <button onclick="playTuningBtn(UMT.FiveLimitJI)" class="btn-sm">Play JI</button>
       <button onclick="playTuningBtn(UMT.WerckmeisterIII)" class="btn-sm">Play Werckmeister</button>
     </div>
     <pre id="out-tuning" class="out"></pre>
@@ -341,7 +341,7 @@
 </main>
 
 <footer class="border-t border-neutral-900 mt-8 py-8 text-center text-neutral-700 text-xs">
-  Universal Music Theory Library &nbsp;·&nbsp; TypeScript &nbsp;·&nbsp; MIT License &nbsp;·&nbsp;
+  Universal Music Theory Library &nbsp;·&nbsp; TypeScript &nbsp;·&nbsp; GPL-3.0 License &nbsp;·&nbsp;
   <a href="https://github.com/memoriainfinita/UMT" class="hover:text-neutral-500 transition-colors">GitHub</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/memoriainfinita/UMT/wiki" class="hover:text-neutral-500 transition-colors">Wiki</a>
@@ -434,7 +434,7 @@ function runTuning() {
     const sym = $('t-scale').value.trim();
     const TUNINGS = [
       { label: '12-TET',           obj: UMT.TET12 },
-      { label: 'Ptolemaic JI',     obj: UMT.PtolemaicJI },
+      { label: '5-limit JI (A)',   obj: UMT.FiveLimitJI },
       { label: 'Werckmeister III', obj: UMT.WerckmeisterIII },
     ];
 
@@ -459,7 +459,7 @@ function runTuning() {
         } else {
           t += `${label} (Δ¢)`.padEnd(22);
           t += notes.map((n, i) => {
-            const cents = obj.getInterval(n.stepsFromBase - scale.rootStep).cents;
+            const cents = obj.getInterval(n.stepsFromBase).cents - obj.getInterval(scale.rootStep).cents;
             const dev   = cents - refCents[i];
             return `${dev >= 0 ? '+' : ''}${dev.toFixed(1)}`.padEnd(C);
           }).join('') + '\n';
@@ -817,8 +817,9 @@ function runNotation() {
     if (type === 'scale') {
       const scale   = UMT.parseScaleSymbol(input);
       const keyNote = scale.getNotes()[0].name.replace(/\d+/, '');
-      const body    = UMT.ABCBridge.scaleToABC(scale, 1, keyNote);
-      abc  = UMT.ABCBridge.wrapInHeaders(body + ' |]', input, '4/4', keyNote);
+      // the scale's own key when it has a signature (D dorian, Bb harmonic minor), else its root
+      const abcIn   = key => UMT.ABCBridge.wrapInHeaders(UMT.ABCBridge.scaleToABC(scale, 1, key) + ' |]', input, '4/4', key);
+      try { abc = abcIn(input); } catch { abc = abcIn(keyNote); }
       lily = UMT.scaleToLilyPond(scale);
       xml  = UMT.scaleToMusicXML(scale, 1, { title: input });
     } else {
