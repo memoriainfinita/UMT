@@ -5,7 +5,7 @@
 import { Chord } from './chord';
 import { spellChordInKey } from './spelling';
 import { parseScaleSymbol, parseChordSymbol } from './parser';
-import { get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
+import { get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, writtenRoot, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 import { CHORD_FORMULAS, SCALE_PATTERNS, MODE_BRIGHTNESS } from './dictionaries';
 import { Note } from './note';
 import { Scale } from './scale';
@@ -172,16 +172,18 @@ interface KeyInfo {
   isMinor: boolean;
   tuning: TuningSystem;
   symbol: string;
+  /** Where a chord root's letter comes from: the key (`spellChordInKey`) or the chord's name. */
+  spelling: 'key' | 'written';
 }
 
-function parseKey(keySymbol: string, tuning: TuningSystem): KeyInfo {
+function parseKey(keySymbol: string, tuning: TuningSystem, spelling: 'key' | 'written' = 'key'): KeyInfo {
   const scale = parseScaleSymbol(keySymbol, tuning);
   const scalePcs = scale.getPitchClasses();
   const match = keySymbol.match(/^([A-G][#b]*)\s+(.*)$/i);
   const rootName = match ? match[1] : 'C';
   const modeRaw = match ? match[2].trim().toLowerCase() : 'major';
   const isMinor = /minor|aeolian|dorian|phrygian|locrian/.test(modeRaw);
-  return { scale, scalePcs, tonicPc: scalePcs[0], rootName, mode: modeRaw, isMinor, tuning, symbol: keySymbol };
+  return { scale, scalePcs, tonicPc: scalePcs[0], rootName, mode: modeRaw, isMinor, tuning, symbol: keySymbol, spelling };
 }
 
 function pcMod(step: number, oct: number): number {
@@ -256,8 +258,9 @@ function getRomanForChord(chord: Chord, key: KeyInfo): {
   let degree = idx !== -1 ? idx + 1 : -1;
 
   // A chromatic root takes its degree from the letter the key spells it with
-  // (F#°7 in C is #iv°7, as `spellChordInKey` writes F#, not bv°7)
-  const byLetter = idx === -1 ? degreeByLetter(chord, key) : null;
+  // (F#°7 in C is #iv°7, as `spellChordInKey` writes F#, not bv°7). With written
+  // spelling every root keeps the letter of its name (Gb in C is bV, B# is #vii).
+  const byLetter = idx === -1 || key.spelling === 'written' ? degreeByLetter(chord, key) : null;
   if (byLetter) {
     degree = byLetter.degree;
     accidental = byLetter.accidental;
@@ -299,6 +302,17 @@ function getRomanForChord(chord: Chord, key: KeyInfo): {
   }
 
   const parts = qualityToRomanParts(quality);
+  // A lower-case numeral with no quality takes the key's chord (vii in C is Bdim, vii7
+  // Bm7b5): a minor chord that is not the key's says so (Bm → viim, Bm7 → viim7).
+  if (accidental === '' && !isDiatonic && (quality === 'm' || quality === 'm7')) parts.suffix = quality;
+  // In natural minor `vii°` stands on the raised leading tone; a diminished chord on the
+  // natural seventh (G° in A minor) is written with its quality in full: `VIIdim`.
+  const onNaturalSeventh = isNaturalMinor(key) && degree === 7 && accidental === ''
+    && chordRootPc === pcMod(key.tonicPc + key.tuning.getStepFromStandard(10), oct);
+  if (onNaturalSeventh && (quality === 'dim' || quality === 'dim7' || quality === 'm7b5')) {
+    parts.upper = true;
+    parts.suffix = quality;
+  }
   const romanBase = degree > 0 ? ROMAN_UPPER[degree - 1] : '?';
   const romanCased = parts.upper ? romanBase : romanBase.toLowerCase();
   const roman = `${accidental}${romanCased}${parts.suffix}`;
@@ -313,12 +327,13 @@ function getRomanForChord(chord: Chord, key: KeyInfo): {
 function degreeByLetter(chord: Chord, key: KeyInfo): { degree: number; accidental: '' | 'b' | '#' } | null {
   if (chord.tuningSystem.octaveSteps !== 12 || key.scalePcs.length !== 7) return null;
   const keyNotes = key.scale.getNotes();
-  const rootLetter = spellChordInKey(chord, key.symbol).name[0];
+  const written = key.spelling === 'written' ? writtenRoot(chord.name.split('/')[0], chord.rootStep) : null;
+  const rootLetter = (written ?? spellChordInKey(chord, key.symbol).name)[0];
   const degreeIdx = keyNotes.slice(0, 7).findIndex(n => n.name[0] === rootLetter);
   if (degreeIdx === -1) return null;
   const diff = pcMod(chord.rootStep - keyNotes[degreeIdx].stepsFromBase + 6, 12) - 6;
-  if (diff !== 1 && diff !== -1) return null;
-  return { degree: degreeIdx + 1, accidental: diff === 1 ? '#' : 'b' };
+  if (Math.abs(diff) > 1) return null;
+  return { degree: degreeIdx + 1, accidental: diff === 1 ? '#' : diff === -1 ? 'b' : '' };
 }
 
 function isNaturalMinor(key: KeyInfo): boolean {
@@ -719,15 +734,21 @@ export class Harmony {
    * Analyzes a progression in a given key, returning Roman-numeral-level info for
    * each chord (function, diatonicism, borrowed/secondary flags, cadence-with-next)
    * and a list of detected modulations (3+ consecutive chords diatonic to a new key).
+   *
+   * Numerals read back with `parseRomanProgression` (`I7` is a dominant, `Imaj7` a major
+   * seventh). A chromatic root takes its letter from the key by default (`spellChordInKey`:
+   * Gb in C is read F#, `#IV`); with `spelling: 'written'` every root keeps the letter of
+   * its name when the name matches its pitch (Gb in C is `bV`), for chords that arrive
+   * already named rather than detected.
    */
-  static analyzeProgression(chords: Chord[], keySymbol: string): {
+  static analyzeProgression(chords: Chord[], keySymbol: string, options: { spelling?: 'key' | 'written' } = {}): {
     analysis: ChordAnalysis[];
     modulations: ModulationEvent[];
     harmonicRhythm: number;
   } {
     if (chords.length === 0) return { analysis: [], modulations: [], harmonicRhythm: 0 };
     const tuning = chords[0].tuningSystem;
-    const key = parseKey(keySymbol, tuning);
+    const key = parseKey(keySymbol, tuning, options.spelling ?? 'key');
 
     const analysis: ChordAnalysis[] = chords.map((chord, i) => {
       const { roman, degree, accidental, isDiatonic, quality } = getRomanForChord(chord, key);

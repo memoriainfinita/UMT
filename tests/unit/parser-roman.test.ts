@@ -14,8 +14,8 @@ describe('parseRomanProgression - quality from the key', () => {
     expect(names('vii vii7', 'C major')).toEqual(['Bdim', 'Bm7b5']);
     expect(pcs('vii7', 'C major')[0]).toEqual([0, 3, 6, 10]);
   });
-  it('7 takes the key seventh: ii7 V7 I7 is Dm7 G7 Cmaj7', () => {
-    expect(names('ii7 V7 I7', 'C major')).toEqual(['Dm7', 'G7', 'Cmaj7']);
+  it('upper-case 7 is a dominant (jazz): ii7 V7 I7 IV7 Imaj7 is Dm7 G7 C7 F7 Cmaj7', () => {
+    expect(names('ii7 V7 I7 IV7 Imaj7 Idom7', 'C major')).toEqual(['Dm7', 'G7', 'C7', 'F7', 'Cmaj7', 'C7']);
   });
   it('a third that is not the key gives the plain chord of the case', () => {
     expect(names('II II7 iv iv7', 'C major')).toEqual(['D', 'D7', 'Fm', 'Fm7']);

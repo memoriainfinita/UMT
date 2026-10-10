@@ -43,7 +43,7 @@ export const PROGRESSIONS: Record<string, ProgressionEntry> = {
   },
   'blues-12': {
     name: 'blues-12',
-    romanNumerals: ['Idom7', 'Idom7', 'Idom7', 'Idom7', 'IVdom7', 'IVdom7', 'Idom7', 'Idom7', 'V7', 'IVdom7', 'Idom7', 'V7'],
+    romanNumerals: ['I7', 'I7', 'I7', 'I7', 'IV7', 'IV7', 'I7', 'I7', 'V7', 'IV7', 'I7', 'V7'],
     description: '12-bar blues. Dominant sevenths on I, IV and V, with V in the turnaround.',
     style: 'blues',
   },
@@ -55,7 +55,7 @@ export const PROGRESSIONS: Record<string, ProgressionEntry> = {
   },
   'blues-jazz': {
     name: 'blues-jazz',
-    romanNumerals: ['Idom7', 'IVdom7', 'Idom7', 'v7 Idom7', 'IVdom7', '#iv°7', 'Idom7', 'VI7', 'ii7', 'V7', 'Idom7 VI7', 'ii7 V7'],
+    romanNumerals: ['I7', 'IV7', 'I7', 'v7 I7', 'IV7', '#iv°7', 'I7', 'VI7', 'ii7', 'V7', 'I7 VI7', 'ii7 V7'],
     description: 'Jazz blues. ii-V into IV in bar 4, #iv°7 in bar 6, VI7 leading to the ii-V turnaround.',
     style: 'jazz',
     defaultKey: 'Bb major',
@@ -63,7 +63,7 @@ export const PROGRESSIONS: Record<string, ProgressionEntry> = {
   'rhythm-changes': {
     name: 'rhythm-changes',
     romanNumerals: ['Imaj7', 'vi7', 'ii7', 'V7', 'Imaj7', 'vi7', 'ii7', 'V7',
-                    'Imaj7', 'Idom7', 'IVmaj7', 'iv7', 'Imaj7', 'V7', 'Imaj7', 'V7'],
+                    'Imaj7', 'I7', 'IVmaj7', 'iv7', 'Imaj7', 'V7', 'Imaj7', 'V7'],
     description: "Rhythm changes A section (from Gershwin's I Got Rhythm).",
     style: 'jazz',
     defaultKey: 'Bb major',
@@ -100,7 +100,7 @@ export const PROGRESSIONS: Record<string, ProgressionEntry> = {
   },
   'bird-blues': {
     name: 'bird-blues',
-    romanNumerals: ['Imaj7', 'viiø7 III7', 'vi7 II7', 'v7 Idom7', 'IVdom7', 'iv7 bVII7', 'iii7 VI7', 'biii7 bVI7', 'ii7', 'V7', 'Imaj7 VI7', 'ii7 V7'],
+    romanNumerals: ['Imaj7', 'viiø7 III7', 'vi7 II7', 'v7 I7', 'IV7', 'iv7 bVII7', 'iii7 VI7', 'biii7 bVI7', 'ii7', 'V7', 'Imaj7 VI7', 'ii7 V7'],
     description: "Bird blues (Parker's Blues for Alice). Chains of ii-V descending from bar 2 to bar 8.",
     style: 'jazz',
     defaultKey: 'F major',

@@ -242,9 +242,9 @@ function romanKey(keySymbol: string, octave: number): RomanKey {
 /**
  * One Roman numeral in a key → chord symbol with octave (`"Dm"`, 4). The case gives the
  * third; what the numeral leaves unsaid comes from the key: `ii` in C is Dm, `vii` is
- * Bdim, `vii7` is Bm7b5, `V7` is G7, `I7` is Cmaj7. A numeral whose third is not the key's
- * takes the plain chord of its case (`II` → D, `II7` → D7, `iv` in major → Fm, `iv7` →
- * Fm7). Accidentals move the key's own degree (`bVII` in C is Bb; in A minor, Gb).
+ * Bdim, `vii7` is Bm7b5. An upper-case `7` is a dominant seventh (`V7` G7, `I7` C7; the
+ * major seventh is `Imaj7`). A numeral whose third is not the key's takes the plain chord
+ * of its case (`II` → D, `iv` in major → Fm, `iv7` → Fm7). Accidentals move the key's own degree (`bVII` in C is Bb; in A minor, Gb).
  * In a natural minor key, `vii°`, `vii°7` and `viiø7` stand on the raised leading tone.
  */
 function romanToSymbol(token: string, key: RomanKey): { symbol: string; octave: number } {
@@ -268,9 +268,12 @@ function romanToSymbol(token: string, key: RomanKey): { symbol: string; octave: 
   let type: string;
   const diatonic = acc === '' && shift === 0;
   if (/^dom\d/.test(suffix)) {
-    // explicit dominant, whatever the key's seventh (`Idom7` in C is C7, `IVdom9` F9)
+    // explicit dominant (`Idom7` in C is C7, `IVdom9` F9): an alias of the upper-case `7`
     if (lower) throw new Error(`parseRomanProgression: a dominant needs an upper-case numeral, got "${token}".`);
     type = suffix.slice(3);
+  } else if (suffix === '7' && !lower) {
+    // jazz convention: an upper-case 7 is a dominant seventh (`I7` is C7); `Imaj7` is Cmaj7
+    type = '7';
   } else if (suffix === '' || suffix === '7') {
     const chord = key.scale.getChordOnDegree(degree, suffix === '7' ? 'seventh' : 'triad');
     const pcs = chord.intervalsInSteps.map(i => ((i % 12) + 12) % 12);
@@ -303,12 +306,13 @@ function romanToSymbol(token: string, key: RomanKey): { symbol: string; octave: 
  *
  * - Case gives the third: `I`, `IV`, `V` major; `ii`, `iii`, `vi` minor
  * - What the numeral leaves unsaid comes from the key: `vii` in C major is Bdim,
- *   `ii7` is Dm7, `vii7` is Bm7b5, `V7` is G7, `I7` is Cmaj7. A third that is not the
- *   key's gives the plain chord of the case: `II` is D, `II7` D7, `iv7` in major Fm7
+ *   `ii7` is Dm7, `vii7` is Bm7b5. A third that is not the key's gives the plain chord
+ *   of the case: `II` is D, `iv7` in major Fm7
+ * - Upper-case `7` is a dominant seventh (jazz convention): `V7` G7, `I7` C7, `IV7` F7;
+ *   the major seventh is written `maj7` (`Imaj7`). `dom` is an alias (`Idom7`)
  * - Any other suffix is a chord type, read like `parseChordSymbol` (dictionary, then
  *   compositional); lower case adds the minor third: `ii9` is Dm9, `V7b9` G7b9,
  *   `viiø7` Bm7b5, `vii°7` Bdim7. An unknown suffix throws
- * - `dom` asks for a dominant whatever the key says: `Idom7` in C is C7, `IVdom9` F9
  * - Accidentals move the key's own degree: `bVII` in C major is Bb, `bII` in A minor is
  *   Bb. In minor, `VII` and `VI` are the natural degrees (G and F in A minor), and
  *   `vii°`, `vii°7`, `viiø7` stand on the raised leading tone (G#)

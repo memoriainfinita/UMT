@@ -221,7 +221,7 @@ describe('Progressions', () => {
   });
 
   it('dom gives an explicit dominant; lower case is rejected', () => {
-    expect(parseRomanProgression('Idom7 IVdom9 I7', 'C major').map(c => c.name)).toEqual(['C7', 'F9', 'Cmaj7']);
+    expect(parseRomanProgression('Idom7 IVdom9 Imaj7', 'C major').map(c => c.name)).toEqual(['C7', 'F9', 'Cmaj7']);
     expect(() => parseRomanProgression('idom7', 'C major')).toThrow();
   });
 });
