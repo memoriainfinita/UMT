@@ -2,10 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { Tonnetz } from '../../lib/music-theory/tonnetz';
 import { parseNote, parseChordSymbol } from '../../lib/music-theory/parser';
 import { Note } from '../../lib/music-theory/note';
-import { EDO } from '../../lib/music-theory/tuning';
+import { EDO, JustIntonation } from '../../lib/music-theory/tuning';
 import { MOS, CommaPump } from '../../lib/music-theory/mos';
 import { FiveLimitJI } from '../../lib/music-theory/presets';
 import { Chord } from '../../lib/music-theory/chord';
+import { Xen } from '../../lib/music-theory/xen';
 
 describe('Tonnetz', () => {
   it('every pitch class once in x 0..3, y 0..2, with pc = 7x + 4y', () => {
@@ -51,5 +52,20 @@ describe('MOS and comma pump', () => {
     const ch = (root: number) => new Chord('x', FiveLimitJI, root, [0, 4, 7]);
     expect(CommaPump.detect([ch(3), ch(0), ch(5), ch(10), ch(15)], FiveLimitJI)).toMatchObject({ commaType: 'syntonic' });
     expect(CommaPump.detect([ch(3), ch(8), ch(10), ch(15)], FiveLimitJI).drift).toBeCloseTo(0, 6);
+  });
+});
+
+describe('Xen otonal / utonal', () => {
+  it('major triad is otonal 4:5:6; minor triad is utonal 1/6:1/5:1/4', () => {
+    expect(Xen.detectOtonal(parseChordSymbol('C'))).toEqual({ isOtonal: true, harmonics: [4, 5, 6] });
+    expect(Xen.detectOtonal(parseChordSymbol('Cm')).isOtonal).toBe(false);
+    expect(Xen.detectUtonal(parseChordSymbol('Cm'))).toEqual({ isUtonal: true, subharmonics: [4, 5, 6] });
+  });
+
+  it('harmonic seventh 4:5:6:7 in JI; 12-TET\'s minor seventh only with a wide tolerance', () => {
+    const ji = new Chord('C7h', new JustIntonation('h', [[5, 4], [3, 2], [7, 4]]), 0, [0, 1, 2, 3]);
+    expect(Xen.detectOtonal(ji).harmonics).toEqual([4, 5, 6, 7]);
+    expect(Xen.detectOtonal(parseChordSymbol('C7')).isOtonal).toBe(false);
+    expect(Xen.detectOtonal(parseChordSymbol('C7'), 7, 35).harmonics).toEqual([4, 5, 6, 7]);
   });
 });

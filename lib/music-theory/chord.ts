@@ -51,15 +51,16 @@ export class Chord {
   getNotes(): Note[] {
     // Use stored preferFlats if set (populated by parseChordSymbol / NeoRiemannian).
     // Fall back to root-name heuristic for directly constructed Chord instances.
+    const is12TET = this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12;
     let chordPf: boolean;
     if (this.preferFlats !== undefined) {
       chordPf = this.preferFlats;
-    } else {
+    } else if (is12TET) {
       const rootFlatName = new Note(this.tuningSystem, this.rootStep).getName({ preferFlats: true });
       chordPf = preferFlatsForKey(rootFlatName);
+    } else {
+      chordPf = false; // other tunings have no letter names ("Step N")
     }
-
-    const is12TET = this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12;
     // Each tone is named by its interval above the written root: D#m is D# F# A#,
     // C7#9 has D#, Edim7 is E G Bb Db. The root letter comes from the name when it
     // matches the root pitch (Cb, E#), else from the flat/sharp preference.

@@ -23,78 +23,48 @@ export class Xen {
   }
 
   /**
-   * Tests whether a chord's intervals correspond to an otonal (harmonic series) structure.
-   * An otonal chord uses partials n, m, p, ... of a common fundamental.
+   * Tests whether a chord is otonal: its notes are partials n₁ < n₂ < … of one fundamental,
+   * none above `harmonicLimit` (4:5:6 major triad, 4:5:6:7 harmonic seventh).
    *
    * @param chord - The chord to test.
-   * @param harmonicLimit - Maximum partial number to consider (default 7).
+   * @param harmonicLimit - Highest partial number allowed (default 7).
+   * @param toleranceCents - How far each note may be from its partial (default 15¢, enough
+   *   for 12-TET's major third; 31¢ would admit its minor seventh as 7/4).
+   * @returns The partial number of each note, lowest note first.
    */
-  static detectOtonal(chord: Chord, harmonicLimit = 7): { isOtonal: boolean; harmonics: number[] } {
-    const notes = chord.getNotes();
-    if (notes.length === 0) return { isOtonal: false, harmonics: [] };
-
-    const baseFreq = notes[0].frequency;
-    const harmonics: number[] = [];
-
-    for (const note of notes) {
-      const ratio = note.frequency / baseFreq;
-      // Try to find integer n/m within harmonicLimit such that n/m ≈ ratio
-      let found = false;
-      for (let n = 1; n <= harmonicLimit; n++) {
-        if (Math.abs(ratio * 1 - n) < 0.05 || Math.abs(ratio - n) < 0.05) {
-          harmonics.push(n);
-          found = true;
-          break;
-        }
-        for (let m = 1; m <= harmonicLimit; m++) {
-          if (Math.abs(ratio - n / m) < 0.02) {
-            harmonics.push(n);
-            found = true;
-            break;
-          }
-        }
-        if (found) break;
-      }
-      if (!found) return { isOtonal: false, harmonics: [] };
-    }
-
-    return { isOtonal: harmonics.length === notes.length, harmonics };
+  static detectOtonal(chord: Chord, harmonicLimit = 7, toleranceCents = 15): { isOtonal: boolean; harmonics: number[] } {
+    const freqs = chord.getNotes().map(n => n.frequency).sort((a, b) => a - b);
+    const harmonics = harmonicNumbers(freqs, harmonicLimit, toleranceCents);
+    return { isOtonal: harmonics !== null, harmonics: harmonics ?? [] };
   }
 
   /**
-   * Tests whether a chord's intervals correspond to a utonal (subharmonic series) structure.
-   * A utonal chord uses subpartials 1/n, 1/m, 1/p, ... of a common overtone.
+   * Tests whether a chord is utonal: its notes are subharmonics 1/n of one common overtone,
+   * none below 1/`harmonicLimit` (1/6 : 1/5 : 1/4, the minor triad 10:12:15).
+   *
+   * @param chord - The chord to test.
+   * @param harmonicLimit - Highest subharmonic number allowed (default 7).
+   * @param toleranceCents - How far each note may be from its subharmonic (default 15¢).
+   * @returns The subharmonic number of each note, highest note first.
    */
-  static detectUtonal(chord: Chord, harmonicLimit = 7): { isUtonal: boolean; subharmonics: number[] } {
-    const notes = chord.getNotes().reverse(); // flip: utonal starts from highest note
-    if (notes.length === 0) return { isUtonal: false, subharmonics: [] };
-
-    const topFreq = notes[0].frequency;
-    const subharmonics: number[] = [];
-
-    for (const note of notes) {
-      const ratio = topFreq / note.frequency;
-      let found = false;
-      for (let n = 1; n <= harmonicLimit; n++) {
-        if (Math.abs(ratio - n) < 0.05) {
-          subharmonics.push(n);
-          found = true;
-          break;
-        }
-      }
-      if (!found) return { isUtonal: false, subharmonics: [] };
-    }
-
-    return { isUtonal: subharmonics.length === notes.length, subharmonics };
+  static detectUtonal(chord: Chord, harmonicLimit = 7, toleranceCents = 15): { isUtonal: boolean; subharmonics: number[] } {
+    // f = overtone / n, so the numbers n are proportional to 1 / f
+    const inverse = chord.getNotes().map(n => 1 / n.frequency).sort((a, b) => a - b);
+    const subharmonics = harmonicNumbers(inverse, harmonicLimit, toleranceCents);
+    return { isUtonal: subharmonics !== null, subharmonics: subharmonics ?? [] };
   }
 
   /**
-   * Returns the closest essentially-just chord name and ratios for a chord in a JI tuning.
-   * Matches the chord's interval structure against common JI ratios.
+   * Returns the closest essentially-just chord (a tempered chord heard as a JI chord) and
+   * its ratios: each interval of the chord, in its own tuning, goes to the nearest of a set
+   * of simple 5- and 7-limit ratios.
+   *
+   * @param chord - The chord, in any tuning.
+   * @param _tuning - Unused; kept for compatibility (the chord's own tuning is used).
    */
   static getEssentiallyJustChord(
     chord: Chord,
-    _tuning: JustIntonation
+    _tuning?: JustIntonation
   ): { name: string; ratios: [number, number][] } {
     const intervals = chord.intervalsInSteps;
     const ts = chord.tuningSystem;
@@ -136,4 +106,19 @@ export class Xen {
 
     return { name, ratios };
   }
+}
+
+/**
+ * Smallest whole numbers n₁ ≤ n₂ ≤ … ≤ limit proportional to `values` (ascending), each
+ * within `toleranceCents`; null if there are none. Repeated notes share a number.
+ */
+function harmonicNumbers(values: number[], limit: number, toleranceCents: number): number[] | null {
+  if (values.length === 0) return null;
+  for (let base = 1; base <= limit; base++) {
+    const ns = values.map(v => (v / values[0]) * base);
+    const rounded = ns.map(Math.round);
+    const ok = rounded.every((r, i) => r >= 1 && r <= limit && Math.abs(1200 * Math.log2(ns[i] / r)) <= toleranceCents);
+    if (ok) return rounded;
+  }
+  return null;
 }
