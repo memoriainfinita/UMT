@@ -2,7 +2,7 @@
  * Harmonic analysis: voice leading, chord functions, modulation detection,
  * negative harmony, Coltrane axis, and slash chord analysis.
  */
-import { Chord } from './chord';
+import { Chord, chordQualityFromIntervals } from './chord';
 import { spellChordInKey, spellPitchInKey } from './spelling';
 import { parseScaleSymbol, parseChordSymbol } from './parser';
 import { get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, writtenRoot, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
@@ -189,27 +189,6 @@ function parseKey(keySymbol: string, tuning: TuningSystem, spelling: 'key' | 'wr
 
 function pcMod(step: number, oct: number): number {
   return ((step % oct) + oct) % oct;
-}
-
-function chordQualityFromIntervals(chord: Chord, oct: number): string {
-  if (oct !== 12) return '';
-  const pcs = chord.intervalsInSteps.map(i => pcMod(i, oct));
-  const has = (n: number) => pcs.includes(n);
-  if (has(4) && has(7) && has(11)) return 'maj7';
-  if (has(3) && has(7) && has(10)) return 'm7';
-  if (has(4) && has(7) && has(10)) return '7';
-  if (has(3) && has(6) && has(9)) return 'dim7';
-  if (has(3) && has(6) && has(10)) return 'm7b5';
-  if (has(3) && has(7) && has(11)) return 'mM7';
-  if (has(4) && has(8) && has(10)) return 'aug7';
-  if (has(4) && has(8) && has(11)) return 'augM7';
-  if (has(4) && has(8)) return 'aug';
-  if (has(3) && has(6)) return 'dim';
-  if (has(2) && has(7)) return 'sus2';
-  if (has(5) && has(7)) return 'sus4';
-  if (has(3) && has(7)) return 'm';
-  if (has(4) && has(7)) return 'M';
-  return '';
 }
 
 const ROMAN_UPPER = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];

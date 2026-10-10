@@ -10,6 +10,7 @@ import { MetricModulation, RhythmAnalysis, TimeSignature } from '../../lib/music
 import { FormAnalyzer } from '../../lib/music-theory/form';
 import { getProgression } from '../../lib/music-theory/progressions';
 import { MelodyAnalysis } from '../../lib/music-theory/melody';
+import { getUpperStructures } from '../../lib/music-theory/upper-structures';
 
 const pcSet = (pcs: number[]) => [...new Set(pcs)].sort((a, b) => a - b).join(',');
 
@@ -245,5 +246,14 @@ describe('MelodyAnalysis.findMotifs', () => {
     const m = MelodyAnalysis.findMotifs(n(['C4', 'D4', 'C4', 'D4', 'C4']), 3);
     const cdc = m.find(x => x.intervals.join() === '2,-2');
     expect(cdc?.occurrences ?? 1).toBe(1);
+  });
+});
+
+describe('getUpperStructures', () => {
+  it('only for dominants', () => {
+    expect(getUpperStructures(parseChordSymbol('G7'))).toHaveLength(6);
+    expect(getUpperStructures(parseChordSymbol('G13'))).toHaveLength(6);
+    expect(getUpperStructures(parseChordSymbol('Cmaj7'))).toEqual([]);
+    expect(getUpperStructures(parseChordSymbol('Dm7'))).toEqual([]);
   });
 });

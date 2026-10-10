@@ -330,3 +330,29 @@ export class Chord {
     return bestNotes;
   }
 }
+
+/**
+ * Chord quality from its intervals (12-TET): `'maj7'`, `'m7'`, `'7'`, `'dim7'`, `'m7b5'`,
+ * `'mM7'`, `'aug7'`, `'augM7'`, `'aug'`, `'dim'`, `'sus2'`, `'sus4'`, `'m'`, `'M'`, or `''`
+ * when none fits or the tuning is not 12 steps per octave.
+ */
+export function chordQualityFromIntervals(chord: Chord, oct: number = chord.tuningSystem.octaveSteps): string {
+  if (oct !== 12) return '';
+  const pcs = chord.intervalsInSteps.map(i => ((i % oct) + oct) % oct);
+  const has = (n: number) => pcs.includes(n);
+  if (has(4) && has(7) && has(11)) return 'maj7';
+  if (has(3) && has(7) && has(10)) return 'm7';
+  if (has(4) && has(7) && has(10)) return '7';
+  if (has(3) && has(6) && has(9)) return 'dim7';
+  if (has(3) && has(6) && has(10)) return 'm7b5';
+  if (has(3) && has(7) && has(11)) return 'mM7';
+  if (has(4) && has(8) && has(10)) return 'aug7';
+  if (has(4) && has(8) && has(11)) return 'augM7';
+  if (has(4) && has(8)) return 'aug';
+  if (has(3) && has(6)) return 'dim';
+  if (has(2) && has(7)) return 'sus2';
+  if (has(5) && has(7)) return 'sus4';
+  if (has(3) && has(7)) return 'm';
+  if (has(4) && has(7)) return 'M';
+  return '';
+}

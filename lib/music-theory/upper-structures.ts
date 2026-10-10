@@ -31,11 +31,14 @@ const UST_TABLE: { offset: number; tensions: string[]; label: string }[] = [
 
 /**
  * Returns the six canonical upper-structure triads for a dominant 7th chord.
- * Returns [] for non-12-TET tunings or non-dominant chords.
+ * Returns [] for non-12-TET tunings or non-dominant chords (a dominant has a major third
+ * and a minor seventh: G7, G9, G13, G7alt).
  */
 export function getUpperStructures(dominantChord: Chord): UpperStructure[] {
   const ts = dominantChord.tuningSystem;
   if (ts.octaveSteps !== 12) return [];
+  const pcs = new Set(dominantChord.intervalsInSteps.map(i => ((i % 12) + 12) % 12));
+  if (!pcs.has(4) || !pcs.has(10)) return [];
 
   return UST_TABLE.map(({ offset, tensions, label }) => {
     const triadRootStep = dominantChord.rootStep + offset;

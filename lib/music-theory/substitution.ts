@@ -1,7 +1,7 @@
 /**
  * Chord substitution engine: tritone subs, diatonic substitutions, sus4, and deceptive resolutions.
  */
-import { Chord } from './chord';
+import { Chord, chordQualityFromIntervals } from './chord';
 import { parseChordSymbol, parseScaleSymbol } from './parser';
 import { get12TETBaseName, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 
@@ -15,28 +15,6 @@ export interface SubstitutionOption {
 /** Wraps `n` into [0, 11] — handles negative values correctly. */
 function pcMod(n: number): number {
   return ((n % 12) + 12) % 12;
-}
-
-/**
- * Returns a canonical quality string for a 12-TET chord (e.g. `'maj7'`, `'m7'`, `'7'`).
- * Returns `''` for non-12-TET tunings or unrecognized interval sets.
- * Used internally to decide which substitutions are applicable.
- */
-function chordQuality(chord: Chord): string {
-  const oct = chord.tuningSystem.octaveSteps;
-  if (oct !== 12) return '';
-  const pcs = chord.intervalsInSteps.map(i => pcMod(i));
-  const has = (n: number) => pcs.includes(n);
-  if (has(4) && has(7) && has(11)) return 'maj7';
-  if (has(3) && has(7) && has(10)) return 'm7';
-  if (has(4) && has(7) && has(10)) return '7';
-  if (has(3) && has(6) && has(9))  return 'dim7';
-  if (has(3) && has(6) && has(10)) return 'm7b5';
-  if (has(5) && has(7)) return 'sus4';
-  if (has(2) && has(7)) return 'sus2';
-  if (has(3) && has(7)) return 'm';
-  if (has(4) && has(7)) return 'M';
-  return '';
 }
 
 /** Returns the note name for pitch class `pc` (0=A), using flats or sharps. */
@@ -59,7 +37,7 @@ export function getSubstitutions(chord: Chord, keySymbol: string): SubstitutionO
   const tuning = chord.tuningSystem;
   const results: SubstitutionOption[] = [];
   const rootPc = pcMod(chord.rootStep);
-  const quality = chordQuality(chord);
+  const quality = chordQualityFromIntervals(chord);
   const pf = chord.preferFlats ?? false;
   const rootName = get12TETBaseName(chord.rootStep, pf);
 
@@ -128,7 +106,7 @@ export function getSubstitutions(chord: Chord, keySymbol: string): SubstitutionO
   };
   const romanOf = (c: Chord, idx: number) => {
     const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][idx];
-    const q = chordQuality(c);
+    const q = chordQualityFromIntervals(c);
     if (q === 'dim7' || q === 'm7b5' || /^[A-G][#b]*dim/.test(c.name)) return roman.toLowerCase() + '°';
     return q === 'm' || q === 'm7' ? roman.toLowerCase() : roman;
   };
