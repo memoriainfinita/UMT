@@ -2,6 +2,9 @@
  * Twelve-tone / serial composition tools.
  * All operations work in pitch-class space (0–11, C=0 convention is NOT required;
  * the row is treated as an ordered sequence of pitch classes modulo 12).
+ *
+ * Forms are labeled by the pitch class they start on (P(n), I(n) and RI(n) begin on n),
+ * so the row as given is P(row[0]): P(0) only when the row starts on 0.
  */
 export class ToneRow {
   private readonly row: readonly number[];
@@ -18,17 +21,18 @@ export class ToneRow {
   }
 
   /**
-   * Returns the full 12×12 tone row matrix.
-   * Row i is P(i) (prime transposed by i semitones from the original first pitch class).
-   * Column j of row i is I(j).
+   * Returns the 12×12 tone row matrix: the first row is the row as given, the first
+   * column the inversion starting on the same pitch class. Each row is the P form that
+   * starts on its first pitch class (read right to left: R); each column, top to bottom,
+   * an I form (bottom to top: RI).
    */
   getMatrix(): number[][] {
-    return Array.from({ length: 12 }, (_, i) => this.P(i));
+    return this.I(this.row[0]).map(start => this.P(start));
   }
 
   /**
    * Prime form transposed so that it starts on pitch class `n`.
-   * P(0) = original row.
+   * The row as given is P(row[0]).
    */
   P(n: number): number[] {
     const offset = ((n - this.row[0]) % 12 + 12) % 12;
@@ -37,7 +41,7 @@ export class ToneRow {
 
   /**
    * Inversion (I) transposed so that it starts on pitch class `n`.
-   * The inversion mirrors all intervals of P(0).
+   * The inversion mirrors all intervals of the row.
    */
   I(n: number): number[] {
     const inv0 = this.row.map(p => ((this.row[0] - p + 12) % 12 + this.row[0]) % 12);
@@ -46,10 +50,10 @@ export class ToneRow {
   }
 
   /**
-   * Retrograde of the original row (P(0) reversed).
+   * Retrograde of P(n): by default the row as given, reversed.
    */
-  R(): number[] {
-    return [...this.row].reverse();
+  R(n: number = this.row[0]): number[] {
+    return this.P(n).reverse();
   }
 
   /**
@@ -76,24 +80,20 @@ export class ToneRow {
   }
 
   /**
-   * Tests whether the row is combinatorial with itself under one of the standard operations.
-   * Returns the operation type ('P', 'I', 'RI') or null.
-   * - `'P'`: some transposition of P starts with the second hexachord of P(0).
-   * - `'I'`: some inversion starts with the second hexachord of P(0).
-   * - `'RI'`: some retrograde inversion starts with the second hexachord of P(0).
+   * Tests whether the row is hexachordally combinatorial with itself: some form's first
+   * hexachord holds the same pitch classes as the row's second hexachord, so the two
+   * together make an aggregate. Returns the first operation found ('P', 'I', 'RI') or null.
+   * - `'P'`: a transposition other than the row itself.
+   * - `'I'`: an inversion.
+   * - `'RI'`: a retrograde inversion.
    */
   isCombinatorial(): 'P' | 'I' | 'RI' | null {
     const hex2 = new Set(this.row.slice(6));
 
     for (let n = 0; n < 12; n++) {
-      if (n !== 0 && new Set(this.P(n).slice(0, 6)).size === 6) {
-        const pHex1 = new Set(this.P(n).slice(0, 6));
-        if ([...pHex1].every(p => hex2.has(p))) return 'P';
-      }
-      const iHex1 = new Set(this.I(n).slice(0, 6));
-      if ([...iHex1].every(p => hex2.has(p))) return 'I';
-      const riHex1 = new Set(this.RI(n).slice(0, 6));
-      if ([...riHex1].every(p => hex2.has(p))) return 'RI';
+      if (n !== this.row[0] && this.P(n).slice(0, 6).every(p => hex2.has(p))) return 'P';
+      if (this.I(n).slice(0, 6).every(p => hex2.has(p))) return 'I';
+      if (this.RI(n).slice(0, 6).every(p => hex2.has(p))) return 'RI';
     }
     return null;
   }

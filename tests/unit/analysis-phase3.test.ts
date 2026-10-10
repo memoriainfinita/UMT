@@ -5,6 +5,7 @@ import { NOTE_NAMES_12TET_FLAT } from '../../lib/music-theory/utils';
 import { FiguredBass } from '../../lib/music-theory/figured-bass';
 import { Schenker } from '../../lib/music-theory/schenker';
 import { Counterpoint, Canon } from '../../lib/music-theory/counterpoint';
+import { ToneRow } from '../../lib/music-theory/twelve-tone';
 
 const pcSet = (pcs: number[]) => [...new Set(pcs)].sort((a, b) => a - b).join(',');
 

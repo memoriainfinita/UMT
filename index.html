@@ -564,18 +564,19 @@ function runToneRow() {
     const n2s    = p => NAMES[((p % 12) + 12) % 12];
 
     const [h1, h2] = row.getHexachords();
-    let t = `P0: ${row.P(0).map(n2s).join('  ')}\n`;
-    t += `I0: ${row.I(0).map(n2s).join('  ')}\n`;
-    t += `R:  ${row.R().map(n2s).join('  ')}\n`;
-    t += `RI: ${row.RI(0).map(n2s).join('  ')}\n\n`;
+    const first = pcs[0];
+    let t = `P${first}: ${row.P(first).map(n2s).join('  ')}\n`;
+    t += `I${first}: ${row.I(first).map(n2s).join('  ')}\n`;
+    t += `R${first}: ${row.R().map(n2s).join('  ')}\n`;
+    t += `RI${first}: ${row.RI(first).map(n2s).join('  ')}\n\n`;
     t += `All-interval: ${row.isAllInterval()}  ·  Combinatorial: ${row.isCombinatorial() ?? 'no'}\n`;
     t += `Hexachords: [${h1.join(',')}] / [${h2.join(',')}]\n\n`;
 
     // 12×12 matrix
     t += '      ' + matrix[0].map(p => n2s(p).padEnd(4)).join('') + '\n';
     t += '      ' + '────'.repeat(12) + '\n';
-    matrix.forEach((rowArr, i) => {
-      t += `P${String(i).padStart(2)}  ` + rowArr.map(p => n2s(p).padEnd(4)).join('') + '\n';
+    matrix.forEach((rowArr) => {
+      t += `P${String(rowArr[0]).padStart(2)}  ` + rowArr.map(p => n2s(p).padEnd(4)).join('') + '\n';
     });
 
     out('out-row', t);
