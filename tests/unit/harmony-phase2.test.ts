@@ -202,6 +202,16 @@ describe('Harmony.analyzeProgression - functions', () => {
     expect(a('Bm7b5', 'A minor').isSecondary).toBe(false);
   });
 
+  it('the tritone sub of V is dominant', () => {
+    expect(a('Db7', 'C major')).toMatchObject({ function: 'D', substitutionCandidate: 'tritone sub of V' });
+  });
+
+  it('a secondary chord is not also reported as borrowed', () => {
+    expect(a('D7', 'C major')).toMatchObject({ isSecondary: true, isBorrowed: false });
+    expect(a('C7', 'C major')).toMatchObject({ isSecondary: true, isBorrowed: false });
+    expect(a('Bb7', 'C major')).toMatchObject({ isSecondary: false, isBorrowed: true });
+  });
+
   it('a diminished triad is not tonicized: A#dim in C is not vii°/vii', () => {
     expect(a('A#dim', 'C major').isSecondary).toBe(false);
   });

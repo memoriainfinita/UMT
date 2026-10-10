@@ -342,6 +342,37 @@ describe('getSubstitutions', () => {
     expect(deceptive).toBeDefined();
     expect(deceptive!.chord.name).toMatch(/^Am/);
   });
+
+  const names = (symbol: string, key: string, type?: string) =>
+    getSubstitutions(chord(symbol), key).filter(o => !type || o.type === type).map(o => o.chord.name);
+
+  it('ii takes IV, and the minor subdominant family', () => {
+    expect(names('Dm7', 'C major', 'diatonic')).toEqual(['Fmaj7']);
+    expect(names('Dm7', 'C major', 'modal')).toEqual(['Fm7', 'Bb7', 'Dm7b5']);
+  });
+
+  it('iv borrowed in major takes the rest of its family and IV', () => {
+    expect(names('Fm', 'C major')).toEqual(['Bb7', 'Dm7b5', 'F']);
+  });
+
+  it('V7 takes viiø7, and back', () => {
+    expect(names('G7', 'C major', 'diatonic')).toEqual(['Bm7b5']);
+    expect(names('Bm7b5', 'C major', 'diatonic')).toEqual(['G7']);
+  });
+
+  it('minor keys: i takes III and VI with the key spelling', () => {
+    expect(names('Am', 'A minor', 'diatonic')).toEqual(['C', 'F']);
+    expect(names('Am', 'A minor', 'modal')).toEqual([]);
+  });
+
+  it('sharp keys keep letter spelling: IV in F# major takes G#m7', () => {
+    expect(names('Bmaj7', 'F# major', 'diatonic')).toEqual(['G#m7']);
+    expect(names('Bmaj7', 'F# major', 'modal')).toContain('E7');   // bVII7 of F#
+  });
+
+  it('a chromatic chord gets no diatonic substitute', () => {
+    expect(names('Eb', 'C major', 'diatonic')).toEqual([]);
+  });
 });
 
 // ============================================================================

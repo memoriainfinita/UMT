@@ -710,15 +710,16 @@ export class Harmony {
       const { roman, degree, accidental, isDiatonic, quality } = getRomanForChord(chord, key);
       const degreeFn = getFunction(degree, quality, key.isMinor, accidental);
 
+      const { isSecondary, target } = detectSecondaryDominant(chord, key);
+
+      // A secondary chord's chromatic note comes from the key it tonicizes, not from a
+      // parallel mode: D7 in C is V7/V, not a chord borrowed from lydian.
       let borrowedFrom: string | undefined;
       let isBorrowed = false;
-      if (!isDiatonic) {
+      if (!isDiatonic && !isSecondary) {
         const bf = detectBorrowedFrom(chord, key);
         if (bf) { isBorrowed = true; borrowedFrom = bf; }
       }
-
-      const { isSecondary, target } = detectSecondaryDominant(chord, key);
-      const fn = isSecondary ? 'D' : degreeFn;
 
       let cadenceWithNext: string | undefined;
       if (i < chords.length - 1) {
@@ -728,6 +729,9 @@ export class Harmony {
 
       let substitutionCandidate: string | undefined;
       if (detectTritoneSubOfV(chord, key)) substitutionCandidate = 'tritone sub of V';
+
+      // Secondary chords and the tritone sub of V act as dominants whatever their degree
+      const fn = isSecondary || substitutionCandidate ? 'D' : degreeFn;
 
       return {
         chord,

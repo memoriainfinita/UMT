@@ -48,7 +48,9 @@ function noteName(pc: number, flat: boolean): string {
  * Returns harmonic substitution options for `chord` in the given key.
  *
  * Covers: tritone substitution (for V7), sus4 suspension, deceptive resolution,
- * and diatonic substitutions (I → iii, I → vi; IV → ii).
+ * diatonic substitutions in major and natural minor (a third away, same function:
+ * I → iii, vi; ii ↔ IV; V ↔ vii°; i → III, VI), and in major keys the minor
+ * subdominant family (IV, ii → iv, bVII7, iiø7, and back to IV).
  */
 export function getSubstitutions(chord: Chord, keySymbol: string): SubstitutionOption[] {
   const oct = chord.tuningSystem.octaveSteps;
@@ -103,41 +105,74 @@ export function getSubstitutions(chord: Chord, keySymbol: string): SubstitutionO
   }
 
   // ── Diatonic substitutions ────────────────────────────────────────────────
-  if ((quality === 'M' || quality === 'maj7') && scalePcs.length >= 7) {
-    const idx = scalePcs.indexOf(rootPc);
-    if (idx !== -1) {
-      const degree = idx + 1;
-      const suffix = quality === 'maj7' ? '7' : '';
+  // A diatonic chord can be replaced by the diatonic chord a third above or below when
+  // both have the same function (they share two notes): I → iii, vi; ii ↔ IV; V ↔ vii°.
+  // Works in major and natural minor, with the key's own spelling and chord type.
+  const mode = keySymbol.replace(/^[A-G][#b]*\s*/i, '').trim().toLowerCase();
+  const isMajorKey = mode === 'major' || mode === 'ionian';
+  const isMinorKey = mode === 'minor' || mode === 'aeolian' || mode === 'natural minor';
+  if (!isMajorKey && !isMinorKey) return results;
 
-      if (degree === 1) {
-        // I → iii
-        const iiiPc = scalePcs[2];
-        const pf3 = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[iiiPc], 'minor');
-        results.push({
-          chord: parseChordSymbol(noteName(iiiPc, pf3) + 'm' + suffix, tuning),
-          type: 'diatonic',
-          explanation: 'Diatonic substitute: iii replaces I',
-        });
-        // I → vi
-        const viPc = scalePcs[5];
-        const pf6 = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[viPc], 'minor');
-        results.push({
-          chord: parseChordSymbol(noteName(viPc, pf6) + 'm' + suffix, tuning),
-          type: 'diatonic',
-          explanation: 'Diatonic substitute: vi replaces I',
-        });
-      }
+  let triads: Chord[], sevenths: Chord[], degreeNames: string[];
+  try {
+    const scale = parseScaleSymbol(keySymbol, tuning);
+    triads = scale.getDiatonicChords('triad');
+    sevenths = scale.getDiatonicChords('seventh');
+    degreeNames = scale.getNotes().slice(0, 7).map(n => n.name.replace(/-?\d+$/, ''));
+  } catch { return results; }
+  if (triads.length !== 7) return results;
 
-      if (degree === 4) {
-        // IV → ii
-        const iiPc = scalePcs[1];
-        const pf2 = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[iiPc], 'minor');
-        results.push({
-          chord: parseChordSymbol(noteName(iiPc, pf2) + 'm' + suffix, tuning),
-          type: 'diatonic',
-          explanation: 'Diatonic substitute: ii replaces IV',
-        });
+  const samePcs = (a: Chord, b: Chord) => {
+    const pa = a.getPitchClasses(), pb = b.getPitchClasses();
+    return pa.length === pb.length && pa.every(pc => pb.includes(pc));
+  };
+  const romanOf = (c: Chord, idx: number) => {
+    const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][idx];
+    const q = chordQuality(c);
+    if (q === 'dim7' || q === 'm7b5' || /^[A-G][#b]*dim/.test(c.name)) return roman.toLowerCase() + '°';
+    return q === 'm' || q === 'm7' ? roman.toLowerCase() : roman;
+  };
+  // T, S, D by degree; VII is D in both modes (leading-tone chord, or subtonic in minor)
+  const FUNCTION = ['T', 'S', 'T', 'S', 'D', 'T', 'D'];
+
+  const isSeventh = chord.getPitchClasses().length >= 4;
+  const pool = isSeventh ? sevenths : triads;
+  const idx = pool.findIndex(c => samePcs(c, chord));
+
+  if (idx !== -1) {
+    for (const d of [(idx + 2) % 7, (idx + 5) % 7]) {
+      if (FUNCTION[d] !== FUNCTION[idx]) continue;
+      results.push({
+        chord: pool[d],
+        type: 'diatonic',
+        explanation: `Diatonic substitute: ${romanOf(triads[d], d)} replaces ${romanOf(triads[idx], idx)}`,
+      });
+    }
+  }
+
+  // ── Minor subdominant (major keys) ────────────────────────────────────────
+  // IV and ii can take the subdominant chords of the parallel minor, and those can take
+  // each other: iv, bVII7, iiø7 (F → Fm, Bb7, Dm7b5 in C major).
+  if (isMajorKey) {
+    const lower = (n: string) => (n.endsWith('#') ? n.slice(0, -1) : n + 'b');
+    const family = [
+      { symbol: degreeNames[3] + (isSeventh ? 'm7' : 'm'), roman: 'iv' },
+      { symbol: lower(degreeNames[6]) + '7', roman: 'bVII7' },
+      { symbol: degreeNames[1] + 'm7b5', roman: 'iiø7' },
+    ].flatMap(m => { try { return [{ ...m, chord: parseChordSymbol(m.symbol, tuning) }]; } catch { return []; } });
+
+    const member = family.find(m => samePcs(m.chord, chord));
+    if (idx === 1 || idx === 3) {
+      const from = romanOf(triads[idx], idx);
+      for (const m of family) {
+        results.push({ chord: m.chord, type: 'modal', explanation: `Minor subdominant: ${m.roman} (from the parallel minor) replaces ${from}` });
       }
+    } else if (member) {
+      for (const m of family) {
+        if (m === member) continue;
+        results.push({ chord: m.chord, type: 'modal', explanation: `Minor subdominant: ${m.roman} replaces ${member.roman}` });
+      }
+      results.push({ chord: pool[3], type: 'diatonic', explanation: `Diatonic subdominant: IV replaces ${member.roman}` });
     }
   }
 

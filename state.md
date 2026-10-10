@@ -43,6 +43,8 @@ last_updated: 2026-10-10
 - [harmony] Función: toda secundaria (V7/x, vii°/x) es D. VII en menor es D; bVII en mayor es S. Confirmed 2026-10.
 - [harmony] En menor natural, V, V7, vii° y vii°7 con la sensible elevada son diatónicos (menor armónica), y el vii° se escribe sin alteración. Lo de la menor melódica (IV mayor) sigue prestado. Confirmed 2026-10.
 - [harmony] Acorde de sensible secundario: dim, dim7 o m7b5 cromático un semitono bajo un grado diatónico no disminuido → `vii°/x`, `vii°7/x`, `viiø7/x`. Los diatónicos conservan su lectura (ii° en menor). Confirmed 2026-10.
+- [harmony] El sustituto tritonal de V (bII7) es D. Una secundaria no se marca además como prestada (D7 en C es V7/V, no lidio). Confirmed 2026-10.
+- [substitution] Sustitutos diatónicos: el acorde de la escala a una tercera con la misma función (I → iii, vi; ii ↔ IV; V ↔ vii°), en mayor y menor natural, con la grafía y el tipo (tríada o cuatríada) de la escala. En mayor, IV y ii toman la subdominante menor (iv, bVII7, iiø7), y esta vuelve a IV. Confirmed 2026-10.
 
 ## TODO
 
