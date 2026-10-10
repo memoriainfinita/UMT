@@ -198,70 +198,105 @@ export function usesFlats(rootName: string): boolean {
   return preferFlatsForKey(rootName);
 }
 
+/** Semitones of the major or perfect interval for each simple number (unison to seventh). */
+const NATURAL_SEMITONES = [0, 2, 4, 5, 7, 9, 11];
+/** Default number (0 = unison … 6 = seventh) for each semitone mod 12; the tritone is d5. */
+const DEFAULT_NUMBER = [0, 1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 6];
+
 /**
- * Returns the standard interval abbreviation for a number of semitones from a root.
- * Handles compound intervals up to the 13th.
- * @param stepsFromRoot - Number of semitones (can exceed 12 for compound intervals).
- * @param is12TET - If false, returns a generic `"Step N"` label.
- * @returns Interval abbreviation, e.g. `"M3"`, `"P5"`, `"m9"`, `"A11"`.
+ * Quality symbol of an interval from its number (1-based, any size) and its semitones:
+ * P, M, m, A, d, AA, dd. Null when the pair is further than a doubly augmented or
+ * doubly diminished interval.
  */
-export function getIntervalName(stepsFromRoot: number, is12TET: boolean = true): string {
+function intervalQuality(number: number, semitones: number): string | null {
+  const simple = (number - 1) % 7;
+  const octaves = Math.floor((number - 1) / 7);
+  const diff = semitones - (NATURAL_SEMITONES[simple] + 12 * octaves);
+  const perfect = simple === 0 || simple === 3 || simple === 4;
+  if (perfect) return ({ '-2': 'dd', '-1': 'd', '0': 'P', '1': 'A', '2': 'AA' } as Record<string, string>)[diff] ?? null;
+  return ({ '-3': 'dd', '-2': 'd', '-1': 'm', '0': 'M', '1': 'A', '2': 'AA' } as Record<string, string>)[diff] ?? null;
+}
+
+/**
+ * Returns the interval abbreviation for a number of semitones above a root, compound
+ * intervals included at any size (`m9`, `P11`, `M13`, `P15`, `M17`).
+ * Pitch alone cannot tell A4 from d5: pass `letterSteps` (letters above the root, 0 =
+ * unison) to choose; without it, 6 semitones is `d5` and every other size takes its
+ * usual number (3 = m3, 8 = m6).
+ * @param stepsFromRoot - Semitones above the root (negative: measured downwards).
+ * @param is12TET - If false, returns a generic `"Step N"` label.
+ * @param letterSteps - Letter distance, e.g. 3 for a fourth, 9 for a tenth.
+ * @returns Interval abbreviation, e.g. `"M3"`, `"A4"`, `"m10"`; `"Step N"` when the
+ *   letter distance and the semitones do not make an interval.
+ */
+export function getIntervalName(stepsFromRoot: number, is12TET: boolean = true, letterSteps?: number): string {
   if (!is12TET) return `Step ${stepsFromRoot}`;
-  
-  const normalized = ((stepsFromRoot % 12) + 12) % 12;
-  const names = ['P1', 'm2', 'M2', 'm3', 'M3', 'P4', 'd5', 'P5', 'm6', 'M6', 'm7', 'M7'];
-  
-  let name = names[normalized];
-  if (stepsFromRoot >= 12) {
-    if (normalized === 1) name = 'm9';
-    if (normalized === 2) name = 'M9';
-    if (normalized === 5) name = 'P11';
-    if (normalized === 6) name = 'A11';
-    if (normalized === 9) name = 'M13';
-  }
-  return name;
+  const semis = Math.abs(stepsFromRoot);
+  const letters = letterSteps !== undefined
+    ? Math.abs(letterSteps)
+    : DEFAULT_NUMBER[semis % 12] + 7 * Math.floor(semis / 12);
+  const quality = intervalQuality(letters + 1, semis);
+  return quality ? `${quality}${letters + 1}` : `Step ${stepsFromRoot}`;
+}
+
+const LETTER_INDEX: Record<string, number> = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+
+/**
+ * Names the interval between two written notes by their letters and octaves: C4–F#4 is
+ * `A4`, C4–Gb4 is `d5`, C4–E5 is `M10`. Order does not matter; the interval is measured
+ * from the lower note. Notes without an octave are taken in octave 4.
+ * @param a - Note name, e.g. `"C4"`, `"F#"`, `"Bb3"`.
+ * @param b - Note name.
+ * @throws if either name is not a note.
+ */
+export function getIntervalBetween(a: string, b: string): string {
+  const parse = (name: string) => {
+    const m = name.trim().match(/^([A-Ga-g])([#b]*)(-?\d+)?$/);
+    if (!m) throw new Error(`getIntervalBetween: invalid note name "${name}".`);
+    const letter = m[1].toUpperCase();
+    const octave = m[3] !== undefined ? parseInt(m[3], 10) : 4;
+    return { pos: octave * 7 + LETTER_INDEX[letter], step: parseNoteToStep12TET(letter + m[2], octave) };
+  };
+  let lo = parse(a), hi = parse(b);
+  if (hi.pos < lo.pos || (hi.pos === lo.pos && hi.step < lo.step)) [lo, hi] = [hi, lo];
+  return getIntervalName(hi.step - lo.step, true, hi.pos - lo.pos);
+}
+
+const ORDINALS = ['Unison', '2nd', '3rd', '4th', '5th', '6th', '7th', 'Octave'];
+const QUALITY_WORDS: Record<string, string> = {
+  P: 'Perfect', M: 'Major', m: 'Minor', A: 'Augmented', d: 'Diminished',
+};
+
+function ordinal(n: number): string {
+  if (n <= 8) return ORDINALS[n - 1];
+  const tens = n % 100;
+  const suffix = tens >= 11 && tens <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th';
+  return `${n}${suffix}`;
 }
 
 /**
  * Returns a human-readable interval name from a cent value.
- * Matches to the nearest 12-TET interval within ±10 cents; otherwise returns the raw cent value.
+ * Matches to the nearest 12-TET interval within ±10 cents, compound intervals included
+ * (`Major 10th (M10)`, `Perfect 15th (P15)`); the tritone is `Tritone (A4/d5)` and its
+ * compounds `Augmented 11th (A11)`. Otherwise returns the raw cent value.
  * Useful for microtonal tunings where exact semitone counts don't apply.
- * @param cents - Interval size in cents (can exceed 1200 for compound intervals).
+ * @param cents - Interval size in cents (negative: measured downwards).
  * @returns Interval name, e.g. `"Major 3rd (M3)"`, or `"350.00 cents"` if no match.
  */
 export function getSemanticIntervalName(cents: number): string {
-  // Try to match standard 12-TET intervals if close enough (within 10 cents)
-  const standardIntervals = [
-    { cents: 0, name: 'Unison (P1)' },
-    { cents: 100, name: 'Minor 2nd (m2)' },
-    { cents: 200, name: 'Major 2nd (M2)' },
-    { cents: 300, name: 'Minor 3rd (m3)' },
-    { cents: 400, name: 'Major 3rd (M3)' },
-    { cents: 500, name: 'Perfect 4th (P4)' },
-    { cents: 600, name: 'Tritone (d5/A4)' },
-    { cents: 700, name: 'Perfect 5th (P5)' },
-    { cents: 800, name: 'Minor 6th (m6)' },
-    { cents: 900, name: 'Major 6th (M6)' },
-    { cents: 1000, name: 'Minor 7th (m7)' },
-    { cents: 1100, name: 'Major 7th (M7)' },
-    { cents: 1200, name: 'Octave (P8)' }
-  ];
-
-  const normalizedCents = ((cents % 1200) + 1200) % 1200;
-  
-  for (const interval of standardIntervals) {
-    if (Math.abs(normalizedCents - interval.cents) <= 10) {
-      let name = interval.name;
-      if (cents >= 1200 && cents < 2400) {
-        if (interval.cents === 200) name = 'Major 9th (M9)';
-        if (interval.cents === 500) name = 'Perfect 11th (P11)';
-        if (interval.cents === 900) name = 'Major 13th (M13)';
-      }
-      return name;
-    }
-  }
-  
-  return `${cents.toFixed(2)} cents`;
+  const semis = Math.round(Math.abs(cents) / 100);
+  if (Math.abs(Math.abs(cents) - semis * 100) > 10) return `${cents.toFixed(2)} cents`;
+  if (semis === 6) return 'Tritone (A4/d5)';
+  // A compound tritone reads as an augmented 11th, 18th…, as in chord symbols (#11)
+  const name = semis % 12 === 6
+    ? getIntervalName(semis, true, 3 + 7 * Math.floor(semis / 12))
+    : getIntervalName(semis);
+  const m = name.match(/^([PMmAd]+)(\d+)$/);
+  if (!m) return `${cents.toFixed(2)} cents`;
+  const number = parseInt(m[2], 10);
+  const quality = QUALITY_WORDS[m[1]] ?? m[1];
+  if (number === 1) return 'Unison (P1)';
+  return `${quality === 'Perfect' && number === 8 ? 'Octave' : `${quality} ${ordinal(number)}`} (${name})`;
 }
 
 /**
