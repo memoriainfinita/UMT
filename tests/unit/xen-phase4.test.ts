@@ -8,6 +8,7 @@ import { MOS, CommaPump } from '../../lib/music-theory/mos';
 import { FiveLimitJI, PtolemaicJI } from '../../lib/music-theory/presets';
 import { Chord } from '../../lib/music-theory/chord';
 import { Xen } from '../../lib/music-theory/xen';
+import { parseScala } from '../../lib/music-theory/scala';
 
 describe('Tonnetz', () => {
   it('every pitch class once in x 0..3, y 0..2, with pc = 7x + 4y', () => {
@@ -96,5 +97,18 @@ describe('TemperamentAnalysis', () => {
     const vs = TemperamentAnalysis.getUnisonVectors(FiveLimitJI).map(r => r.join('/'));
     expect(vs).toContain('81/80');
     expect(TemperamentAnalysis.getUnisonVectors(PtolemaicJI).map(r => r.join('/'))).toContain('81/80');
+  });
+});
+
+describe('parseScala', () => {
+  it('an empty description line is the description', () => {
+    const t = parseScala('! empty description\n\n2\n3/2\n2/1\n');
+    expect(t.name).toBe('');
+    expect(t.octaveSteps).toBe(2);
+    expect(t.getInterval(1).cents).toBeCloseTo(701.955, 2);
+  });
+
+  it('fewer pitches than declared throws', () => {
+    expect(() => parseScala('short\n3\n3/2\n2/1\n')).toThrow(/3 notes declared, 2 found/);
   });
 });

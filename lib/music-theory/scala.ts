@@ -72,21 +72,28 @@ export class ScalaTuning extends TuningSystem {
 
 /**
  * Parses a Scala (.scl) file format string and returns a ScalaTuning object.
+ * Following the Scala format: lines starting with `!` are comments; the first other line
+ * is the description, which may be empty; then the number of notes; then one pitch per line.
+ * @throws if the note count is missing, or there are fewer pitches than it says.
  */
 export function parseScala(sclText: string, baseFrequency = 440): ScalaTuning {
-  const lines = sclText.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('!'));
-  if (lines.length < 2) throw new Error("Invalid Scala file");
+  const all = sclText.split(/\r?\n/).map(l => l.trim()).filter(l => !l.startsWith('!'));
+  if (all.length < 2) throw new Error("Invalid Scala file");
 
-  const name = lines[0];
-  const numNotes = parseInt(lines[1], 10);
+  // the description line is kept even when empty; after it, blank lines are skipped
+  const name = all[0];
+  const lines = [name, ...all.slice(1).filter(l => l.length > 0)];
+  const numNotes = parseInt(lines[1] ?? '', 10);
   if (isNaN(numNotes) || numNotes <= 0) {
-    throw new Error(`parseScala: expected a positive note count on line 2, got "${lines[1]}".`);
+    throw new Error(`parseScala: expected a positive note count after the description, got "${lines[1]}".`);
+  }
+  if (lines.length - 2 < numNotes) {
+    throw new Error(`parseScala: ${numNotes} notes declared, ${lines.length - 2} found.`);
   }
   const cents: number[] = [];
 
   for (let i = 0; i < numNotes; i++) {
     const rawLine = lines[2 + i];
-    if (!rawLine) break;
     const val = rawLine.split(/\s/)[0]; // strip inline comments (e.g. "3/2 perfect fifth")
 
     if (val.includes('.')) {
