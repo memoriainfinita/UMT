@@ -24,7 +24,7 @@ last_updated: 2026-10-10
 
 - esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (112 kb)
 - typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
-- vitest - tests unitarios (`npm run test:unit`) - 722 tests
+- vitest - tests unitarios (`npm run test:unit`) - 734 tests
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
 - Tailwind CDN - estilos en demo
@@ -44,6 +44,7 @@ last_updated: 2026-10-10
 - [harmony] En menor natural, V, V7, vii° y vii°7 con la sensible elevada son diatónicos (menor armónica), y el vii° se escribe sin alteración. Lo de la menor melódica (IV mayor) sigue prestado. Confirmed 2026-10.
 - [harmony] Acorde de sensible secundario: dim, dim7 o m7b5 cromático un semitono bajo un grado diatónico no disminuido → `vii°/x`, `vii°7/x`, `viiø7/x`. Los diatónicos conservan su lectura (ii° en menor). Confirmed 2026-10.
 - [harmony] El sustituto tritonal de V (bII7) es D. Una secundaria no se marca además como prestada (D7 en C es V7/V, no lidio). Confirmed 2026-10.
+- [spelling] `spelling.ts`: en una tonalidad, las notas de la escala con sus letras y las cromáticas por la escala cromática armónica (b2, b3, #4, b6, b7; en menor, 3, 6 y 7 elevados como #3, #6, #7). Las notas de un acorde se nombran por su intervalo sobre la fundamental (b5 sin quinta justa, #11 con ella; bb7 en dim7). `Chord.getNotes()` no cambia. Confirmed 2026-10.
 - [substitution] Sustitutos diatónicos: el acorde de la escala a una tercera con la misma función (I → iii, vi; ii ↔ IV; V ↔ vii°), en mayor y menor natural, con la grafía y el tipo (tríada o cuatríada) de la escala. En mayor, IV y ii toman la subdominante menor (iv, bVII7, iiø7), y esta vuelve a IV. Confirmed 2026-10.
 
 ## TODO

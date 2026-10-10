@@ -99,6 +99,7 @@ npm run build:umt   # lib/music-theory/umt.ts -> dist/umt.js
 | `key-detection.ts` | Krumhansl-Schmuckler key detection algorithm |
 | `neo-riemannian.ts` | P, L, R transformations in any tuning |
 | `figured-bass.ts` | Figured bass parsing and realization |
+| `spelling.ts` | Pitches spelled in a key (harmonic chromatic scale), chord tones by interval |
 
 ### Post-tonal
 
@@ -275,7 +276,7 @@ scaleToMusicXML(scale);            // MusicXML document
 ## Tests
 
 ```bash
-npm run test:unit    # 722 unit tests via vitest
+npm run test:unit    # 734 unit tests via vitest
 npm run typecheck    # TypeScript type checking
 ```
 

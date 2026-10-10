@@ -26,6 +26,7 @@ export * from './melody';
 export * from './schenker';
 export * from './clave-patterns';
 export * from './figured-bass';
+export * from './spelling';
 export * from './ragas';
 export * from './maqamat';
 export * from './solfege';

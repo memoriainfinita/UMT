@@ -2,7 +2,7 @@
 
 ## What is this
 
-A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 722 tests, zero runtime dependencies.
+A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 734 tests, zero runtime dependencies.
 
 The library compiles to a standalone IIFE (`dist/umt.js`, 112 kb) usable via script tag, CDN (jsDelivr), or ESM import.
 
@@ -46,6 +46,7 @@ lib/music-theory/         # Core library - all TypeScript (41 modules)
   form.ts                 # Formal analysis (AABA, ABAB, binary...)
   upper-structures.ts     # USTs, slash chord analysis, chord-scale completeness
   figured-bass.ts         # Figured bass parsing and realization
+  spelling.ts             # Pitches spelled in a key, chord tones by interval
   twelve-tone.ts          # ToneRow, P/I/R/RI, 12x12 matrix
   counterpoint.ts         # Species counterpoint, Canon
   melody.ts               # Contour analysis, motif detection
