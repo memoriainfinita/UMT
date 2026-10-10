@@ -2,9 +2,9 @@
 
 ## What is this
 
-A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 941 tests, zero runtime dependencies.
+A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 960 tests, zero runtime dependencies.
 
-The library compiles to a standalone IIFE (`dist/umt.js`, 127 kb) usable via script tag, CDN (jsDelivr), or ESM import.
+The library compiles to a standalone IIFE (`dist/umt.js`, 130 kb) usable via script tag, CDN (jsDelivr), or ESM import.
 
 The demo is a single vanilla HTML file (`index.html`) with 7 interactive sections. The original Next.js scaffolding and old demo versions are in `archive/` (gitignored).
 
@@ -26,7 +26,7 @@ npm run typecheck    # tsc --noEmit (covers lib/ and tests/)
 ## Project structure
 
 ```
-lib/music-theory/         # Core library - all TypeScript (41 modules)
+lib/music-theory/         # Core library - all TypeScript (42 modules)
   types.ts                # Cents, Hertz, Ratio
   interval.ts             # Interval math (cents, ratios)
   tuning.ts               # TuningSystem (abstract), EDO, JustIntonation, CentTuning, NonOctaveTuning
@@ -67,6 +67,7 @@ lib/music-theory/         # Core library - all TypeScript (41 modules)
   abc-bridge.ts           # Export to ABC notation
   lilypond-bridge.ts      # Export to LilyPond
   musicxml-bridge.ts      # Export to MusicXML
+  notation-layout.ts      # Shared by the exporters: spelling, key signatures, measures and ties
   utils.ts                # Note naming, MIDI conversion, interval naming
   index.ts                # Re-exports everything
   umt.ts                  # IIFE entry point - attaches UMT to window
