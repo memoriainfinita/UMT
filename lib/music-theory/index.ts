@@ -41,3 +41,7 @@ export * from './musicxml-bridge';
 export * from './lilypond-bridge';
 export * from './aliases';
 export * from './fretboard';
+export * from './voicing';
+export * from './scale-finder';
+export * from './chord-names';
+export * from './rhythmic-cycles';
