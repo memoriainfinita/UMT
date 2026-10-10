@@ -3,6 +3,7 @@
  * negative harmony, Coltrane axis, and slash chord analysis.
  */
 import { Chord } from './chord';
+import { spellChordInKey } from './spelling';
 import { parseScaleSymbol, parseChordSymbol } from './parser';
 import { get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 import { CHORD_FORMULAS, SCALE_PATTERNS, MODE_BRIGHTNESS } from './dictionaries';
@@ -170,6 +171,7 @@ interface KeyInfo {
   mode: string;
   isMinor: boolean;
   tuning: TuningSystem;
+  symbol: string;
 }
 
 function parseKey(keySymbol: string, tuning: TuningSystem): KeyInfo {
@@ -179,7 +181,7 @@ function parseKey(keySymbol: string, tuning: TuningSystem): KeyInfo {
   const rootName = match ? match[1] : 'C';
   const modeRaw = match ? match[2].trim().toLowerCase() : 'major';
   const isMinor = /minor|aeolian|dorian|phrygian|locrian/.test(modeRaw);
-  return { scale, scalePcs, tonicPc: scalePcs[0], rootName, mode: modeRaw, isMinor, tuning };
+  return { scale, scalePcs, tonicPc: scalePcs[0], rootName, mode: modeRaw, isMinor, tuning, symbol: keySymbol };
 }
 
 function pcMod(step: number, oct: number): number {
@@ -253,7 +255,13 @@ function getRomanForChord(chord: Chord, key: KeyInfo): {
   let accidental: '' | 'b' | '#' = '';
   let degree = idx !== -1 ? idx + 1 : -1;
 
-  if (idx === -1) {
+  // A chromatic root takes its degree from the letter the key spells it with
+  // (F#°7 in C is #iv°7, as `spellChordInKey` writes F#, not bv°7)
+  const byLetter = idx === -1 ? degreeByLetter(chord, key) : null;
+  if (byLetter) {
+    degree = byLetter.degree;
+    accidental = byLetter.accidental;
+  } else if (idx === -1) {
     // Try as flatted degree (root is 1 semitone below a scale note)
     const sharpTarget = pcMod(chordRootPc + 1, oct);
     const flatIdx = key.scalePcs.indexOf(sharpTarget);
@@ -296,6 +304,21 @@ function getRomanForChord(chord: Chord, key: KeyInfo): {
   const roman = `${accidental}${romanCased}${parts.suffix}`;
 
   return { roman, degree, accidental, isDiatonic, quality };
+}
+
+/**
+ * Degree and accidental of a chord root from its letter as written in the key (12-TET,
+ * seven-note keys). Null when the key has no letters or the root needs a double accidental.
+ */
+function degreeByLetter(chord: Chord, key: KeyInfo): { degree: number; accidental: '' | 'b' | '#' } | null {
+  if (chord.tuningSystem.octaveSteps !== 12 || key.scalePcs.length !== 7) return null;
+  const keyNotes = key.scale.getNotes();
+  const rootLetter = spellChordInKey(chord, key.symbol).name[0];
+  const degreeIdx = keyNotes.slice(0, 7).findIndex(n => n.name[0] === rootLetter);
+  if (degreeIdx === -1) return null;
+  const diff = pcMod(chord.rootStep - keyNotes[degreeIdx].stepsFromBase + 6, 12) - 6;
+  if (diff !== 1 && diff !== -1) return null;
+  return { degree: degreeIdx + 1, accidental: diff === 1 ? '#' : 'b' };
 }
 
 function isNaturalMinor(key: KeyInfo): boolean {

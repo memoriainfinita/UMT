@@ -18,7 +18,7 @@ const baseName = (name: string) => name.replace(/-?\d+$/, '');
  */
 const CHROMATIC_LETTER_OFFSET = [0, 1, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6];
 
-type KeyLetters = { tonicLetter: string; tonicPc: number; scaleOffsets: Map<number, number> };
+type KeyLetters = { tonicLetter: string; tonicPc: number; scaleOffsets: Map<number, number>; minor: boolean };
 
 function keyLetters(keySymbol: string): KeyLetters | null {
   try {
@@ -33,7 +33,7 @@ function keyLetters(keySymbol: string): KeyLetters | null {
       scaleOffsets.set(9, 5);
       scaleOffsets.set(11, 6);
     }
-    return { tonicLetter: notes[0].name[0], tonicPc, scaleOffsets };
+    return { tonicLetter: notes[0].name[0], tonicPc, scaleOffsets, minor: scaleOffsets.get(3) === 2 };
   } catch { return null; }
 }
 
@@ -115,7 +115,9 @@ export function spellChordInKey(chord: Chord, keySymbol: string): Chord {
   // accidentals across the chord, the root's counted twice: it is the name read first
   const cost = (r: string) => spellChord(chord, r).reduce((n, t) => n + accidentalCount(t), 0) + accidentalCount(r);
   // a root that is a note of the key keeps its letter unless the other saves 3 or more
-  const margin = inKey(chord.rootStep, key) ? KEY_LETTER_MARGIN : 0;
+  // in a minor key the raised third (C# in A minor, the parallel major's) holds its letter too
+  const raisedThird = key.minor && pc12(chord.rootStep - key.tonicPc) === 4;
+  const margin = inKey(chord.rootStep, key) || raisedThird ? KEY_LETTER_MARGIN : 0;
   const letterIdx = 'CDEFGAB'.indexOf(keyRoot[0]);
   const alternatives = [1, 6].map(o => spellByLetter(chord.rootStep, 'CDEFGAB'[letterIdx], o))
     .filter((n): n is string => n !== null && accidentalCount(n) <= 2).map(baseName);

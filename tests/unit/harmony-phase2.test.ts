@@ -535,3 +535,20 @@ describe('Meta', () => {
     expect(true).toBe(true);
   });
 });
+
+describe('Harmony.analyzeProgression - numeral from the written letter', () => {
+  const roman = (sym: string, key: string) => Harmony.analyzeProgression([parseChordSymbol(sym)], key).analysis[0];
+  it('F#dim7 in C is #iv°7 (F#, as spelled in the key), not bv°7', () => {
+    expect(roman('F#dim7', 'C major').roman).toBe('#iv°7');
+  });
+  it('Gbdim7 in C is respelled F# and reads the same', () => {
+    expect(roman('Gbdim7', 'C major').roman).toBe('#iv°7');
+  });
+  it('D# major in E major is VII (D# is the seventh of the key)', () => {
+    expect(roman('D#', 'E major').roman).toBe('VII');
+  });
+  it('lowered roots in E major: F is bII, C is bVI', () => {
+    expect(roman('F', 'E major').roman).toBe('bII');
+    expect(roman('C', 'E major').roman).toBe('bVI');
+  });
+});
