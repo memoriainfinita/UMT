@@ -198,3 +198,31 @@ describe('getSuggestedScales root in other tunings', () => {
     expect(scales.every(s => s.startsWith('G '))).toBe(true);
   });
 });
+
+describe('Harmony.detectChordsScored', () => {
+  it('a complete chord over its root scores 1', () => {
+    const [c] = Harmony.detectChordsScored(notes('C4', 'E4', 'G4'));
+    expect(c).toMatchObject({ name: 'C', root: 'C', quality: 'M', score: 1, rootInBass: true, omitted: [], tensions: [] });
+  });
+
+  it('an omitted fifth and another bass lower the score, with the reasons', () => {
+    const [c] = Harmony.detectChordsScored(notes('E3', 'C4', 'Bb4'));
+    expect(c).toMatchObject({ name: 'C7/E', bass: 'E', omitted: ['5'], rootInBass: false, score: 0.55 });
+  });
+
+  it('exact readings come before readings with omissions; tensions are named', () => {
+    const r = Harmony.detectChordsScored(notes('C4', 'E4', 'G4', 'Bb4', 'D5'));
+    expect(r[0]).toMatchObject({ name: 'C9', tensions: ['9'], score: 0.97 });
+    const scores = r.map(c => c.score);
+    expect(scores).toEqual([...scores].sort((a, b) => b - a));
+  });
+
+  it('the bass is the lowest note, wherever it is in the array', () => {
+    expect(Harmony.detectChordsScored(notes('G4', 'C4', 'E3'))[0].name).toBe('C/E');
+  });
+
+  it('two notes allow no omissions; other tunings give []', () => {
+    expect(Harmony.detectChordsScored(notes('C4', 'E4')).every(c => c.omitted.length === 0)).toBe(true);
+    expect(Harmony.detectChordsScored([new Note(new EDO(19), 0)])).toEqual([]);
+  });
+});

@@ -357,3 +357,26 @@ export function chordQualityFromIntervals(chord: Chord, oct: number = chord.tuni
   if (has(4) && has(7)) return 'M';
   return '';
 }
+
+const DEGREE_BY_INTERVAL: Record<number, string> = {
+  0: 'R', 1: 'b2', 2: '2', 3: 'b3', 4: '3', 5: '4', 6: 'b5', 7: '5', 8: '#5', 9: '6', 10: 'b7', 11: '7',
+  12: 'R', 13: 'b9', 14: '9', 15: '#9', 16: '3', 17: '11', 18: '#11', 19: '5', 20: 'b13', 21: '13', 22: 'b7', 23: '7',
+};
+
+/**
+ * Name of a chord member by its interval above the root (12-TET semitones, as in
+ * `CHORD_FORMULAS`): `'R'`, `'b3'`, `'3'`, `'5'`, `'b7'`, `'7'`, `'9'`, `'#11'`, `'13'`…
+ * Ninths, elevenths and thirteenths are named as such when the formula writes them above
+ * the octave (14 = `'9'`); below it they are `'2'`, `'4'`, `'6'` (sus2, sus4, sixth chords).
+ * The rest of the formula decides two cases: 9 semitones is `'bb7'` in a diminished seventh
+ * chord, and 3 semitones is `'#9'` beside a major third.
+ * @param interval - Semitones above the root (0-23; larger values are reduced by octaves).
+ * @param formula - All intervals of the chord.
+ */
+export function chordDegreeLabel(interval: number, formula: readonly number[]): string {
+  let v = ((interval % 24) + 24) % 24;
+  const pcs = formula.map(i => ((i % 12) + 12) % 12);
+  if (v === 9 && pcs.includes(3) && pcs.includes(6) && !pcs.includes(10) && !pcs.includes(11)) return 'bb7';
+  if (v === 3 && pcs.includes(4)) v = 15;
+  return DEGREE_BY_INTERVAL[v];
+}

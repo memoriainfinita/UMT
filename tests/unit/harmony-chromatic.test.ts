@@ -344,3 +344,13 @@ describe('Harmony.getNegativeHarmony', () => {
     expect(pc(neg.rootStep)).toBe(pc(parseChordSymbol(neg.name).rootStep));
   });
 });
+
+describe('Harmony.getBorrowedChords - type option', () => {
+  it('triads on request, sevenths by default', () => {
+    const triads = Harmony.getBorrowedChords('C major', { type: 'triad' });
+    expect(triads.length).toBeGreaterThan(0);
+    expect(triads.every(b => b.chord.getPitchClasses().length === 3)).toBe(true);
+    expect(triads.map(b => b.chord.name)).toContain('Fm');
+    expect(Harmony.getBorrowedChords('C major').every(b => b.chord.getPitchClasses().length === 4)).toBe(true);
+  });
+});

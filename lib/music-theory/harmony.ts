@@ -2,7 +2,7 @@
  * Harmonic analysis: voice leading, chord functions, modulation detection,
  * negative harmony, Coltrane axis, and slash chord analysis.
  */
-import { Chord, chordQualityFromIntervals } from './chord';
+import { Chord, chordQualityFromIntervals, chordDegreeLabel } from './chord';
 import { spellChordInKey, spellPitchInKey } from './spelling';
 import { parseScaleSymbol, parseChordSymbol } from './parser';
 import { get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey, writtenRoot, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
@@ -110,6 +110,23 @@ export interface SixFourAnalysis {
  * A chord borrowed from a parallel mode (modal mixture).
  * Includes the source mode, brightness value, and harmonic function.
  */
+/** One reading of a set of notes as a chord, with what ranks it (see `Harmony.detectChordsScored`). */
+export interface ChordCandidate {
+  /** Chord symbol, with a slash bass when the lowest note is not the root: `'C7'`, `'C7/E'`. */
+  name: string;
+  root: string;
+  bass: string;
+  /** Key of the formula in `CHORD_FORMULAS` (`'M'`, `'7'`, `'maj9'`…). */
+  quality: string;
+  /** 1 for a complete chord over its root; less for each omitted member, another bass, and each tension. */
+  score: number;
+  rootInBass: boolean;
+  /** Formula members that do not sound (`'5'`; `'9'` and `'11'` in eleventh and thirteenth chords). */
+  omitted: string[];
+  /** Members above the octave: `'9'`, `'#11'`, `'b13'`… */
+  tensions: string[];
+}
+
 export interface BorrowedChord {
   chord: Chord;
   sourceMode: string;
@@ -937,6 +954,62 @@ export class Harmony {
   }
 
   /**
+   * Reads a set of notes as chords and ranks the readings, with the reasons. Besides exact
+   * matches (those of `detectChords`), a reading may leave out the fifth, and an eleventh or
+   * thirteenth chord its ninth or eleventh, when at least three different notes sound.
+   * The lowest note (by pitch) is the bass. Readings are ranked by, in order: fewer omitted
+   * members, root in the bass, fewer tensions, fewer formula notes; `score` follows the same
+   * order (1 − 0.3 per omitted member − 0.15 off the root − 0.03 per tension, at least 0).
+   * 12-TET only: other tunings return [].
+   * @example
+   * Harmony.detectChordsScored(['E3', 'C4', 'Bb4'].map(n => parseNote(n)))[0]
+   * // → { name: 'C7/E', omitted: ['5'], rootInBass: false, score: 0.55, … }
+   */
+  static detectChordsScored(notes: Note[]): ChordCandidate[] {
+    if (notes.length === 0 || notes[0].tuningSystem.octaveSteps !== 12) return [];
+    const pcOf = (n: Note) => ((n.stepsFromBase % 12) + 12) % 12;
+    const lowest = notes.reduce((a, b) => (b.stepsFromBase < a.stepsFromBase ? b : a));
+    const bassPc = pcOf(lowest);
+    const pcs = [...new Set(notes.map(pcOf))];
+    const name = (pc: number) => {
+      const flat = NOTE_NAMES_12TET_FLAT[pc];
+      return preferFlatsForKey(flat, 'major') ? flat : NOTE_NAMES_12TET_SHARP[pc];
+    };
+    const aliases = ['major', 'minor', 'dominant7', 'half-diminished', 'm(maj7)', 'aug(maj7)', '7#5'];
+
+    const found = new Map<string, ChordCandidate & { size: number; order: number }>();
+    let order = 0;
+    for (const root of pcs) {
+      const played = new Set(pcs.map(pc => (pc - root + 12) % 12));
+      for (const [quality, formula] of Object.entries(CHORD_FORMULAS)) {
+        if (aliases.includes(quality)) continue;
+        const members = new Map<number, number>(); // pc above the root → formula interval
+        for (const i of formula) if (!members.has(i % 12)) members.set(i % 12, i);
+        if ([...played].some(p => !members.has(p))) continue;
+        const missing = [...members.keys()].filter(p => !played.has(p));
+        const isUpper = formula.some(i => i >= 17); // eleventh or thirteenth chord
+        const omittable = (p: number) => p === 7 || (isUpper && (p === 2 || (p === 5 && formula.includes(21))));
+        if (missing.length > 0 && (pcs.length < 3 || !missing.every(omittable))) continue;
+
+        const rootInBass = root === bassPc;
+        const omitted = missing.map(p => chordDegreeLabel(members.get(p)!, formula));
+        const tensions = [...members.values()].filter(i => i > 12).map(i => chordDegreeLabel(i, formula));
+        const score = Math.max(0, 1 - 0.3 * omitted.length - (rootInBass ? 0 : 0.15) - 0.03 * tensions.length);
+        const symbol = `${name(root)}${quality === 'M' ? '' : quality}${rootInBass ? '' : `/${name(bassPc)}`}`;
+        if (found.has(symbol)) continue;
+        found.set(symbol, {
+          name: symbol, root: name(root), bass: name(bassPc), quality,
+          score: Math.round(score * 1000) / 1000, rootInBass, omitted, tensions,
+          size: members.size, order: order++,
+        });
+      }
+    }
+    return [...found.values()]
+      .sort((a, b) => b.score - a.score || a.size - b.size || a.order - b.order)
+      .map(({ size: _size, order: _order, ...c }) => c);
+  }
+
+  /**
    * Returns the Negative Harmony equivalent of a chord in a given key.
    */
   static getNegativeHarmony(chord: Chord, keyCenter: string): Chord {
@@ -988,10 +1061,11 @@ export class Harmony {
    * @param keySymbol - e.g. `'C major'`, `'A minor'`
    * @param options.sources - Limit results to these mode names only.
    * @param options.tuning - Defaults to TET12; returns [] for non-12-TET.
+   * @param options.type - `'seventh'` (default) or `'triad'`, as in `Scale.getDiatonicChords`.
    */
   static getBorrowedChords(
     keySymbol: string,
-    options?: { sources?: string[]; tuning?: TuningSystem }
+    options?: { sources?: string[]; tuning?: TuningSystem; type?: 'triad' | 'seventh' }
   ): BorrowedChord[] {
     const tuning = options?.tuning ?? TET12;
     if (tuning.octaveSteps !== 12) return [];
@@ -1030,7 +1104,7 @@ export class Harmony {
 
       let diatonicChords: Chord[];
       try {
-        diatonicChords = modeScale.getDiatonicChords('seventh');
+        diatonicChords = modeScale.getDiatonicChords(options?.type ?? 'seventh');
       } catch { continue; }
 
       for (const c of diatonicChords) {
