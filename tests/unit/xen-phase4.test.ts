@@ -5,7 +5,7 @@ import { Note } from '../../lib/music-theory/note';
 import { EDO, JustIntonation, CentTuning } from '../../lib/music-theory/tuning';
 import { TemperamentAnalysis } from '../../lib/music-theory/temperament-analysis';
 import { MOS, CommaPump } from '../../lib/music-theory/mos';
-import { FiveLimitJI, PtolemaicJI } from '../../lib/music-theory/presets';
+import { FiveLimitJI, PtolemaicJI, BohlenPierce } from '../../lib/music-theory/presets';
 import { Chord } from '../../lib/music-theory/chord';
 import { Xen } from '../../lib/music-theory/xen';
 import { parseScala } from '../../lib/music-theory/scala';
@@ -122,5 +122,27 @@ describe('Spectral.sensoryConsonance with partials', () => {
     expect(c(7)).toBeGreaterThan(c(6));
     expect(c(4)).toBeGreaterThan(c(6));
     expect(c(6)).toBeGreaterThan(c(1));
+  });
+});
+
+describe('getStepFromStandard: nearest step in cents for every tuning', () => {
+  it('Bohlen-Pierce maps a fifth to step 5 (731.6¢), not 8', () => {
+    expect(BohlenPierce.getStepFromStandard(7)).toBe(5);
+    expect(BohlenPierce.getStepFromStandard(19)).toBe(13); // tritave 3:1 ≈ 1902¢ ≈ 19 semitones
+  });
+
+  it('an unequal cent table and a Scala tuning pick the nearest pitch', () => {
+    const seven = new CentTuning('7 unequal', [0, 200, 350, 500, 700, 900, 1050]);
+    expect(seven.getStepFromStandard(4)).toBe(2);  // 400¢ → 350¢
+    expect(seven.getStepFromStandard(3)).toBe(2);  // 300¢ → 350¢
+    expect(seven.getStepFromStandard(-1)).toBe(-1); // −100¢ → 1050 − 1200 = −150¢
+    const scl = parseScala('pent\n5\n200.0\n400.0\n700.0\n900.0\n2/1\n');
+    expect(scl.getStepFromStandard(7)).toBe(3);
+    expect(scl.getStepFromStandard(12)).toBe(5);
+  });
+
+  it('12-step tunings stay one to one', () => {
+    expect(FiveLimitJI.getStepFromStandard(6)).toBe(6);
+    expect(new EDO(24).getStepFromStandard(7)).toBe(14);
   });
 });

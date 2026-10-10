@@ -59,15 +59,6 @@ export class ScalaTuning extends TuningSystem {
     return `Step ${stepsFromBase}`;
   }
 
-  /**
-   * Maps a 12-TET semitone count to the nearest step in this tuning.
-   * This is a linear approximation — not harmonically precise, but sufficient
-   * for chord/scale formulas passed through `parseChordSymbol`/`parseScaleSymbol`.
-   */
-  getStepFromStandard(standardSteps: number): number {
-    // A rough approximation for UI compatibility
-    return Math.round(standardSteps * (this.octaveSteps / 12));
-  }
 }
 
 /**

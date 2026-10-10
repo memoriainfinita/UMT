@@ -39,14 +39,18 @@ export abstract class TuningSystem {
   }
 
   /**
-   * Converts a standard 12-TET step (A4 = 0) to the nearest equivalent step in this tuning.
-   *
-   * **Contract:** the default implementation is the identity function, which is only correct
-   * when this tuning has exactly 12 steps per octave (same grid as 12-TET).
-   * Subclasses with a different step count MUST override this method.
+   * Converts a standard 12-TET step (A4 = 0) to the step of this tuning nearest in cents
+   * (`standardStep` × 100¢ above step 0). Works for any tuning whose steps rise: unequal
+   * (JI, cent tables, Scala) and non-octave ones alike — in Bohlen-Pierce a fifth (700¢)
+   * maps to step 5 (731.6¢). Tunings with 12 steps per octave map one to one.
    */
   getStepFromStandard(standardStep: number): number {
-    return standardStep;
+    const target = standardStep * 100;
+    const error = (k: number) => Math.abs(this.getInterval(k).cents - target);
+    let s = Math.round((standardStep * this.octaveSteps) / 12); // proportional first guess
+    while (error(s + 1) < error(s)) s++;
+    while (error(s - 1) < error(s)) s--;
+    return s;
   }
 }
 
@@ -144,21 +148,7 @@ export class JustIntonation extends TuningSystem {
    */
   getStepFromStandard(standardStep: number): number {
     if (this.intervals.length === 12) return standardStep;
-
-    const octaves = Math.floor(standardStep / 12);
-    const pc12 = ((standardStep % 12) + 12) % 12;
-    const targetCents = pc12 * 100;
-
-    let bestIdx = 0;
-    let bestDist = Infinity;
-    for (let i = 0; i < this.intervals.length; i++) {
-      const dist = Math.abs(this.intervals[i].cents - targetCents);
-      if (dist < bestDist) {
-        bestDist = dist;
-        bestIdx = i;
-      }
-    }
-    return bestIdx + octaves * this.intervals.length;
+    return super.getStepFromStandard(standardStep);
   }
 }
 
@@ -205,13 +195,11 @@ export class CentTuning extends TuningSystem {
   }
 
   /**
-   * Maps a 12-TET step to this tuning's nearest step index.
-   * Only correct when this tuning has exactly 12 pitch classes per octave.
-   * For other sizes the mapping is approximate.
+   * Maps a 12-TET step to this tuning's step nearest in cents; one to one with 12 pitch classes.
    */
   getStepFromStandard(standardStep: number): number {
     if (this.cents.length === 12) return standardStep;
-    return Math.round((standardStep * this.cents.length) / 12);
+    return super.getStepFromStandard(standardStep);
   }
 }
 
@@ -258,16 +246,6 @@ export class NonOctaveTuning extends TuningSystem {
     return this.stepsPerPeriod;
   }
 
-  /**
-   * Maps a 12-TET step to the nearest step in this non-octave tuning.
-   *
-   * Note: this is a proportional approximation and has limited musical meaning,
-   * since the tuning's period is not the octave. Chord/scale formulas derived
-   * from 12-TET will not translate correctly to non-octave tunings.
-   */
-  getStepFromStandard(standardStep: number): number {
-    return Math.round((standardStep * this.stepsPerPeriod) / 12);
-  }
 }
 
 /** Standard 12-TET singleton - used as the default tuning throughout the library. */
