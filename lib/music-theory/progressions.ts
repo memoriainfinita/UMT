@@ -76,7 +76,7 @@ export const PROGRESSIONS: Record<string, ProgressionEntry> = {
   },
   'andalusian': {
     name: 'andalusian',
-    romanNumerals: ['i', 'bVII', 'bVI', 'V'],
+    romanNumerals: ['i', 'VII', 'VI', 'V'],
     description: 'Andalusian cadence. Descending minor tetrachord with Phrygian flavour.',
     style: 'flamenco',
   },

@@ -3,7 +3,7 @@ import { TET12, TuningSystem } from './tuning';
 import { Chord } from './chord';
 import { Scale } from './scale';
 import { Note } from './note';
-import { get12TETBaseName, parseNoteToStep12TET, preferFlatsForKey } from './utils';
+import { parseNoteToStep12TET, preferFlatsForKey, spellByLetter } from './utils';
 
 /**
  * Attempts to parse a chord suffix using a compositional grammar when the
@@ -105,22 +105,6 @@ function normalizeSuffix(type: string): string {
   if (type === '+7') return 'aug7';
   if (type === '7alt') return 'alt';
   return type;
-}
-
-/**
- * Infers the canonical chord suffix for a Roman numeral token.
- * Handles the context-dependent '7' rule (ii7=m7, V7=dom7, I7=maj7),
- * then delegates shorthands to normalizeSuffix.
- */
-function inferRomanSuffix(raw: string, isMinor: boolean, degree: number): string {
-  const s = raw.trim();
-  if (s === '') return isMinor ? 'm' : 'M';
-  if (s === '7') {
-    if (isMinor) return 'm7';
-    if (degree === 5) return '7';
-    return 'maj7';
-  }
-  return normalizeSuffix(s);
 }
 
 /**
@@ -234,132 +218,130 @@ const ROMAN_VALUES: Record<string, number> = {
   'i': 1, 'ii': 2, 'iii': 3, 'iv': 4, 'v': 5, 'vi': 6, 'vii': 7
 };
 
+const ROMAN_TOKEN = /^(sub)?(bb|b|##|#)?(IV|III|II|I|VII|VI|V|iv|iii|ii|i|vii|vi|v)(.*)$/;
+
+/** A suffix that already says the chord's quality (`m7b5`, `dim`, `sus4`, `maj7`…). */
+const QUALITY_PREFIX = /^(m(?!aj)|dim|aug|sus|alt|maj|M\d|°|o|ø|\+|-|Δ|△)/;
+
+type RomanKey = { scale: Scale; letters: string[]; naturalMinor: boolean };
+
+function romanKey(keySymbol: string, octave: number): RomanKey {
+  // Names and qualities come from the 12-TET key; the chord is then mapped to the tuning
+  const scale = parseScaleSymbol(keySymbol, TET12, octave);
+  if (scale.stepPattern.length !== 7) {
+    throw new Error(`parseRomanProgression: "${keySymbol}" is not a seven-note key.`);
+  }
+  const type = keySymbol.trim().replace(/^\S+\s+/, '').toLowerCase();
+  return {
+    scale,
+    letters: scale.getNotes().slice(0, 7).map(n => n.name),
+    naturalMinor: type === 'minor' || type === 'aeolian' || type === 'natural minor',
+  };
+}
+
+/**
+ * One Roman numeral in a key → chord symbol with octave (`"Dm"`, 4). The case gives the
+ * third; what the numeral leaves unsaid comes from the key: `ii` in C is Dm, `vii` is
+ * Bdim, `vii7` is Bm7b5, `V7` is G7, `I7` is Cmaj7. A numeral whose third is not the key's
+ * takes the plain chord of its case (`II` → D, `II7` → D7, `iv` in major → Fm, `iv7` →
+ * Fm7). Accidentals move the key's own degree (`bVII` in C is Bb; in A minor, Gb).
+ * In a natural minor key, `vii°`, `vii°7` and `viiø7` stand on the raised leading tone.
+ */
+function romanToSymbol(token: string, key: RomanKey): { symbol: string; octave: number } {
+  const m = token.match(ROMAN_TOKEN);
+  if (!m) throw new Error(`parseRomanProgression: invalid Roman numeral "${token}".`);
+  const [, isSub, acc = '', roman, suffixRaw] = m;
+  if (roman !== roman.toUpperCase() && roman !== roman.toLowerCase()) {
+    throw new Error(`parseRomanProgression: mixed-case numeral "${token}".`);
+  }
+  const degree = ROMAN_VALUES[roman.toLowerCase()];
+  const lower = roman === roman.toLowerCase();
+  const suffix = suffixRaw.trim();
+
+  const degreeName = key.letters[degree - 1];
+  const letter = degreeName[0];
+  const degreeStep = parseNoteToStep12TET(degreeName.replace(/-?\d+$/, ''), parseInt(degreeName.match(/-?\d+$/)![0], 10));
+  let shift = [...acc].reduce((n, c) => n + (c === '#' ? 1 : -1), 0);
+  // the leading-tone chord of a natural minor key stands on the raised seventh
+  if (key.naturalMinor && degree === 7 && lower && acc === '' && /^(°|o|ø|dim|m7b5)/.test(suffix)) shift = 1;
+
+  let type: string;
+  const diatonic = acc === '' && shift === 0;
+  if (suffix === '' || suffix === '7') {
+    const chord = key.scale.getChordOnDegree(degree, suffix === '7' ? 'seventh' : 'triad');
+    const pcs = chord.intervalsInSteps.map(i => ((i % 12) + 12) % 12);
+    const keyThirdMinor = pcs.includes(3);
+    if (diatonic && keyThirdMinor === lower && !chord.name.includes('(')) {
+      type = chord.name.replace(/^[A-G][#b]*/, '');
+    } else {
+      type = suffix === '7' ? (lower ? 'm7' : '7') : (lower ? 'm' : '');
+    }
+  } else {
+    const normalized = suffix === 'o' || suffix === '°' ? 'dim' : suffix;
+    type = lower && !QUALITY_PREFIX.test(normalized) ? `m${normalized}` : normalized;
+  }
+
+  let step = degreeStep + shift;
+  let spelled = spellByLetter(step, letter, 0);
+  if (isSub) {
+    // tritone substitute: a diminished fifth above, on the letter four above (G → Db)
+    step += 6;
+    spelled = spellByLetter(step, letter, 4);
+  }
+  if (!spelled) throw new Error(`parseRomanProgression: cannot spell the root of "${token}".`);
+  const [, root, oct] = spelled.match(/^([A-G][#b]*)(-?\d+)$/)!;
+  const canonical = normalizeSuffix(type);
+  return { symbol: `${root}${canonical === 'M' ? '' : canonical}`, octave: parseInt(oct, 10) };
+}
+
 /**
  * Parses a Roman numeral progression in a given key into an array of `Chord` objects.
  *
- * Supported syntax:
- * - Uppercase numerals = major quality: `I`, `IV`, `V`
- * - Lowercase numerals = minor quality: `ii`, `iii`, `vi`
- * - `7` suffix: degree-sensitive - `ii7` = m7, `V7` = dom7, `I7` = maj7
- * - Other suffixes delegate to `normalizeSuffix`: `IVmaj7`, `iiø`, etc.
- * - Chromatic accidentals: `bVII`, `#IV`
- * - Applied chords: `V7/ii`, `IV/V`
+ * - Case gives the third: `I`, `IV`, `V` major; `ii`, `iii`, `vi` minor
+ * - What the numeral leaves unsaid comes from the key: `vii` in C major is Bdim,
+ *   `ii7` is Dm7, `vii7` is Bm7b5, `V7` is G7, `I7` is Cmaj7. A third that is not the
+ *   key's gives the plain chord of the case: `II` is D, `II7` D7, `iv7` in major Fm7
+ * - Any other suffix is a chord type, read like `parseChordSymbol` (dictionary, then
+ *   compositional); lower case adds the minor third: `ii9` is Dm9, `V7b9` G7b9,
+ *   `viiø7` Bm7b5, `vii°7` Bdim7. An unknown suffix throws
+ * - Accidentals move the key's own degree: `bVII` in C major is Bb, `bII` in A minor is
+ *   Bb. In minor, `VII` and `VI` are the natural degrees (G and F in A minor), and
+ *   `vii°`, `vii°7`, `viiø7` stand on the raised leading tone (G#)
+ * - Applied chords: `V7/ii`, `vii°7/V`, `V/bVI` (read in the major or minor key of the
+ *   target, as its case says)
  * - Tritone substitution: `subV7`, `subV7/ii`
  *
+ * Roots are named as the key writes them (`bII` in E major is F, `V/vi` in Db major is Ab).
  * Example: `parseRomanProgression("ii7 V7 subV7/ii Imaj7", "C major")`
  *
- * **Note:** Applied chord names use 12-TET note names regardless of the target tuning.
- * This is a known limitation for non-12-TET tunings.
- *
  * @param progression - Space- or hyphen-separated Roman numeral tokens.
- * @param keySymbol - Key and scale type, e.g. `"C major"`, `"D dorian"`.
- * @param tuning - Target tuning system (default: 12-TET).
- * @param octave - Octave for root notes (default: 4).
+ * @param keySymbol - Seven-note key, e.g. `"C major"`, `"A minor"`, `"D dorian"`.
+ * @param tuning - Target tuning system (default: 12-TET). Chords are built as in
+ *   `parseChordSymbol`, with intervals mapped by `getStepFromStandard`.
+ * @param octave - Octave of the key's tonic (default: 4).
+ * @throws on an invalid numeral, an unknown suffix or a key that is not heptatonic.
  */
 export function parseRomanProgression(progression: string, keySymbol: string, tuning: TuningSystem = TET12, octave: number = 4): Chord[] {
-  const keyScale = parseScaleSymbol(keySymbol, tuning, octave);
-  const scaleNotes = keyScale.getNotes(2); // Get 2 octaves to be safe
-  
+  const key = romanKey(keySymbol, octave);
   const tokens = progression.split(/[\s-]+/).filter(t => t.length > 0);
-  
+
   return tokens.map(token => {
-    // Check for applied chords (e.g., V7/ii)
-    const parts = token.split('/');
-    if (parts.length === 2) {
-      const appliedRoman = parts[0];
-      const targetRoman = parts[1];
-      
-      // 1. Find the root step of the target roman numeral in the main key
-      const targetMatch = targetRoman.match(/^([b#]?)(IV|III|II|I|VII|VI|V|iv|iii|ii|i|vii|vi|v)(.*)$/i);
-      if (!targetMatch) throw new Error(`Invalid target Roman numeral: ${targetRoman}`);
-      
-      const [, tAcc, tRom] = targetMatch;
-      const tDegree = ROMAN_VALUES[tRom.toLowerCase()];
-      let targetRootStep = scaleNotes[tDegree - 1].stepsFromBase;
-      if (tAcc === 'b') targetRootStep -= 1;
-      if (tAcc === '#') targetRootStep += 1;
-      
-      // 2. Create a temporary major scale based on that target root
-      const targetRootName = get12TETBaseName(targetRootStep);
-      // Determine if target is minor based on roman numeral casing
-      const isTargetMinor = tRom === tRom.toLowerCase();
-      const tempKeyScale = parseScaleSymbol(`${targetRootName} ${isTargetMinor ? 'minor' : 'major'}`, tuning, octave);
-      const tempScaleNotes = tempKeyScale.getNotes(2);
-
-      // 3. Parse the applied roman numeral in that temporary key
-      const appliedMatch = appliedRoman.match(/^(sub)?([b#]?)(IV|III|II|I|VII|VI|V|iv|iii|ii|i|vii|vi|v)(.*)$/i);
-      if (!appliedMatch) throw new Error(`Invalid applied Roman numeral: ${appliedRoman}`);
-
-      const [, isSub, aAcc, aRom, aSuffixRaw] = appliedMatch;
-      const aDegree = ROMAN_VALUES[aRom.toLowerCase()];
-      if (!aDegree) throw new Error(`parseRomanProgression: unknown Roman numeral "${aRom}" in applied chord "${token}".`);
-      const isMinor = aRom === aRom.toLowerCase();
-      const aSuffix = inferRomanSuffix(aSuffixRaw, isMinor, aDegree);
-
-      const intervals12TET = CHORD_FORMULAS[aSuffix] || CHORD_FORMULAS['M'];
-      const intervals = intervals12TET.map(s => tuning.getStepFromStandard(s));
-
-      let rootStep = tempScaleNotes[aDegree - 1].stepsFromBase;
-      if (aAcc === 'b') rootStep -= tuning.getStepFromStandard(1);
-      if (aAcc === '#') rootStep += tuning.getStepFromStandard(1);
-
-      if (isSub) {
-        rootStep += tuning.getStepFromStandard(6); // Tritone substitution
-      }
-
-      // Determine accidental spelling: tritone subs and flat-prefix accidentals prefer flats;
-      // sharp-prefix accidentals prefer sharps; otherwise use the degree's key context.
-      let aPf: boolean;
-      if (isSub || aAcc === 'b') {
-        aPf = true;
-      } else if (aAcc === '#') {
-        aPf = false;
-      } else {
-        aPf = tempScaleNotes[aDegree - 1].preferFlats;
-      }
-      const rootName = get12TETBaseName(rootStep, aPf);
-      const chordName = `${rootName}${aSuffixRaw}`;
-
-      return new Chord(chordName, tuning, rootStep, intervals, undefined, aPf);
+    // `V7/ii`: the target is a bare degree of the main key, and the applied numeral is
+    // read in the target's key (major or minor by its case). `I6/9` is not applied.
+    const applied = token.match(/^(.+)\/((?:bb|b|##|#)?(?:IV|III|II|I|VII|VI|V|iv|iii|ii|i|vii|vi|v))$/);
+    let chordKey = key;
+    if (applied) {
+      const target = romanToSymbol(applied[2], key);
+      const targetRoot = target.symbol.match(/^[A-G][#b]*/)![0];
+      const targetMinor = /[iv]/.test(applied[2]);
+      chordKey = romanKey(`${targetRoot} ${targetMinor ? 'minor' : 'major'}`, target.octave);
     }
-    
-    // Normal parsing
-    const match = token.match(/^(sub)?([b#]?)(IV|III|II|I|VII|VI|V|iv|iii|ii|i|vii|vi|v)(.*)$/i);
-    if (!match) throw new Error(`Invalid Roman numeral: ${token}`);
-    
-    const [, isSub, accidental, roman, suffixRaw] = match;
-    const degree = ROMAN_VALUES[roman.toLowerCase()];
-    if (!degree) throw new Error(`Unknown Roman numeral: ${roman}`);
-    
-    const isMinor = roman === roman.toLowerCase();
-    const suffix = inferRomanSuffix(suffixRaw, isMinor, degree);
-
-    const intervals12TET = CHORD_FORMULAS[suffix] || CHORD_FORMULAS['M'];
-    const intervals = intervals12TET.map(s => tuning.getStepFromStandard(s));
-
-    // Calculate root step
-    let rootStep = scaleNotes[degree - 1].stepsFromBase;
-    if (accidental === 'b') rootStep -= tuning.getStepFromStandard(1);
-    if (accidental === '#') rootStep += tuning.getStepFromStandard(1);
-
-    if (isSub) {
-      rootStep += tuning.getStepFromStandard(6); // Tritone substitution
+    const { symbol, octave: rootOctave } = romanToSymbol(applied ? applied[1] : token, chordKey);
+    try {
+      return parseChordSymbol(symbol, tuning, rootOctave);
+    } catch {
+      throw new Error(`parseRomanProgression: unknown chord type in "${token}" (read as "${symbol}").`);
     }
-
-    // Determine accidental spelling: tritone subs and flat-prefix accidentals prefer flats;
-    // sharp-prefix accidentals prefer sharps; otherwise use the degree's key context.
-    let preferFlats: boolean;
-    if (isSub || accidental === 'b') {
-      preferFlats = true;
-    } else if (accidental === '#') {
-      preferFlats = false;
-    } else {
-      preferFlats = scaleNotes[degree - 1].preferFlats;
-    }
-    const rootName = get12TETBaseName(rootStep, preferFlats);
-    const chordName = `${rootName}${suffixRaw}`;
-
-    return new Chord(chordName, tuning, rootStep, intervals, undefined, preferFlats);
   });
 }
 
@@ -368,7 +350,8 @@ export function parseRomanProgression(progression: string, keySymbol: string, tu
  *
  * Formats supported:
  * - `"Fmaj7|Gmaj7"` - upper chord | lower chord (vertical stack)
- * - `"D/C"` - if C is not a chord tone of D, treated as polychord (non-inversion slash)
+ * - `"D/C"` - upper chord over the triad of the bass note; throws when the bass is a
+ *   tone of the upper chord (`"C/E"` is an inversion: use `parseChordSymbol`)
  *
  * @throws if the symbol cannot be parsed.
  */
@@ -387,12 +370,18 @@ export function parsePolychord(
     };
   }
 
-  // Slash notation: re-parse, treating bass as lower root triad
+  // Slash notation: an upper chord over a lower triad on the bass note. A bass that is a
+  // tone of the upper chord makes an inversion (C/E), not a polychord.
   if (s.includes('/')) {
-    const [upperSym, bassSym] = s.split('/').map(p => p.trim());
+    const cut = s.lastIndexOf('/');
+    const upperSym = s.slice(0, cut).trim();
+    const bassSym = s.slice(cut + 1).trim();
     const upper = parseChordSymbol(upperSym, tuning);
     const normalizedBass = bassSym.charAt(0).toUpperCase() + bassSym.slice(1);
     const lower = parseChordSymbol(normalizedBass, tuning);
+    if (upper.contains(lower.rootStep)) {
+      throw new Error(`parsePolychord: "${symbol}" is an inversion (the bass is a tone of ${upperSym}); use parseChordSymbol.`);
+    }
     return { upper, lower };
   }
 
