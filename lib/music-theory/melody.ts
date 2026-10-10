@@ -5,9 +5,14 @@ import { Note } from './note';
 
 /** A recurring interval pattern detected within a melody. */
 export interface Motif {
+  /** Index of the first note of the first occurrence. */
   start: number;
+  /** Length in notes. */
   length: number;
+  /** Intervals between consecutive notes, in steps. */
   intervals: number[];
+  /** Occurrences that do not overlap one another. */
+  occurrences: number;
 }
 
 /**
@@ -41,8 +46,10 @@ export class MelodyAnalysis {
   }
 
   /**
-   * Finds recurring interval patterns (motifs) in a melody.
-   * Returns motifs sorted by frequency of occurrence.
+   * Finds recurring interval patterns (motifs) in a melody, up to 9 notes long.
+   * Occurrences are counted without overlap (in C D C D C, C-D-C occurs once). A pattern
+   * that only recurs inside a longer motif, as often as it, is left out.
+   * Sorted by number of occurrences, then by length (longest first).
    * @param notes - Melody notes.
    * @param minLength - Minimum motif length in notes (default 3).
    */
@@ -50,27 +57,28 @@ export class MelodyAnalysis {
     if (notes.length < minLength) return [];
 
     const intervals = notes.slice(1).map((n, i) => n.stepsFromBase - notes[i].stepsFromBase);
-    const found = new Map<string, { count: number; first: number; len: number }>();
+    const found = new Map<string, { count: number; first: number; len: number; lastEnd: number }>();
 
-    for (let len = minLength - 1; len <= Math.min(intervals.length, 8); len++) {
+    for (let len = Math.max(1, minLength - 1); len <= Math.min(intervals.length, 8); len++) {
       for (let i = 0; i <= intervals.length - len; i++) {
-        const pattern = intervals.slice(i, i + len);
-        const key = pattern.join(',');
-        if (!found.has(key)) {
-          found.set(key, { count: 0, first: i, len });
+        const key = intervals.slice(i, i + len).join(',');
+        const entry = found.get(key);
+        if (!entry) {
+          found.set(key, { count: 1, first: i, len, lastEnd: i + len });
+        } else if (i > entry.lastEnd) {
+          // a new occurrence only after the last note of the previous one (no shared notes)
+          entry.count++;
+          entry.lastEnd = i + len;
         }
-        found.get(key)!.count++;
       }
     }
 
-    // Return only patterns that appear more than once
-    const results: Motif[] = [];
-    for (const [key, { count, first, len }] of found) {
-      if (count > 1) {
-        results.push({ start: first, length: len + 1, intervals: key.split(',').map(Number) });
-      }
-    }
-    return results.sort((a, b) => b.intervals.length - a.intervals.length);
+    const repeated = [...found].filter(([, e]) => e.count > 1);
+    const results: Motif[] = repeated
+      .filter(([key, e]) => !repeated.some(([other, o]) =>
+        o.len > e.len && o.count >= e.count && `,${other},`.includes(`,${key},`)))
+      .map(([key, e]) => ({ start: e.first, length: e.len + 1, intervals: key.split(',').map(Number), occurrences: e.count }));
+    return results.sort((a, b) => b.occurrences - a.occurrences || b.length - a.length);
   }
 
   /**

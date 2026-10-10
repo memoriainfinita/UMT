@@ -9,6 +9,7 @@ import { ToneRow } from '../../lib/music-theory/twelve-tone';
 import { MetricModulation, RhythmAnalysis, TimeSignature } from '../../lib/music-theory/rhythm';
 import { FormAnalyzer } from '../../lib/music-theory/form';
 import { getProgression } from '../../lib/music-theory/progressions';
+import { MelodyAnalysis } from '../../lib/music-theory/melody';
 
 const pcSet = (pcs: number[]) => [...new Set(pcs)].sort((a, b) => a - b).join(',');
 
@@ -228,5 +229,21 @@ describe('FormAnalyzer', () => {
     const A = parseRomanProgression('I V IV V', 'C major');
     const B = parseRomanProgression('vi ii V I', 'C major');
     expect(FormAnalyzer.detectReprise([...A, ...B, ...A])).toEqual([{ start: 0, length: 4 }]);
+  });
+});
+
+describe('MelodyAnalysis.findMotifs', () => {
+  const n = (names: string[]) => names.map(x => parseNote(x));
+
+  it('counts non-overlapping occurrences, sorts by frequency, drops sub-motifs', () => {
+    // motif C D E repeated three times, transposed
+    const m = MelodyAnalysis.findMotifs(n(['C4', 'D4', 'E4', 'G4', 'A4', 'B4', 'D5', 'E5', 'F#5']));
+    expect(m[0]).toEqual({ start: 0, length: 3, intervals: [2, 2], occurrences: 3 });
+  });
+
+  it('overlapping repetitions are not counted twice', () => {
+    const m = MelodyAnalysis.findMotifs(n(['C4', 'D4', 'C4', 'D4', 'C4']), 3);
+    const cdc = m.find(x => x.intervals.join() === '2,-2');
+    expect(cdc?.occurrences ?? 1).toBe(1);
   });
 });
