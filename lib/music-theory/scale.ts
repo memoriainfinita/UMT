@@ -2,9 +2,7 @@ import { TuningSystem, EDO } from './tuning';
 import { Note } from './note';
 import { Chord } from './chord';
 import { SCALE_PATTERNS, MODE_PARENT_FAMILY, MODE_BRIGHTNESS } from './dictionaries';
-import { usesFlats, preferFlatsForKey, get12TETBaseName, spellByLetter, parseNoteToStep12TET } from './utils';
-
-const pcMod12 = (n: number) => ((n % 12) + 12) % 12;
+import { preferFlatsForKey, get12TETBaseName, spellByLetter, writtenRoot } from './utils';
 
 /**
  * Characteristic analysis of a modal scale: brightness relative to Ionian,
@@ -98,7 +96,7 @@ export class Scale {
       pf = this.preferFlats;
     } else if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
       const rootFlatName = new Note(this.tuningSystem, this.rootStep).getName({ preferFlats: true });
-      pf = usesFlats(rootFlatName);
+      pf = preferFlatsForKey(rootFlatName);
     } else {
       pf = false; // non-12-TET tunings have no flat/sharp preference
     }
@@ -108,10 +106,7 @@ export class Scale {
     // D harmonic minor has C#, not Db). Other scales fall back to the flat/sharp preference.
     const byLetter = is12TET && this.stepPattern.length === 7;
     // The written root (Cb, E#) comes from the scale name when it matches the root pitch.
-    const written = this.name.match(/^([A-G][#b]*)/)?.[1];
-    const rootLetter = written && pcMod12(parseNoteToStep12TET(written)) === pcMod12(this.rootStep)
-      ? written[0]
-      : get12TETBaseName(this.rootStep, pf)[0];
+    const rootLetter = (writtenRoot(this.name, this.rootStep) ?? get12TETBaseName(this.rootStep, pf))[0];
 
     const createNote = (step: number, degree: number): Note => {
       if (!is12TET) return new Note(this.tuningSystem, step);
@@ -191,7 +186,16 @@ export class Scale {
       newRootStep += this.stepPattern[i];
     }
 
-    return new Scale(`${this.name} (Mode ${degree})`, this.tuningSystem, newRootStep, newPattern);
+    // Named as the mode of the family when known (C major, mode 2 → "D dorian"), else
+    // "D (mode 2 of C major)". The root keeps the letter this scale gives it.
+    const rootName = this.getNotes()[modeIndex].name.replace(/-?\d+$/, '');
+    const type = this.getCanonicalType();
+    const parent = type ? MODE_PARENT_FAMILY[type] : undefined;
+    const modeName = parent
+      ? parent.familyModes[(parent.degree - 1 + modeIndex) % parent.familyModes.length]
+      : undefined;
+    const name = modeName ? `${rootName} ${modeName}` : `${rootName} (mode ${degree} of ${this.name})`;
+    return new Scale(name, this.tuningSystem, newRootStep, newPattern, this.preferFlats);
   }
 
   /**
@@ -388,22 +392,26 @@ export class Scale {
 
   /**
    * Returns a new scale with the same pattern transposed by the given number of steps.
-   * The name is updated to reflect the new root note.
+   * Named with the new root and the same type ("C major" +2 → "D major"); the root takes
+   * the spelling of the key with fewer accidentals.
    */
   transpose(steps: number): Scale {
     const newRoot = this.rootStep + steps;
     // Re-derive preferFlats for the new root - key signature changes with transposition.
     // Use get12TETBaseName for 12-TET (no octave number in the name); fall back to getNoteName.
+    // The type is what follows the root in the name ("C dorian" → "dorian").
+    const typeText = this.name.match(/^[A-G][#b]*\s+(.+)$/)?.[1];
     let newRootName: string;
     let newPf: boolean;
     if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
       const flatBaseName = get12TETBaseName(newRoot, true);
-      newPf = preferFlatsForKey(flatBaseName);
+      newPf = preferFlatsForKey(flatBaseName, typeText ?? 'major');
       newRootName = get12TETBaseName(newRoot, newPf);
     } else {
-      newRootName = new Note(this.tuningSystem, newRoot).getName();
+      newRootName = new Note(this.tuningSystem, newRoot).getName().replace(/-?\d+$/, '');
       newPf = false;
     }
-    return new Scale(`${this.name} → ${newRootName}`, this.tuningSystem, newRoot, [...this.stepPattern], newPf);
+    const name = typeText ? `${newRootName} ${typeText}` : `${newRootName} (${this.name})`;
+    return new Scale(name, this.tuningSystem, newRoot, [...this.stepPattern], newPf);
   }
 }

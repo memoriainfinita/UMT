@@ -114,31 +114,50 @@ export class Chord {
   }
 
   /**
-   * Returns a new chord transposed by the given number of steps.
-   * The name is updated to reflect the new root note.
+   * Returns a new chord transposed by the given number of steps. The name follows: the
+   * root takes the spelling of the key with fewer accidentals, and a slash bass keeps
+   * its letter distance from the root (C/E +2 → D/F#; C/Bb +2 → D/C).
+   * By whole octaves the chord keeps its name.
    */
   transpose(steps: number): Chord {
     const newRoot = this.rootStep + steps;
-    // Re-derive preferFlats for the new root - key signature changes with transposition.
-    // Use get12TETBaseName for 12-TET (no octave number in the name); fall back to getNoteName.
+    const newBass = this.bassStep !== undefined ? this.bassStep + steps : undefined;
+    const os = this.tuningSystem.octaveSteps;
+    if (steps % os === 0) {
+      return new Chord(this.name, this.tuningSystem, newRoot, [...this.intervalsInSteps], newBass, this.preferFlats);
+    }
+    const [main, slash] = this.name.split('/');
+    const suffix = main.match(/^[A-G][#b]*(.*)$/)?.[1] ?? '';
     let newRootName: string;
     let newPf: boolean;
+    let bassName = '';
     if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
       const flatBaseName = get12TETBaseName(newRoot, true);
       newPf = preferFlatsForKey(flatBaseName);
       newRootName = get12TETBaseName(newRoot, newPf);
+      if (slash !== undefined && newBass !== undefined) {
+        const oldRoot = writtenRoot(main, this.rootStep);
+        const oldBass = writtenRoot(slash.trim(), this.bassStep!);
+        const letters = 'CDEFGAB';
+        const distance = oldRoot && oldBass
+          ? (letters.indexOf(oldBass[0]) - letters.indexOf(oldRoot[0]) + 7) % 7
+          : null;
+        const spelled = distance !== null ? spellByLetter(newBass, newRootName[0], distance) : null;
+        bassName = '/' + (spelled ? spelled.replace(/-?\d+$/, '') : get12TETBaseName(newBass, newPf));
+      }
     } else {
-      newRootName = new Note(this.tuningSystem, newRoot).getName();
+      newRootName = new Note(this.tuningSystem, newRoot).getName().replace(/-?\d+$/, '');
       newPf = false;
+      if (slash !== undefined && newBass !== undefined) {
+        bassName = '/' + new Note(this.tuningSystem, newBass).getName().replace(/-?\d+$/, '');
+      }
     }
-    const match = this.name.match(/^[A-G][#b]*(.*)/);
-    const suffix = match ? match[1] : '';
     return new Chord(
-      `${newRootName}${suffix}`,
+      `${newRootName}${suffix}${bassName}`,
       this.tuningSystem,
       newRoot,
       [...this.intervalsInSteps],
-      this.bassStep !== undefined ? this.bassStep + steps : undefined,
+      newBass,
       newPf
     );
   }
