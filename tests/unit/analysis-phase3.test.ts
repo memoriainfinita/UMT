@@ -3,6 +3,7 @@ import { Harmony } from '../../lib/music-theory/harmony';
 import { parseChordSymbol, parseRomanProgression, parseNote } from '../../lib/music-theory/parser';
 import { NOTE_NAMES_12TET_FLAT } from '../../lib/music-theory/utils';
 import { FiguredBass } from '../../lib/music-theory/figured-bass';
+import { Schenker } from '../../lib/music-theory/schenker';
 
 const pcSet = (pcs: number[]) => [...new Set(pcs)].sort((a, b) => a - b).join(',');
 
@@ -109,5 +110,28 @@ describe('FiguredBass.realize completes abbreviations', () => {
   it('parse still reads the figures as written', () => {
     expect(FiguredBass.parse('6').intervals).toEqual([9]);
     expect(FiguredBass.parse('#').intervals).toEqual([5]);
+  });
+});
+
+describe('Schenker', () => {
+  const notes = (names: string[]) => names.map(n => parseNote(n));
+
+  it('finds an 8-line from C5 down to C4', () => {
+    const r = Schenker.findUrlinie(notes(['C5', 'B4', 'A4', 'G4', 'F4', 'E4', 'D4', 'C4']), 'C major');
+    expect(r?.type).toBe('8-line');
+    expect(r?.line.map(n => n.name)).toEqual(['C5', 'B4', 'A4', 'G4', 'F4', 'E4', 'D4', 'C4']);
+  });
+
+  it('a 3-line with neighbour notes between', () => {
+    const r = Schenker.findUrlinie(notes(['E4', 'F4', 'E4', 'D4', 'G4', 'C4']), 'C major');
+    expect(r?.type).toBe('3-line');
+    expect(r?.line.map(n => n.name)).toEqual(['E4', 'D4', 'C4']);
+  });
+
+  it('prolongation levels differ: foreground keeps C C7, middleground merges them', () => {
+    const cs = ['C', 'C', 'C7', 'F', 'G7', 'C'].map(n => parseChordSymbol(n));
+    expect(Schenker.prolongationLevel(cs, 'foreground').map(c => c.name)).toEqual(['C', 'C7', 'F', 'G7', 'C']);
+    expect(Schenker.prolongationLevel(cs, 'middleground').map(c => c.name)).toEqual(['C', 'F', 'G7', 'C']);
+    expect(Schenker.prolongationLevel(cs, 'background').map(c => c.name)).toEqual(['C', 'C', 'C7', 'G7', 'C']);
   });
 });

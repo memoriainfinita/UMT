@@ -32,45 +32,39 @@ export class Schenker {
     let scale;
     try { scale = parseScaleSymbol(keySymbol); } catch { return null; }
 
-    const scaleDegreeSteps = scale.getNotes(1).map(n => n.stepsFromBase);
+    const degreeSteps = scale.getNotes(1).slice(0, -1).map(n => n.stepsFromBase - scale.rootStep);
+    const size = degreeSteps.length;
     const oct = scale.tuningSystem.octaveSteps;
 
-    // Compute scale degree for each melody note (1-indexed, 0 = not in scale)
-    const degree = (note: Note): number => {
-      const pc = ((note.stepsFromBase % oct) + oct) % oct;
-      const idx = scaleDegreeSteps.findIndex(s => ((s % oct) + oct) % oct === pc);
-      return idx + 1; // 1-indexed
+    // Each note's place on the scale counting octaves (tonic = 0, ^2 = 1 … ^8 = size),
+    // so that ^8 is told apart from ^1; null for notes outside the scale.
+    const position = (note: Note): number | null => {
+      const rel = note.stepsFromBase - scale.rootStep;
+      const d = degreeSteps.findIndex(s => (((rel - s) % oct) + oct) % oct === 0);
+      return d === -1 ? null : Math.round((rel - degreeSteps[d]) / oct) * size + d;
     };
+    const positions = melody.map(position);
 
-    const degrees = melody.map(degree);
-
-    // Try to find descending stepwise line ending on ^1
-    const lastTonic = degrees.lastIndexOf(1);
+    // The line ends on the last tonic of the melody
+    let lastTonic = -1;
+    positions.forEach((p, i) => { if (p !== null && ((p % size) + size) % size === 0) lastTonic = i; });
     if (lastTonic < 0) return null;
+    const finalPos = positions[lastTonic]!;
 
-    // Check for 3-line: find ^3 somewhere before tonic
-    const checkLine = (startDeg: number): UrlinieResult | null => {
-      const startIdx = degrees.indexOf(startDeg);
-      if (startIdx < 0 || startIdx >= lastTonic) return null;
-
-      // Collect the structural notes: startDeg, ..., 2, 1 descending
+    // A stepwise descent from ^N down to that tonic, its notes in order (others between)
+    const checkLine = (n: 3 | 5 | 8): UrlinieResult | null => {
       const line: Note[] = [];
-      let expectedDeg = startDeg;
-      for (let i = startIdx; i <= lastTonic; i++) {
-        if (degrees[i] === expectedDeg) {
-          line.push(melody[i]);
-          expectedDeg--;
-          if (expectedDeg < 1) break;
-        }
+      let expected = finalPos + n - 1;
+      for (let i = 0; i < lastTonic && expected > finalPos; i++) {
+        if (positions[i] === expected) { line.push(melody[i]); expected--; }
       }
-      if (line[line.length - 1] && degree(line[line.length - 1]) === 1) {
-        const type = startDeg === 3 ? '3-line' : startDeg === 5 ? '5-line' : '8-line';
-        return { line, type };
-      }
-      return null;
+      if (expected !== finalPos) return null;
+      line.push(melody[lastTonic]);
+      return { line, type: `${n}-line` as UrlinieResult['type'] };
     };
 
-    return checkLine(3) ?? checkLine(5) ?? checkLine(8) ?? null;
+    // The longest line found: an 8-line also contains a 3-line
+    return checkLine(8) ?? checkLine(5) ?? checkLine(3);
   }
 
   /**
@@ -114,9 +108,9 @@ export class Schenker {
   /**
    * Reduces a chord progression to a simplified structural level.
    *
-   * - `'background'`: only tonic and dominant.
-   * - `'middleground'`: removes repeated roots; keeps harmonic function changes.
-   * - `'foreground'`: removes consecutive identical chords.
+   * - `'background'`: only tonic and dominant (the first chord is taken as the tonic).
+   * - `'middleground'`: merges consecutive chords on the same root (C C7 → C).
+   * - `'foreground'`: merges consecutive identical chords (same pitch classes).
    */
   static prolongationLevel(
     chords: Chord[],
@@ -126,10 +120,8 @@ export class Schenker {
     const oct = chords[0].tuningSystem.octaveSteps;
 
     if (level === 'foreground') {
-      // Remove consecutive duplicates
-      return chords.filter((c, i) =>
-        i === 0 || ((c.rootStep % oct + oct) % oct) !== ((chords[i - 1].rootStep % oct + oct) % oct)
-      );
+      const content = (c: Chord) => [...new Set(c.getPitchClasses())].sort((a, b) => a - b).join(',');
+      return chords.filter((c, i) => i === 0 || content(c) !== content(chords[i - 1]));
     }
 
     if (level === 'middleground') {
@@ -145,11 +137,11 @@ export class Schenker {
     // Background: keep only tonic and dominant
     // Determine tonic and dominant PCs from first chord (assumed tonic)
     const tonicPc = ((chords[0].rootStep % oct) + oct) % oct;
-    const dominantPc = (tonicPc + oct * 7 / 12) % oct; // approximation
+    const dominantPc = (tonicPc + chords[0].tuningSystem.getStepFromStandard(7)) % oct;
 
     return chords.filter(c => {
       const root = ((c.rootStep % oct) + oct) % oct;
-      return root === tonicPc || Math.abs(root - dominantPc) <= 1;
+      return root === tonicPc || root === dominantPc;
     });
   }
 }
