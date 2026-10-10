@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { Tonnetz } from '../../lib/music-theory/tonnetz';
 import { parseNote, parseChordSymbol } from '../../lib/music-theory/parser';
 import { Note } from '../../lib/music-theory/note';
-import { EDO, JustIntonation } from '../../lib/music-theory/tuning';
+import { EDO, JustIntonation, CentTuning } from '../../lib/music-theory/tuning';
+import { TemperamentAnalysis } from '../../lib/music-theory/temperament-analysis';
 import { MOS, CommaPump } from '../../lib/music-theory/mos';
-import { FiveLimitJI } from '../../lib/music-theory/presets';
+import { FiveLimitJI, PtolemaicJI } from '../../lib/music-theory/presets';
 import { Chord } from '../../lib/music-theory/chord';
 import { Xen } from '../../lib/music-theory/xen';
 
@@ -67,5 +68,33 @@ describe('Xen otonal / utonal', () => {
     expect(Xen.detectOtonal(ji).harmonics).toEqual([4, 5, 6, 7]);
     expect(Xen.detectOtonal(parseChordSymbol('C7')).isOtonal).toBe(false);
     expect(Xen.detectOtonal(parseChordSymbol('C7'), 7, 35).harmonics).toEqual([4, 5, 6, 7]);
+  });
+});
+
+describe('TemperamentAnalysis', () => {
+  const pythagorean = new CentTuning('Pythagorean', [0, 90.225, 203.91, 294.135, 407.82, 498.045, 611.73, 701.955, 792.18, 905.865, 996.09, 1109.775]);
+
+  it('equal temperaments have no wolves; Pythagorean has its wolf fifth', () => {
+    expect(TemperamentAnalysis.detectWolfIntervals(new EDO(19))).toEqual([]);
+    expect(TemperamentAnalysis.detectWolfIntervals(new EDO(12))).toEqual([]);
+    const wolfFifths = TemperamentAnalysis.detectWolfIntervals(pythagorean).filter(w => w.interval === 7);
+    expect(wolfFifths).toHaveLength(1);
+    // the table runs Ab…F#: the wolf is F# (step 6) → Db, 678.5¢, a Pythagorean comma short
+    expect(wolfFifths[0].from).toBe(6);
+    expect(wolfFifths[0].errorCents).toBeCloseTo(23.46, 1);
+  });
+
+  it('compare finds the closest step in JI and non-12 tunings', () => {
+    const t = TemperamentAnalysis.compare([new EDO(19), FiveLimitJI], [[3, 2], [5, 4]]);
+    expect(t.entries[0][0].tuningCents).toBeCloseTo(1200 * 11 / 19, 6);
+    expect(t.entries[1][0].errorCents).toBeCloseTo(0, 6);
+    expect(t.entries[1][1].errorCents).toBeCloseTo(0, 6);
+  });
+
+  it('unison vectors: commas by which two sizes of one interval differ', () => {
+    // 5-limit JI: fifths 3/2 and 40/27 (D–A), whole tones 9/8 and 10/9 → 81/80
+    const vs = TemperamentAnalysis.getUnisonVectors(FiveLimitJI).map(r => r.join('/'));
+    expect(vs).toContain('81/80');
+    expect(TemperamentAnalysis.getUnisonVectors(PtolemaicJI).map(r => r.join('/'))).toContain('81/80');
   });
 });

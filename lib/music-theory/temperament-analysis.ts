@@ -20,6 +20,18 @@ export interface ComparisonTable {
   entries: ComparisonEntry[][];
 }
 
+/** The step of `tuning` whose interval above step 0 is closest to `cents` (steps assumed ascending). */
+function closestStep(tuning: TuningSystem, cents: number): number {
+  let s = 0;
+  const dir = cents >= 0 ? 1 : -1;
+  for (let guard = 0; guard < 100000; guard++) {
+    const next = s + dir;
+    if (Math.abs(tuning.getInterval(next).cents - cents) >= Math.abs(tuning.getInterval(s).cents - cents)) break;
+    s = next;
+  }
+  return s;
+}
+
 /** Static methods for comparing tuning systems against JI, detecting wolf intervals, and finding optimal EDOs. */
 export class TemperamentAnalysis {
   /**
@@ -33,9 +45,9 @@ export class TemperamentAnalysis {
     const entries: ComparisonEntry[][] = tunings.map(tuning => {
       return intervals.map(([num, den]) => {
         const justCents = 1200 * Math.log2(num / den);
-        // Find the closest step in this tuning to the JI interval
-        const approxSteps = Math.round(justCents / (1200 / tuning.octaveSteps));
-        const tuningCents = tuning.getInterval(approxSteps).cents;
+        // The closest step of this tuning to the JI interval, found by walking its steps
+        // (works for EDOs, JI, cent tables and non-octave tunings alike)
+        const tuningCents = tuning.getInterval(closestStep(tuning, justCents)).cents;
         return {
           tuningName: tuning.name,
           intervalRatio: [num, den] as [number, number],
@@ -49,29 +61,36 @@ export class TemperamentAnalysis {
   }
 
   /**
-   * Detects wolf intervals in a tuning system:
-   * intervals that deviate from their JI target by more than `threshold` cents.
+   * Detects wolf intervals: single instances of an interval that stand out from the other
+   * intervals of the same number of steps. For each step count k, the typical size (median
+   * over all starting degrees) is taken as meant to be the nearest consonance (6/5, 5/4,
+   * 4/3, 3/2, 8/5, 5/3) when within `threshold` of it; an instance more than `threshold`
+   * away from that consonance is a wolf (Pythagorean tuning's G#–Eb fifth). Equal
+   * temperaments have none.
    *
    * @param tuning - The tuning system to audit.
-   * @param threshold - Error threshold in cents (default 25).
-   * @returns Array of { interval (step count), errorCents }.
+   * @param threshold - Error threshold in cents (default 20: Pythagorean tuning's wolf fifth
+   *   is a Pythagorean comma, 23.5¢, short).
+   * @returns Array of { interval (step count), from (starting step), errorCents (from the consonance) }.
    */
   static detectWolfIntervals(
     tuning: TuningSystem,
-    threshold = 25
-  ): { interval: number; errorCents: number }[] {
-    const wolves: { interval: number; errorCents: number }[] = [];
-    const oct = tuning.octaveSteps;
+    threshold = 20
+  ): { interval: number; from: number; errorCents: number }[] {
+    const wolves: { interval: number; from: number; errorCents: number }[] = [];
+    const period = tuning.octaveSteps;
+    const consonances = [[6, 5], [5, 4], [4, 3], [3, 2], [8, 5], [5, 3]].map(([n, d]) => 1200 * Math.log2(n / d));
+    const cents = (s: number) => tuning.getInterval(s).cents;
 
-    // Check all intervals within one octave
-    for (let step = 1; step < oct; step++) {
-      const tuningCents = tuning.getInterval(step).cents;
-      // Approximate JI target: nearest multiple of 100 cents (12-TET reference)
-      const justApprox = Math.round(tuningCents / 100) * 100;
-      const error = Math.abs(tuningCents - justApprox);
-      if (error > threshold) {
-        wolves.push({ interval: step, errorCents: error });
-      }
+    for (let k = 1; k < period; k++) {
+      const sizes = Array.from({ length: period }, (_, i) => cents(i + k) - cents(i));
+      const median = [...sizes].sort((a, b) => a - b)[Math.floor(period / 2)];
+      const target = consonances.reduce((best, c) => (Math.abs(c - median) < Math.abs(best - median) ? c : best));
+      if (Math.abs(target - median) > threshold) continue; // this step count is not a consonance
+      sizes.forEach((size, from) => {
+        const error = Math.abs(size - target);
+        if (error > threshold) wolves.push({ interval: k, from, errorCents: error });
+      });
     }
     return wolves;
   }
@@ -97,25 +116,23 @@ export class TemperamentAnalysis {
   }
 
   /**
-   * Finds unison vectors for a JustIntonation tuning:
-   * small intervals that represent the comma pumps in the tuning.
+   * Finds unison vectors for a JustIntonation tuning: the known commas by which two sizes
+   * of the same interval (same number of steps, different starting notes) differ. In 5-limit
+   * JI the fifths 3/2 and 40/27, or the whole tones 9/8 and 10/9, differ by 81/80.
    */
   static getUnisonVectors(tuning: JustIntonation): [number, number][] {
     const commas = this.getCommas();
-    const result: [number, number][] = [];
-
-    for (const comma of commas) {
-      const commaCents = comma.cents;
-      // Check if any step in the tuning approximates this comma
-      for (let step = 1; step <= 2; step++) {
-        const tuningCents = tuning.getInterval(step).cents;
-        if (Math.abs(tuningCents - commaCents) < 10) {
-          result.push(comma.ratio);
-          break;
-        }
-      }
+    const n = tuning.octaveSteps;
+    const cents = (s: number) => tuning.getInterval(s).cents;
+    // differences between sizes of the same k-step interval
+    const gaps = new Set<number>();
+    for (let k = 1; k < n; k++) {
+      const sizes = Array.from({ length: n }, (_, i) => cents(i + k) - cents(i));
+      for (const a of sizes) for (const b of sizes) if (a > b) gaps.add(a - b);
     }
-    return result;
+    return commas
+      .filter(c => [...gaps].some(g => Math.abs(g - c.cents) < 0.5))
+      .map(c => c.ratio);
   }
 }
 
