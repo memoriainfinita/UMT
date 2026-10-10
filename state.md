@@ -24,7 +24,7 @@ last_updated: 2026-10-10
 
 - esbuild - compila `lib/music-theory/umt.ts` → `dist/umt.js` (112 kb)
 - typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
-- vitest - tests unitarios (`npm run test:unit`) - 738 tests
+- vitest - tests unitarios (`npm run test:unit`) - 751 tests
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
 - Tailwind CDN - estilos en demo
@@ -58,6 +58,7 @@ last_updated: 2026-10-10
 - [x] ESLint — `typescript-eslint` instalado, parser configurado con tsconfig. 4 errores corregidos. Commit `84cdafa`.
 - [x] `SetTheory.getZRelated` — implementado via búsqueda dinámica en FORTE_TABLE por interval vector. 6 tests. Commit `d1e7d12`.
 - [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit `549920d`.
+- [ ] Auditoría 2026-10: arreglar fallos en 6 fases (núcleo, datos, análisis, xen, exportadores, distribución). Detalle y plan en `docs/auditoria-2026-10.md`
 
 ## History
 

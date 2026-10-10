@@ -5,6 +5,17 @@ function ivs(symbol: string): readonly number[] {
   return parseChordSymbol(symbol).intervalsInSteps;
 }
 
+describe('slash in a chord type', () => {
+  it('6/9 is a chord type, not a bass note', () => expect(ivs('C6/9')).toEqual([0,4,7,9,14]));
+  it('m6/9 is a chord type', () => expect(ivs('Cm6/9')).toEqual([0,3,7,9,14]));
+  it('6/9 over a bass keeps both', () => {
+    const c = parseChordSymbol('C6/9/E');
+    expect(c.intervalsInSteps).toEqual([0,4,7,9,14]);
+    expect(((c.bassStep! % 12) + 12) % 12).toBe(7); // E (A=0)
+  });
+  it('a note after the slash is still the bass', () => expect(parseChordSymbol('C/E').bassStep).toBeDefined());
+});
+
 describe('compositional chord parser', () => {
 
   describe('dictionary still takes priority', () => {

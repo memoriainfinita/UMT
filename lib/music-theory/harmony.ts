@@ -855,7 +855,8 @@ export class Harmony {
           const rootFlatName = NOTE_NAMES_12TET_FLAT[root];
           const rootPf = preferFlatsForKey(rootFlatName, 'major');
           const rootName = rootPf ? rootFlatName : NOTE_NAMES_12TET_SHARP[root];
-          let chordName = `${rootName}${suffix}`;
+          // 'M' is the dictionary key for the major triad; the symbol is the bare root
+          let chordName = `${rootName}${suffix === 'M' ? '' : suffix}`;
 
           if (root !== bassStep) {
             const bassFlatName = NOTE_NAMES_12TET_FLAT[bassStep];
@@ -892,12 +893,26 @@ export class Harmony {
     const negativeNotes = negativeSteps.map(step => new Note(tuning, step)).sort((a, b) => a.frequency - b.frequency);
 
     const detectedNames = this.detectChords(negativeNotes);
-    const bestName = detectedNames[0] !== 'Unknown Chord' ? detectedNames[0] : `Negative of ${chord.name}`;
+    const lowestStep = negativeNotes[0].stepsFromBase;
+    if (detectedNames[0] === 'Unknown Chord') {
+      return new Chord(`Negative of ${chord.name}`, tuning, lowestStep, negativeNotes.map(n => n.stepsFromBase - lowestStep));
+    }
 
-    const newRootStep = negativeNotes[0].stepsFromBase;
-    const newIntervals = negativeNotes.map(n => n.stepsFromBase - newRootStep);
+    // The root is the root of the chord the notes are named as; a lowest note that is not
+    // that root becomes the bass (Cm7/Bb has root C and Bb below it).
+    const bestName = detectedNames[0];
+    const oct = tuning.octaveSteps;
+    const pc = (s: number) => ((s % oct) + oct) % oct;
+    const rootPc = pc(ts.getStepFromStandard(parseNoteToStep12TET(bestName.match(/^[A-G][#b]*/)![0], 4)));
+    const rootStep = negativeNotes.find(n => pc(n.stepsFromBase) === rootPc)!.stepsFromBase;
+    const newIntervals = [...new Set(negativeNotes.map(n => {
+      let iv = n.stepsFromBase - rootStep;
+      while (iv < 0) iv += oct;
+      return iv;
+    }))].sort((a, b) => a - b);
+    const bassStep = pc(lowestStep) === rootPc ? undefined : lowestStep;
 
-    return new Chord(bestName, tuning, newRootStep, newIntervals);
+    return new Chord(bestName, tuning, rootStep, newIntervals, bassStep);
   }
 
   /**
@@ -1192,9 +1207,11 @@ export class Harmony {
       return 'Plagal Cadence (IV -> I)';
     }
 
-    // Deceptive
-    if (isC1DominantRoot && r2 === (t + ts.getStepFromStandard(9)) % oct) {
-      return 'Deceptive Cadence (V -> vi)';
+    // Deceptive: V to the key's own sixth degree (vi in major, VI in minor)
+    const sixth = scaleNotes.length > 5 ? ((scaleNotes[5].stepsFromBase % oct) + oct) % oct : -1;
+    if (isC1DominantRoot && r2 === sixth) {
+      const minorSixth = ((sixth - t) % oct + oct) % oct === ts.getStepFromStandard(8);
+      return minorSixth ? 'Deceptive Cadence (V -> VI)' : 'Deceptive Cadence (V -> vi)';
     }
 
     // Phrygian Half / Hyper-phrygian: ♭II → I (or → i)
@@ -1276,8 +1293,8 @@ export class Harmony {
         if (distance === 5) {
           const isNextMinor = !!nextChord.name.match(/^[A-G][#b]*m(?!aj)/);
           if (isNextMinor) {
+            suggestions.push(s(`${root} phrygian dominant`, 'mixolydian b9 b13, V of harmonic minor'));
             suggestions.push(s(`${root} altered`));
-            suggestions.push(s(`${root} half-whole diminished`, 'Mixolydian b9 b13 approximation'));
           } else {
             suggestions.push(s(`${root} lydian dominant`, 'if tritone sub'));
             suggestions.push(s(`${root} half-whole diminished`));

@@ -131,7 +131,7 @@ function inferRomanSuffix(raw: string, isMinor: boolean, degree: number): string
  * - Seventh chords: `Cmaj7`, `Cm7`, `C7`, `Cdim7`, `Cm7b5`, `CmM7`
  * - Extended: `C9`, `C11`, `C13`, `Cmaj9`, etc.
  * - Altered: `C7b9`, `C7#11`, `C7alt`, `Calt`
- * - Slash chords: `C/E`, `Cmaj7/G`
+ * - Slash chords: `C/E`, `Cmaj7/G`, `C6/9/E` (only a note name after the last slash is a bass)
  * - Shorthands: `CΔ`, `CΔ7`, `Cø`, `C-7`, `C°`, `C°7`, `C+`
  * - Compositional (any combination): `Cm9b5`, `C13b9#11`, `CmM9`, `Cmaj13#11`
  *   Alterations (`b5 #5 b9 #9 #11 b13`) may appear in any order.
@@ -152,8 +152,11 @@ export function parseChordSymbol(symbol: string, tuning: TuningSystem = TET12, o
   // Normalize root to uppercase (e.g. "cmaj7" → "Cmaj7")
   const normalizedSymbol = symbol.trim().charAt(0).toUpperCase() + symbol.trim().slice(1);
 
-  // Separate main symbol and bass note for slash chords
-  const [mainSymbol, bassSymbol] = normalizedSymbol.split('/');
+  // Separate main symbol and bass note for slash chords. Only a note name after the last
+  // slash is a bass: the slash in `6/9` belongs to the chord type.
+  const slash = normalizedSymbol.match(/^(.*)\/\s*([A-Ga-g][#b]*)$/);
+  const mainSymbol = slash ? slash[1] : normalizedSymbol;
+  const bassSymbol = slash ? slash[2] : undefined;
 
   const match = mainSymbol.match(/^([A-G][#b]*)(.*)$/);
   if (!match) throw new Error(`parseChordSymbol: invalid chord symbol "${symbol}".`);
