@@ -89,16 +89,37 @@ export class Spectral {
   }
 
   /**
-   * Estimates sensory consonance of a chord using its note frequencies.
-   * Returns a value 0 (maximum roughness) to 1 (maximum consonance).
+   * Estimates sensory consonance of a chord from the roughness between the harmonic partials
+   * of its notes (Sethares' model: partial k at k·f with amplitude rolloff^(k−1)). Only
+   * partials of different notes are paired. Returns 1 − roughness / the most roughness those
+   * partials could make, from 0 (rough) to 1 (smooth): a fifth scores above a tritone.
+   *
+   * @param chord - The chord to evaluate.
+   * @param partials - Harmonic partials per note (default 6; 1 = fundamentals only).
+   * @param rolloff - Amplitude ratio between consecutive partials (default 0.88).
    */
-  static sensoryConsonance(chord: Chord): number {
+  static sensoryConsonance(chord: Chord, partials = 6, rolloff = 0.88): number {
     const notes = chord.getNotes();
-    const freqs = notes.map(n => n.frequency);
-    const roughness = this.roughnessPlompLevelt(freqs);
-    // Normalize: a single note has roughness 0; normalize by number of pairs
-    const pairs = (freqs.length * (freqs.length - 1)) / 2;
-    if (pairs === 0) return 1;
-    return Math.max(0, 1 - roughness / pairs);
+    if (notes.length < 2) return 1;
+    const amps = Array.from({ length: partials }, (_, k) => Math.pow(rolloff, k));
+    const spectra = notes.map(n => amps.map((a, k) => ({ f: n.frequency * (k + 1), a })));
+
+    // peak of e^(−3.5x) − e^(−5.75x), the most roughness one pair of unit partials can make
+    const xPeak = Math.log(5.75 / 3.5) / 2.25;
+    const peak = Math.exp(-3.5 * xPeak) - Math.exp(-5.75 * xPeak);
+
+    let roughness = 0;
+    let max = 0;
+    for (let i = 0; i < spectra.length; i++) {
+      for (let j = i + 1; j < spectra.length; j++) {
+        for (const p of spectra[i]) {
+          for (const q of spectra[j]) {
+            roughness += this.roughnessPlompLevelt([p.f, q.f], [p.a, q.a]);
+            max += p.a * q.a * peak;
+          }
+        }
+      }
+    }
+    return Math.max(0, 1 - roughness / max);
   }
 }

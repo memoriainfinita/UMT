@@ -9,6 +9,7 @@ import { FiveLimitJI, PtolemaicJI } from '../../lib/music-theory/presets';
 import { Chord } from '../../lib/music-theory/chord';
 import { Xen } from '../../lib/music-theory/xen';
 import { parseScala } from '../../lib/music-theory/scala';
+import { Spectral } from '../../lib/music-theory/spectral';
 
 describe('Tonnetz', () => {
   it('every pitch class once in x 0..3, y 0..2, with pc = 7x + 4y', () => {
@@ -110,5 +111,16 @@ describe('parseScala', () => {
 
   it('fewer pitches than declared throws', () => {
     expect(() => parseScala('short\n3\n3/2\n2/1\n')).toThrow(/3 notes declared, 2 found/);
+  });
+});
+
+describe('Spectral.sensoryConsonance with partials', () => {
+  const dyad = (semis: number) => new Chord('d', new EDO(12), -9, [0, semis]);
+  it('orders intervals as the ear does: octave, fifth, major third above tritone and minor second', () => {
+    const c = (s: number) => Spectral.sensoryConsonance(dyad(s));
+    expect(c(12)).toBeGreaterThan(c(7));
+    expect(c(7)).toBeGreaterThan(c(6));
+    expect(c(4)).toBeGreaterThan(c(6));
+    expect(c(6)).toBeGreaterThan(c(1));
   });
 });
