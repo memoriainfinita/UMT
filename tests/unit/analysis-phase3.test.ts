@@ -185,6 +185,9 @@ describe('ToneRow', () => {
 
   it('isCombinatorial finds real hexachordal combinatoriality', () => {
     expect(new ToneRow([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).isCombinatorial()).toBe('P'); // P(6) opens with 6..11
-    expect(new ToneRow([0, 1, 3, 2, 6, 4, 5, 7, 8, 9, 10, 11]).isCombinatorial()).toBe(null);
+    // first hexachord {0,1,2,3,4,6} inverts onto the second: I-combinatorial
+    expect(new ToneRow([0, 1, 3, 2, 6, 4, 5, 7, 8, 9, 10, 11]).isCombinatorial()).toBe('I');
+    // a Z hexachord (6-Z36) is not its own complement's transform: never combinatorial
+    expect(new ToneRow([0, 1, 2, 3, 4, 7, 5, 6, 8, 9, 10, 11]).isCombinatorial()).toBe(null);
   });
 });
