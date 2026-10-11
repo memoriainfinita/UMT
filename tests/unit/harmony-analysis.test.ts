@@ -127,6 +127,34 @@ describe('analyzeProgression after MODUS notes (modulation, local key, harmonic 
     expect(mods(run('C Am Dm G7 C E7 Am D7 G', 'C major'))).toEqual([]);
   });
 
+  it('a turnaround of secondary dominants that returns to the key is not a modulation', () => {
+    // VI7 ii7 V7 I7 in Bb: G7 → Cm7 is V7 → i of C minor, but F7 brings Bb back
+    const r = run('Bb7 Eb7 Bb7 Fm7 Bb7 Eb7 Edim7 Bb7 G7 Cm7 F7 Bb7 G7 Cm7 F7', 'Bb major');
+    expect(mods(r)).toEqual([]);
+    expect(r.analysis[8].secondaryTarget).toBe('V7/ii');
+    expect(r.analysis[9].roman).toBe('ii7');
+  });
+
+  it('style blues: I7, IV7 and V7 belong to the key; I7 after its ii is still V7/IV', () => {
+    const r = run('Bb7 Eb7 Bb7 Fm7 Bb7 Eb7', 'Bb major', { style: 'blues' });
+    expect(r.analysis.map(a => a.function)).toEqual(['T', 'S', 'T', 'D', 'D', 'S']);
+    expect(r.analysis[0]).toMatchObject({ roman: 'I7', isSecondary: false, isBorrowed: false });
+    expect(r.analysis[1]).toMatchObject({ roman: 'IV7', isBorrowed: false });
+    expect(r.analysis[4].secondaryTarget).toBe('V7/IV');
+    const tonal = run('Bb7 Eb7', 'Bb major');
+    expect(tonal.analysis[0].secondaryTarget).toBe('V7/IV');
+  });
+
+  it('style blues: the twelve-bar blues stays in the key', () => {
+    expect(mods(run('C7 C7 C7 C7 F7 F7 C7 C7 G7 F7 C7 G7', 'C major', { style: 'blues' }))).toEqual([]);
+  });
+
+  it('v → I is not an authentic cadence: the dominant needs its leading tone', () => {
+    expect(run('Fm7 Bb7', 'Bb major').analysis[0].cadenceWithNext).toBeUndefined();
+    expect(run('F7 Bb', 'Bb major').analysis[0].cadenceWithNext).toBe('Authentic Cadence (V -> I)');
+    expect(Harmony.analyzeCadence(parseChordSymbol('Em'), parseChordSymbol('F'), 'A minor')).toBe('No standard cadence');
+  });
+
   it('numerals and cadences after a modulation are in the new key', () => {
     const r = run('C F G C Am D7 G Em', 'C major');
     expect(r.analysis.map(a => a.key)).toEqual(['C major', 'C major', 'C major', 'C major', 'C major', 'G major', 'G major', 'G major']);

@@ -1097,6 +1097,15 @@ export declare class Harmony {
 	 * the new key is the one with an authentic cadence (V → I) in the passage, then with its
 	 * tonic chord in it, then with the best Krumhansl-Schmuckler correlation. A passage of
 	 * fewer than three chords is a tonicization, not a modulation (E7 → Am inside C major).
+	 * Nor is a passage whose foreign chords are all secondary dominants of the current key
+	 * and after which the music returns to it: the turnaround G7 Cm7 F7 Bb7 in Bb major
+	 * (VI7 ii7 V7 I7) stays in Bb, though G7 → Cm7 is a cadence in C minor. A passage that does
+	 * not return (C … D7 G Em Am D7 G to the end) is a modulation.
+	 *
+	 * `style: 'blues'`: dominant sevenths on I, IV and V belong to the key (C7, F7 and G7 in
+	 * C major are I7, IV7 and V7, functions T, S and D), not secondary dominants (C7 as V7/IV)
+	 * nor borrowed chords, and they do not start a modulation. I7 preceded by its ii is still
+	 * V7/IV (Gm7 C7 → F7). Without the option, I7 → IV is V7/IV, as in rhythm changes.
 	 *
 	 * Harmonic rhythm: with `durations` (in beats, one per chord), chord changes per bar of
 	 * `beatsPerBar` (default 4); without them, chord changes per chord, which only says how
@@ -1112,6 +1121,7 @@ export declare class Harmony {
 		spelling?: "key" | "written";
 		durations?: readonly number[];
 		beatsPerBar?: number;
+		style?: "tonal" | "blues";
 	}): {
 		analysis: ChordAnalysis[];
 		modulations: ModulationEvent[];
@@ -1694,7 +1704,9 @@ export declare class ABCBridge {
  */
 export declare class NeoRiemannian {
 	/**
-	 * Identifies if a chord is a major or minor triad and returns its root step.
+	 * Identifies a major or minor triad and returns its root step: exactly a root, a third and a
+	 * perfect fifth, in any inversion or doubling. Anything else is `null` (G7, Cmaj7, Cadd9,
+	 * Cdim, Csus4), so P, L and R return `null` for it too.
 	 */
 	static getTriadType(chord: Chord): {
 		rootStep: number;

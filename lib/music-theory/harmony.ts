@@ -370,6 +370,14 @@ function getFunction(degree: number, quality: string, isMinor: boolean, accident
   return 'unknown';
 }
 
+/** A dominant seventh on the first, fourth or fifth degree: the I7, IV7 and V7 of the blues. */
+function isBluesSeventh(chord: Chord, key: KeyInfo): boolean {
+  const oct = chord.tuningSystem.octaveSteps;
+  if (chordQualityFromIntervals(chord, oct) !== '7') return false;
+  const fromTonic = pcMod(chord.rootStep - key.tonicPc, oct);
+  return [0, 5, 7].map(s => key.tuning.getStepFromStandard(s)).includes(fromTonic);
+}
+
 function detectSecondaryDominant(chord: Chord, key: KeyInfo): { isSecondary: boolean; target?: string } {
   const oct = chord.tuningSystem.octaveSteps;
   const quality = chordQualityFromIntervals(chord, oct);
@@ -747,6 +755,15 @@ export class Harmony {
    * the new key is the one with an authentic cadence (V → I) in the passage, then with its
    * tonic chord in it, then with the best Krumhansl-Schmuckler correlation. A passage of
    * fewer than three chords is a tonicization, not a modulation (E7 → Am inside C major).
+   * Nor is a passage whose foreign chords are all secondary dominants of the current key
+   * and after which the music returns to it: the turnaround G7 Cm7 F7 Bb7 in Bb major
+   * (VI7 ii7 V7 I7) stays in Bb, though G7 → Cm7 is a cadence in C minor. A passage that does
+   * not return (C … D7 G Em Am D7 G to the end) is a modulation.
+   *
+   * `style: 'blues'`: dominant sevenths on I, IV and V belong to the key (C7, F7 and G7 in
+   * C major are I7, IV7 and V7, functions T, S and D), not secondary dominants (C7 as V7/IV)
+   * nor borrowed chords, and they do not start a modulation. I7 preceded by its ii is still
+   * V7/IV (Gm7 C7 → F7). Without the option, I7 → IV is V7/IV, as in rhythm changes.
    *
    * Harmonic rhythm: with `durations` (in beats, one per chord), chord changes per bar of
    * `beatsPerBar` (default 4); without them, chord changes per chord, which only says how
@@ -761,7 +778,7 @@ export class Harmony {
   static analyzeProgression(
     chords: Chord[],
     keySymbol: string,
-    options: { spelling?: 'key' | 'written'; durations?: readonly number[]; beatsPerBar?: number } = {},
+    options: { spelling?: 'key' | 'written'; durations?: readonly number[]; beatsPerBar?: number; style?: 'tonal' | 'blues' } = {},
   ): {
     analysis: ChordAnalysis[];
     modulations: ModulationEvent[];
@@ -778,7 +795,8 @@ export class Harmony {
     const homeKey = parseKey(keySymbol, tuning, spelling);
 
     // The key each chord is read in: the home key, then each modulation's from its index
-    const modulations = detectModulations(chords, homeKey);
+    const blues = options.style === 'blues';
+    const modulations = detectModulations(chords, homeKey, blues);
     const keySymbols = chords.map((_, i) => {
       const last = modulations.filter(m => m.atIndex <= i).pop();
       return last ? last.toKey : keySymbol;
@@ -795,13 +813,18 @@ export class Harmony {
       const { roman, degree, accidental, isDiatonic, quality } = getRomanForChord(chord, key);
       const degreeFn = getFunction(degree, quality, key.isMinor, accidental);
 
-      const { isSecondary, target } = detectSecondaryDominant(chord, key);
+      // In the blues, I7 preceded by its ii (Fm7 Bb7 → Eb7 in Bb) is still V7/IV
+      const prev = chords[i - 1];
+      const iiBefore = prev !== undefined && pcMod(prev.rootStep - chord.rootStep, 12) === 7
+        && ['m', 'm7'].includes(chordQualityFromIntervals(prev, prev.tuningSystem.octaveSteps));
+      const bluesSeventh = blues && isBluesSeventh(chord, key) && !iiBefore;
+      const { isSecondary, target } = bluesSeventh ? { isSecondary: false, target: undefined } : detectSecondaryDominant(chord, key);
 
       // A secondary chord's chromatic note comes from the key it tonicizes, not from a
       // parallel mode: D7 in C is V7/V, not a chord borrowed from lydian.
       let borrowedFrom: string | undefined;
       let isBorrowed = false;
-      if (!isDiatonic && !isSecondary) {
+      if (!isDiatonic && !isSecondary && !bluesSeventh) {
         const bf = detectBorrowedFrom(chord, key);
         if (bf) { isBorrowed = true; borrowedFrom = bf; }
       }
@@ -1334,7 +1357,8 @@ export class Harmony {
 
     const isC2Tonic = r2 === t;
     const isC1Subdominant = r1 === (t + ts.getStepFromStandard(5)) % oct; // IV
-    const isC1DominantRoot = r1 === (t + ts.getStepFromStandard(7)) % oct; // V
+    // V with the leading tone (a major third): v → i is not a cadence on the dominant
+    const isC1DominantRoot = r1 === (t + ts.getStepFromStandard(7)) % oct && c1Pcs.includes(maj3); // V
 
     // Picardy: same root, minor → major on tonic pair
     if (r1 === t && r2 === t && c1IsMinor && c2IsMajor) {
@@ -1817,10 +1841,12 @@ function candidateKeys(tuning: TuningSystem): CandidateKey[] {
  * (V or V7 → its tonic) in it, then with its tonic chord in it, then with the best
  * Krumhansl-Schmuckler correlation. A passage of fewer than three chords is a
  * tonicization (E7 → Am inside C major; B7 → Em at the end), not a modulation.
- * The modulation is placed on the first foreign chord; it is a pivot modulation when the
- * chord before belongs to both keys.
+ * Nor is a passage whose foreign chords are all secondary dominants of the current key when
+ * the next chord returns to that key (a turnaround). In the blues, I7, IV7 and V7 belong to
+ * the key. The modulation is placed on the first foreign chord; it is a pivot modulation
+ * when the chord before belongs to both keys.
  */
-function detectModulations(chords: Chord[], key: KeyInfo): ModulationEvent[] {
+function detectModulations(chords: Chord[], key: KeyInfo, blues = false): ModulationEvent[] {
   const events: ModulationEvent[] = [];
   const tuning = key.tuning;
   if (tuning.octaveSteps !== 12 || chords.length < 2) return events;
@@ -1834,9 +1860,14 @@ function detectModulations(chords: Chord[], key: KeyInfo): ModulationEvent[] {
   const isDominant = (c: Chord, k: CandidateKey) => pcMod(c.rootStep, 12) === pcMod(k.tonicPc + 7, 12) && has(c, 4);
 
   let active: { symbol: string; pcs: number[] } = { symbol: `${key.rootName} ${key.mode}`, pcs: key.scalePcs };
+  let activeInfo = key;
+  // In the blues, I7, IV7 and V7 belong to the active key
+  const inActive = (j: number) => fits(j, active.pcs) || (blues && isBluesSeventh(chords[j], activeInfo));
+  // Secondary dominants and leading-tone chords of the active key
+  const applied = (j: number) => detectSecondaryDominant(chords[j], activeInfo).isSecondary;
   let i = 1;
   while (i < chords.length) {
-    if (fits(i, active.pcs)) { i++; continue; }
+    if (inActive(i)) { i++; continue; }
 
     // The passage each candidate holds from the foreign chord on
     const options = candidates
@@ -1848,7 +1879,11 @@ function detectModulations(chords: Chord[], key: KeyInfo): ModulationEvent[] {
         const cadence = passage.some((c, j) => j + 1 < passage.length && isDominant(c, k) && isTonic(passage[j + 1], k));
         const tonic = passage.some(c => isTonic(c, k));
         const confirmed = end - i + 1 >= 3;
-        return { k, end, cadence, tonic, confirmed };
+        // Applied chords of the active key, then back to it: a tonicization
+        let appliedOnly = true;
+        for (let j = i; j <= end; j++) if (!inActive(j) && !applied(j)) appliedOnly = false;
+        const returns = end + 1 < chords.length && (inActive(end + 1) || applied(end + 1));
+        return { k, end, cadence, tonic, confirmed: confirmed && !(appliedOnly && returns) };
       })
       .filter(o => o.confirmed && (o.cadence || o.tonic));
 
@@ -1866,6 +1901,7 @@ function detectModulations(chords: Chord[], key: KeyInfo): ModulationEvent[] {
     const pivot = i > 0 && fits(i - 1, active.pcs) && fits(i - 1, best.k.pcs) ? chords[i - 1] : undefined;
     events.push({ atIndex: i, fromKey: active.symbol, toKey: best.k.symbol, type: pivot ? 'pivot' : 'direct', pivotChord: pivot });
     active = best.k;
+    activeInfo = parseKey(best.k.symbol, tuning, key.spelling);
     i = best.end + 1;
   }
   return events;
