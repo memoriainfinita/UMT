@@ -2,6 +2,16 @@
 
 Versions are git tags. Pin one (`#v0.4.1` in npm, `@v0.4.1` on jsDelivr); `main` may change.
 
+## 0.5.0 - 2026-10-11
+
+Names in Spanish, requested by MODUS. No breaking changes.
+
+### Added
+
+- `scaleName(name, language, { roots })`: scale and mode names with or without a root (`findScalesForNotes`, `getSuggestedScales`, `getBorrowedChords`, `borrowedFrom`): 'D dorian' → 'Re dórico', 'harmonic minor' → 'menor armónica'. Proper names (hirajoshi, pelog, freygish…) are kept
+- `cadenceName(cadence, language, { short })`: cadences of `analyzeCadence` with their numerals ('Cadencia rota (V -> vi)') or alone ('Rota', 'Authentic')
+- `substitutionTypeName(type, language)`: the `type` of `getSubstitutions` ('tritonal', 'mediante cromática')
+
 ## 0.4.2 - 2026-10-11
 
 ### Fixed
