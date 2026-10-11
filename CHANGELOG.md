@@ -2,6 +2,12 @@
 
 Versions are git tags. Pin one (`#v0.4.1` in npm, `@v0.4.1` on jsDelivr); `main` may change.
 
+## 0.4.2 - 2026-10-11
+
+### Fixed
+
+- `chordQualityFromIntervals` read a chord with a third and an added ninth or eleventh as sus: Cadd9, C6/9 and Cmadd9 were `'sus2'`, Cadd11 `'sus4'`. A chord is sus only without a third; G7sus4 is `'7sus4'`. In `analyzeProgression`, Cadd9 is `I` (was `Isus2`), G7sus4 `V7sus4` (was `Vsus4`); both read back with `parseRomanProgression`
+
 ## 0.4.1 - 2026-10-11
 
 ### Fixed
