@@ -3068,7 +3068,8 @@ export interface FindScalesOptions {
 /**
  * Returns the scales of SCALE_PATTERNS, on every root, that contain all the given notes,
  * ranked: root on the tonic first, then by tier (common scales before other families and
- * regional collections), then by fewer notes added to the set. Aliases of one pattern are
+ * regional collections), then by fewer notes added to the set. The chromatic scale, which
+ * holds any set, comes last on every root. Aliases of one pattern are
  * one result. Roots take the letter of a given note when one has that pitch class.
  * Other tunings are read by the nearest 12-TET pitch class.
  * @example

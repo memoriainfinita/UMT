@@ -42,6 +42,10 @@ describe('findScalesForNotes', () => {
   it('the chromatic scale is last; nothing for no notes', () => {
     const all = find(['C4', 'E4', 'G4']);
     expect(all[all.length - 1].type).toBe('chromatic');
+    // on the tonic too: E G C B has E chromatic below every scale on another root
+    const onE = find(['E3', 'G3', 'C4', 'B4']);
+    expect(onE.slice(0, 2).map(s => s.name)).toEqual(['E phrygian', 'E minor']);
+    expect(onE.findIndex(s => s.type === 'chromatic')).toBeGreaterThan(onE.findIndex(s => !s.rootIsTonic));
     expect(findScalesForNotes([])).toEqual([]);
   });
 });

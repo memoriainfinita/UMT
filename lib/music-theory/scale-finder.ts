@@ -78,7 +78,8 @@ const pcOfName = (name: string): number => {
 /**
  * Returns the scales of SCALE_PATTERNS, on every root, that contain all the given notes,
  * ranked: root on the tonic first, then by tier (common scales before other families and
- * regional collections), then by fewer notes added to the set. Aliases of one pattern are
+ * regional collections), then by fewer notes added to the set. The chromatic scale, which
+ * holds any set, comes last on every root. Aliases of one pattern are
  * one result. Roots take the letter of a given note when one has that pitch class.
  * Other tunings are read by the nearest 12-TET pitch class.
  * @example
@@ -126,7 +127,9 @@ export function findScalesForNotes(notes: Note[], options: FindScalesOptions = {
     }
   }
 
+  const isChromatic = (m: ScaleMatch) => Number(m.tier === 3);
   results.sort((a, b) =>
-    Number(b.rootIsTonic) - Number(a.rootIsTonic) || a.tier - b.tier || a.extra.length - b.extra.length);
+    isChromatic(a) - isChromatic(b) || Number(b.rootIsTonic) - Number(a.rootIsTonic) ||
+    a.tier - b.tier || a.extra.length - b.extra.length);
   return options.limit !== undefined ? results.slice(0, options.limit) : results;
 }
