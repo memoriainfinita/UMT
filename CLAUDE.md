@@ -4,7 +4,7 @@
 
 A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 1005 tests, zero runtime dependencies.
 
-The library compiles to a standalone IIFE (`dist/umt.js`, 142 kb) for script tags and jsDelivr, and to an ESM bundle (`dist/umt.mjs`) with bundled types (`dist/umt.d.ts`). Releases are git tags with notes in `CHANGELOG.md`.
+The library compiles to a standalone IIFE (`dist/umt.js`, 146 kb) for script tags and jsDelivr, and to an ESM bundle (`dist/umt.mjs`) with bundled types (`dist/umt.d.ts`). Releases are git tags with notes in `CHANGELOG.md`.
 
 The demo is a single vanilla HTML file (`index.html`) with 12 interactive sections in four groups (tonal harmony, scales and tuning, rhythm, beyond), its own CSS with light and dark themes. The original Next.js scaffolding and old demo versions are in `archive/` (gitignored).
 
