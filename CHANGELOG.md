@@ -1,6 +1,15 @@
 # Changelog
 
-Versions are git tags. Pin one (`#v0.3.0` in npm, `@v0.3.0` on jsDelivr); `main` may change.
+Versions are git tags. Pin one (`#v0.4.0` in npm, `@v0.4.0` on jsDelivr); `main` may change.
+
+## 0.4.0 - 2026-10-11
+
+`Harmony.getBorrowedChords`, from MODUS's key explorer.
+
+### Breaking changes
+
+- In a minor key, the dominant and leading-tone chords of the harmonic minor (E7, E, G#dim7, G#dim in A minor) are no longer listed as borrowed: `analyzeProgression` reads them as diatonic
+- `characteristic` marks the degrees that set the source mode apart from its reference scale (Berklee Online, "Modes"). Aeolian is marked by the b6 alone, not by the b6 or the b7: in C major, Cm7, Ebmaj7 and Gm7 from aeolian are no longer characteristic
 
 ## 0.3.0 - 2026-10-11
 

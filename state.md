@@ -16,8 +16,8 @@ last_updated: 2026-10-10
 - Repo: https://github.com/memoriainfinita/UMT
 - Demo: https://memoriainfinita.github.io/UMT (GitHub Pages, branch `main`, root `/`)
 - API Docs: https://memoriainfinita.github.io/UMT/api-docs/ (TypeDoc, generado en `api-docs/`)
-- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.3.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
-- Versión: 0.3.0 (tag `v0.3.0`); `v0.2.0` cierra las fases 0-6 de la auditoría; `v0.1.0` es el estado previo a la auditoría (`801e5ec`). Cambios en `CHANGELOG.md`
+- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.4.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
+- Versión: 0.4.0 (tag `v0.4.0`); `v0.3.0` cierra la fase 7; `v0.2.0` cierra las fases 0-6 de la auditoría; `v0.1.0` es el estado previo a la auditoría (`801e5ec`). Cambios en `CHANGELOG.md`
 - Status: publicado y en producción.
 - Deploy: `npm run build` + commit `dist/` + push; versión nueva: `package.json`, `CHANGELOG.md` y tag `vX.Y.Z`. Para docs: `npm run docs` + commit `api-docs/` + push.
 
@@ -26,7 +26,7 @@ last_updated: 2026-10-10
 - esbuild (fijado 0.28.2) - compila `dist/umt.js` (IIFE, 142 kb) y `dist/umt.mjs` (ESM)
 - dts-bundle-generator (fijado 9.5.1) - tipos en un solo `dist/umt.d.ts`
 - typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
-- vitest - tests unitarios (`npm run test:unit`) - 994 tests, un archivo por módulo
+- vitest - tests unitarios (`npm run test:unit`) - 997 tests, un archivo por módulo
 - GitHub Actions (`.github/workflows/ci.yml`) - typecheck, lint, tests, build y `dist` igual a las fuentes
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
@@ -72,7 +72,7 @@ last_updated: 2026-10-10
 - [x] ESLint — `typescript-eslint` instalado, parser configurado con tsconfig. 4 errores corregidos. Commit `84cdafa`.
 - [x] `SetTheory.getZRelated` — implementado via búsqueda dinámica en FORTE_TABLE por interval vector. 6 tests. Commit `d1e7d12`.
 - [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit `549920d`.
-- [x] Auditoría 2026-10: arreglar fallos en 8 fases (0 fallos de MODUS, núcleo, datos, análisis, xen, exportadores, distribución, funciones de MODUS). Fases 0 (`6750e23`), 1 (`a0494bd`…`e893bc3`), 2 (`1c67882`), 3 (`b3d2390`…`65641ad`, más `37f1473` por las notas de MODUS) 4 (`3449c91`…`88171ea`), 5 (`6a8d4fa`), 6 (`3f3fd6c`…`v0.2.0`) y 7 (`12c73c7`…`v0.3.0`, más `bc3b157`) hechas. notae fijada a `v0.3.0`. Detalle y plan en `docs/auditoria-2026-10.md`; peticiones de MODUS en `docs/notas-desde-modus-2026-10.md`
+- [x] Auditoría 2026-10: arreglar fallos en 8 fases (0 fallos de MODUS, núcleo, datos, análisis, xen, exportadores, distribución, funciones de MODUS). Fases 0 (`6750e23`), 1 (`a0494bd`…`e893bc3`), 2 (`1c67882`), 3 (`b3d2390`…`65641ad`, más `37f1473` por las notas de MODUS) 4 (`3449c91`…`88171ea`), 5 (`6a8d4fa`), 6 (`3f3fd6c`…`v0.2.0`) y 7 (`12c73c7`…`v0.3.0`, más `bc3b157`) hechas. Las dos peticiones de MODUS que faltaban, en `v0.4.0`. notae fijada a `v0.3.0`. Detalle y plan en `docs/auditoria-2026-10.md`; peticiones de MODUS en `docs/notas-desde-modus-2026-10.md`
 
 ## History
 
