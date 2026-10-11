@@ -1,6 +1,19 @@
 # Changelog
 
-Versions are git tags. Pin one (`#v0.4.0` in npm, `@v0.4.0` on jsDelivr); `main` may change.
+Versions are git tags. Pin one (`#v0.4.1` in npm, `@v0.4.1` on jsDelivr); `main` may change.
+
+## 0.4.1 - 2026-10-11
+
+### Fixed
+
+- `findScalesForNotes`: the chromatic scale comes last on every root. It came before the scales on other roots when its root was the tonic (E G C B listed E chromatic third)
+
+### Demo
+
+- Redesigned page, without Tailwind: navigation by topic, light and dark themes, chord symbol style and solfège roots for the whole page
+- New sections: progression analysis, identify notes (clickable piano), key explorer, key detection, rhythmic cycles
+- Results drawn instead of printed: keyboards, chord cards by function, confidence bars, step grids and cycles lit while they play, pitch-class clock, tone-row matrix, staves with ABC, LilyPond and MusicXML
+- README examples and screenshots match the library's current output
 
 ## 0.4.0 - 2026-10-11
 

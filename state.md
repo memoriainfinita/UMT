@@ -16,8 +16,8 @@ last_updated: 2026-10-10
 - Repo: https://github.com/memoriainfinita/UMT
 - Demo: https://memoriainfinita.github.io/UMT (GitHub Pages, branch `main`, root `/`)
 - API Docs: https://memoriainfinita.github.io/UMT/api-docs/ (TypeDoc, generado en `api-docs/`)
-- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.4.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
-- Versión: 0.4.0 (tag `v0.4.0`); `v0.3.0` cierra la fase 7; `v0.2.0` cierra las fases 0-6 de la auditoría; `v0.1.0` es el estado previo a la auditoría (`801e5ec`). Cambios en `CHANGELOG.md`
+- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.4.1/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
+- Versión: 0.4.1 (tag `v0.4.1`); `v0.4.0` cierra las peticiones de MODUS; `v0.3.0` cierra la fase 7; `v0.2.0` cierra las fases 0-6 de la auditoría; `v0.1.0` es el estado previo a la auditoría (`801e5ec`). Cambios en `CHANGELOG.md`
 - Status: publicado y en producción.
 - Deploy: `npm run build` + commit `dist/` + push; versión nueva: `package.json`, `CHANGELOG.md` y tag `vX.Y.Z`. Para docs: `npm run docs` + commit `api-docs/` + push.
 
@@ -30,7 +30,7 @@ last_updated: 2026-10-10
 - GitHub Actions (`.github/workflows/ci.yml`) - typecheck, lint, tests, build y `dist` igual a las fuentes
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
-- Tailwind CDN - estilos en demo
+- Fraunces (Google Fonts) - títulos en demo; el resto es CSS propio, sin Tailwind
 
 ## Patterns
 
