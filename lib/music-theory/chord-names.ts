@@ -1,6 +1,6 @@
 /**
- * Chord symbol styles (Cmaj7 / CΔ7 / CM7), roots in solfège, and long chord names in
- * English and Spanish.
+ * Chord symbol styles (Cmaj7 / CΔ7 / CM7), roots in solfège, and names in English and Spanish:
+ * chords, scales and modes, cadences, substitution types.
  */
 import { Chord } from './chord';
 
@@ -100,4 +100,104 @@ export function chordLongName(chord: Chord | string, language: ChordNameLanguage
   const head = `${localizeNoteName(root, language, true)} ${quality}`.trim();
   if (!bass) return head;
   return language === 'es' ? `${head} con bajo en ${localizeNoteName(bass, 'es', true)}` : `${head} over ${localizeNoteName(bass, 'en', true)}`;
+}
+
+// Spanish names of the scales of SCALE_PATTERNS. Modes are masculine, as "modo" (Re dórico);
+// other scales feminine, as "escala" (La menor armónica)
+const SCALE_NAMES_ES: Record<string, string> = {
+  major: 'mayor', minor: 'menor', 'natural minor': 'menor natural',
+  ionian: 'jónico', dorian: 'dórico', phrygian: 'frigio', lydian: 'lidio',
+  mixolydian: 'mixolidio', aeolian: 'eólico', locrian: 'locrio',
+  'harmonic minor': 'menor armónica', 'locrian #6': 'locrio #6', 'ionian #5': 'jónico #5',
+  'dorian #4': 'dórico #4', 'phrygian dominant': 'frigio dominante', 'lydian #2': 'lidio #2',
+  'super locrian bb7': 'superlocrio bb7', 'harmonic major': 'mayor armónica',
+  'melodic minor': 'menor melódica', 'jazz minor': 'menor jazz', 'dorian b2': 'dórico b2',
+  'lydian augmented': 'lidio aumentado', 'lydian dominant': 'lidio dominante', acoustic: 'acústica',
+  'mixolydian b6': 'mixolidio b6', 'locrian #2': 'locrio #2', altered: 'alterada',
+  'super locrian': 'superlocrio',
+  'whole tone': 'de tonos enteros', augmented: 'aumentada', chromatic: 'cromática',
+  'whole-half diminished': 'disminuida tono-semitono', 'half-whole diminished': 'disminuida semitono-tono',
+  'messiaen-4': 'modo 4 de Messiaen', 'messiaen-5': 'modo 5 de Messiaen',
+  'messiaen-6': 'modo 6 de Messiaen', 'messiaen-7': 'modo 7 de Messiaen',
+  'pentatonic major': 'pentatónica mayor', 'pentatonic minor': 'pentatónica menor',
+  blues: 'blues', 'blues major': 'blues mayor',
+  'bebop dominant': 'bebop dominante', 'bebop major': 'bebop mayor', 'bebop dorian': 'bebop dórico',
+  'double harmonic': 'doble armónica', 'hungarian minor': 'húngara menor',
+  'neapolitan minor': 'napolitana menor', 'neapolitan major': 'napolitana mayor',
+  enigmatic: 'enigmática', persian: 'persa', prometheus: 'de Prometeo',
+  balinese: 'balinesa', chinese: 'china', egyptian: 'egipcia',
+  'greek-dorian': 'dórico griego', 'greek-phrygian': 'frigio griego', 'greek-lydian': 'lidio griego',
+  'greek-mixolydian': 'mixolidio griego', 'greek-hypodorian': 'hipodórico griego',
+  'greek-hypophrygian': 'hipofrigio griego', 'greek-hypolydian': 'hipolidio griego',
+  'greek-hypomixolydian': 'hipomixolidio griego',
+  spanish: 'española', flamenco: 'flamenca', hindu: 'hindú', 'romanian minor': 'rumana menor',
+  byzantine: 'bizantina', 'gypsy major': 'gitana mayor', 'gypsy minor': 'gitana menor',
+};
+
+/**
+ * A scale or mode name in another language, with or without a root: the `name` of
+ * `findScalesForNotes` and `scale` of `getSuggestedScales` (`'D dorian'`), or the
+ * `sourceMode` of `getBorrowedChords` and `borrowedFrom` of `analyzeProgression`
+ * (`'harmonic minor'`). Names without a translation (hirajoshi, pelog, freygish…) are kept.
+ * Roots are in solfège in Spanish and in letters in English unless `roots` says otherwise.
+ * @example scaleName('F# lydian dominant', 'es') // 'Fa# lidio dominante'
+ * @example scaleName('A harmonic minor', 'en', { roots: 'solfege' }) // 'La harmonic minor'
+ */
+export function scaleName(
+  name: string,
+  language: ChordNameLanguage = 'en',
+  options: { roots?: 'letters' | 'solfege' } = {},
+): string {
+  const m = name.match(/^([A-G](?:#{1,2}|b{1,2})?) (.+)$/);
+  const [root, type] = m ? [m[1], m[2]] : [undefined, name];
+  const words = language === 'es' ? SCALE_NAMES_ES[type.toLowerCase()] ?? type : type;
+  if (!root) return words;
+  const solfege = (options.roots ?? (language === 'es' ? 'solfege' : 'letters')) === 'solfege';
+  return `${solfege ? localizeNoteName(root, 'es') : root} ${words}`;
+}
+
+// Cadences of `Harmony.analyzeCadence`: [long, short] name per language
+const CADENCE_NAMES: Record<string, Record<ChordNameLanguage, [string, string]>> = {
+  'Authentic Cadence': { en: ['Authentic Cadence', 'Authentic'], es: ['Cadencia auténtica', 'Auténtica'] },
+  'Plagal Cadence': { en: ['Plagal Cadence', 'Plagal'], es: ['Cadencia plagal', 'Plagal'] },
+  'Minor Plagal Cadence': { en: ['Minor Plagal Cadence', 'Minor plagal'], es: ['Cadencia plagal menor', 'Plagal menor'] },
+  'Deceptive Cadence': { en: ['Deceptive Cadence', 'Deceptive'], es: ['Cadencia rota', 'Rota'] },
+  'Half Cadence': { en: ['Half Cadence', 'Half'], es: ['Semicadencia', 'Semicadencia'] },
+  'Phrygian Cadence': { en: ['Phrygian Cadence', 'Phrygian'], es: ['Cadencia frigia', 'Frigia'] },
+  'Phrygian Half Cadence': { en: ['Phrygian Half Cadence', 'Phrygian half'], es: ['Semicadencia frigia', 'Semicadencia frigia'] },
+  'Backdoor Cadence': { en: ['Backdoor Cadence', 'Backdoor'], es: ['Cadencia backdoor', 'Backdoor'] },
+  'Picardy Third': { en: ['Picardy Third', 'Picardy third'], es: ['Tercera de picardía', 'Tercera de picardía'] },
+  'Tritone Sub Resolution': { en: ['Tritone Sub Resolution', 'Tritone sub'], es: ['Resolución del sustituto tritonal', 'Sustituto tritonal'] },
+  'No standard cadence': { en: ['No standard cadence', 'None'], es: ['Sin cadencia', 'Ninguna'] },
+};
+
+/**
+ * A cadence from `Harmony.analyzeCadence` (or `cadenceWithNext` of `analyzeProgression`) in
+ * another language. The long form keeps the numerals (`'Cadencia rota (V -> vi)'`); `short`
+ * gives the name alone (`'Rota'`, `'Authentic'`). An unknown string is returned unchanged.
+ */
+export function cadenceName(cadence: string, language: ChordNameLanguage = 'en', options: { short?: boolean } = {}): string {
+  const m = cadence.match(/^(.*?)(?: (\(.*\)))?$/);
+  const names = m ? CADENCE_NAMES[m[1]]?.[language] : undefined;
+  if (!m || !names) return cadence;
+  if (options.short) return names[1];
+  return m[2] ? `${names[0]} ${m[2]}` : names[0];
+}
+
+const SUBSTITUTION_NAMES: Record<string, Record<ChordNameLanguage, string>> = {
+  tritone: { en: 'tritone', es: 'tritonal' },
+  diatonic: { en: 'diatonic', es: 'diatónica' },
+  deceptive: { en: 'deceptive', es: 'rota' },
+  'chromatic-mediant': { en: 'chromatic mediant', es: 'mediante cromática' },
+  sus4: { en: 'sus4', es: 'sus4' },
+  modal: { en: 'modal', es: 'modal' },
+};
+
+/**
+ * The `type` of a `getSubstitutions` option in words: `'tritone'` → `'tritonal'`
+ * (sustitución tritonal), `'chromatic-mediant'` → `'chromatic mediant'` / `'mediante cromática'`.
+ * An unknown type is returned unchanged.
+ */
+export function substitutionTypeName(type: string, language: ChordNameLanguage = 'en'): string {
+  return SUBSTITUTION_NAMES[type]?.[language] ?? type;
 }

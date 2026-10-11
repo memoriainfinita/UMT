@@ -1,6 +1,6 @@
 # UMT
 
-[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.4.2/dist/umt.js)
+[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.5.0/dist/umt.js)
 [![Live demo](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://memoriainfinita.github.io/UMT)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
@@ -43,11 +43,11 @@ SetTheory.getZRelated([0, 1, 4, 6]);      // Z-related sets
 
 ## Installation
 
-Releases are git tags (`v0.4.2`); pin one, since `main` may change. Breaking changes are listed in `CHANGELOG.md`.
+Releases are git tags (`v0.5.0`); pin one, since `main` may change. Breaking changes are listed in `CHANGELOG.md`.
 
 **Browser - CDN (jsDelivr)**
 ```html
-<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.4.2/dist/umt.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.5.0/dist/umt.js"></script>
 <script>
   const chord = UMT.parseChordSymbol('Cmaj9');
   console.log(chord.getNotes().map(n => n.name));
@@ -61,7 +61,7 @@ Releases are git tags (`v0.4.2`); pin one, since `main` may change. Breaking cha
 
 **npm (from GitHub) - ESM with types**
 ```bash
-npm install github:memoriainfinita/UMT#v0.4.2
+npm install github:memoriainfinita/UMT#v0.5.0
 ```
 ```typescript
 import { parseChordSymbol, TET12, Harmony, SetTheory } from 'universal-music-theory-library';
@@ -70,7 +70,7 @@ import { parseChordSymbol, TET12, Harmony, SetTheory } from 'universal-music-the
 **Browser - ESM from the CDN**
 ```html
 <script type="module">
-  import { parseChordSymbol } from 'https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.4.2/dist/umt.mjs';
+  import { parseChordSymbol } from 'https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.5.0/dist/umt.mjs';
 </script>
 ```
 
@@ -114,7 +114,7 @@ npm run build   # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
 | `spelling.ts` | Pitches spelled in a key (harmonic chromatic scale), chord tones by interval |
 | `voicing.ts` | Voicing analysis: inversion, close/open position, drop 2/3/2+4, doubled, omitted and added notes |
 | `scale-finder.ts` | Every scale of the dictionary, on every root, that holds a set of notes, ranked |
-| `chord-names.ts` | Chord symbol styles (Cmaj7 / CΔ7 / CM7), solfège roots, long names in English and Spanish |
+| `chord-names.ts` | Chord symbol styles (Cmaj7 / CΔ7 / CM7), solfège roots; chord, scale, cadence and substitution names in English and Spanish |
 
 ### Post-tonal
 
@@ -303,7 +303,7 @@ scaleToMusicXML(scale);            // MusicXML document
 ## Tests
 
 ```bash
-npm run test:unit    # 998 unit tests via vitest, one file per module
+npm run test:unit    # 1005 unit tests via vitest, one file per module
 npm run typecheck    # TypeScript type checking
 ```
 

@@ -3106,6 +3106,32 @@ export declare function formatChordSymbol(chord: Chord | string, options?: {
  * (`'C 7#9'`, `'Do 7#9'`).
  */
 export declare function chordLongName(chord: Chord | string, language?: ChordNameLanguage): string;
+/**
+ * A scale or mode name in another language, with or without a root: the `name` of
+ * `findScalesForNotes` and `scale` of `getSuggestedScales` (`'D dorian'`), or the
+ * `sourceMode` of `getBorrowedChords` and `borrowedFrom` of `analyzeProgression`
+ * (`'harmonic minor'`). Names without a translation (hirajoshi, pelog, freygish…) are kept.
+ * Roots are in solfège in Spanish and in letters in English unless `roots` says otherwise.
+ * @example scaleName('F# lydian dominant', 'es') // 'Fa# lidio dominante'
+ * @example scaleName('A harmonic minor', 'en', { roots: 'solfege' }) // 'La harmonic minor'
+ */
+export declare function scaleName(name: string, language?: ChordNameLanguage, options?: {
+	roots?: "letters" | "solfege";
+}): string;
+/**
+ * A cadence from `Harmony.analyzeCadence` (or `cadenceWithNext` of `analyzeProgression`) in
+ * another language. The long form keeps the numerals (`'Cadencia rota (V -> vi)'`); `short`
+ * gives the name alone (`'Rota'`, `'Authentic'`). An unknown string is returned unchanged.
+ */
+export declare function cadenceName(cadence: string, language?: ChordNameLanguage, options?: {
+	short?: boolean;
+}): string;
+/**
+ * The `type` of a `getSubstitutions` option in words: `'tritone'` → `'tritonal'`
+ * (sustitución tritonal), `'chromatic-mediant'` → `'chromatic mediant'` / `'mediante cromática'`.
+ * An unknown type is returned unchanged.
+ */
+export declare function substitutionTypeName(type: string, language?: ChordNameLanguage): string;
 /** A repeating rhythmic cycle. */
 export interface RhythmicCycle {
 	name: string;
