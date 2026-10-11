@@ -16,8 +16,8 @@ last_updated: 2026-10-11
 - Repo: https://github.com/memoriainfinita/UMT
 - Demo: https://memoriainfinita.github.io/UMT (GitHub Pages, branch `main`, root `/`)
 - API Docs: https://memoriainfinita.github.io/UMT/api-docs/ (TypeDoc, generado en `api-docs/`)
-- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.5.1/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
-- Versión: 0.5.1 (tag `v0.5.1`). Cambios por versión en `CHANGELOG.md`; `v0.1.0` es el estado previo a la auditoría de 2026-10 (`801e5ec`)
+- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.6.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
+- Versión: 0.6.0 (tag `v0.6.0`). Cambios por versión en `CHANGELOG.md`; `v0.1.0` es el estado previo a la auditoría de 2026-10 (`801e5ec`)
 - Auditoría 2026-10 cerrada: detalle en `docs/auditoria-2026-10.md`; peticiones de MODUS y respuestas en `docs/notas-desde-modus-2026-10.md` (los dos sin versionar)
 - Consumidores: MODUS y notae, cada uno fijado a un tag. Solo la sesión de UMT commitea aquí; MODUS deja sus peticiones en las notas
 - Status: publicado y en producción.
@@ -28,7 +28,7 @@ last_updated: 2026-10-11
 - esbuild (fijado 0.28.2) - compila `dist/umt.js` (IIFE, 146 kb) y `dist/umt.mjs` (ESM)
 - dts-bundle-generator (fijado 9.5.1) - tipos en un solo `dist/umt.d.ts`
 - typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
-- vitest - tests unitarios (`npm run test:unit`) - 1007 tests, un archivo por módulo
+- vitest - tests unitarios (`npm run test:unit`) - 1016 tests, un archivo por módulo
 - GitHub Actions (`.github/workflows/ci.yml`) - typecheck, lint, tests, build y `dist` igual a las fuentes
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
@@ -59,7 +59,9 @@ last_updated: 2026-10-11
 - [counterpoint] `checkSpecies` lee el contrapunto en una rejilla de tiempos por nota del cantus (1, 2, 4, 2, 4 según especie; en 5ª una nota larga repite su altura). Confirmed 2026-10.
 - [tuning] `getStepFromStandard` lleva un paso de 12-TET al paso de la afinación más cercano en cents (clase base); EDO redondea y las afinaciones de 12 clases van uno a uno. Los módulos 12-TET (Tonnetz, contrapunto, cifrado) leen las notas de otras afinaciones por su semitono más cercano según la frecuencia. Confirmed 2026-10.
 - [export] Los tres exportadores (ABC, LilyPond, MusicXML) escriben sobre `notation-layout.ts`: grafía por letra y octava científica (otras afinaciones: semitono más cercano, y en MusicXML `<alter>` decimal), compases en ticks (384 por redonda), puntillos, tresillos y ligaduras al cruzar la barra; una sola voz, eventos solapados lanzan error. ABC con `L:1/4`, `C` = C4. Confirmed 2026-10.
-- [harmony] Modulación en `analyzeProgression`: empieza en el primer acorde ajeno a la tonalidad activa; tonalidad nueva por cadencia auténtica, luego tónica presente, luego Krumhansl; menos de tres acordes es tonicización. Numerales y cadencias en la tonalidad local (`ChordAnalysis.key`). Confirmed 2026-10.
+- [harmony] Modulación en `analyzeProgression`: empieza en el primer acorde ajeno a la tonalidad activa; tonalidad nueva por cadencia auténtica, luego tónica presente, luego Krumhansl; menos de tres acordes es tonicización, y también un pasaje cuyos acordes ajenos son todos dominantes secundarias de la tonalidad activa y tras el que se vuelve a ella (turnaround VI7 ii7 V7 I7). Numerales y cadencias en la tonalidad local (`ChordAnalysis.key`). Confirmed 2026-10.
+- [harmony] `style: 'blues'` en `analyzeProgression`: I7, IV7 y V7 son de la tonalidad (T, S, D), salvo el I7 precedido de su ii, que sigue siendo V7/IV. Sin la opción, I7 → IV es V7/IV. Cadencia auténtica y rota solo con la sensible en el V. Confirmed 2026-10.
+- [neo-riemannian] P, L y R solo sobre tríadas mayores y menores exactas; cualquier otro acorde da `null`. Confirmed 2026-10.
 - [data] Los datos de referencia se contrastan con fuente y los tests fijan los valores: Forte de la lista de Wikipedia (223 clases, prime forms de Rahn, Z mayúscula), maqamat de maqamworld.com (forma ascendente), ragas de las fichas de Wikipedia (vadi y samvadi como número de svara, Sa = 1 … Ni = 7). La fuente va citada en la cabecera del módulo. Confirmed 2026-10.
 - [substitution] Sustitutos diatónicos: el acorde de la escala a una tercera con la misma función (I → iii, vi; ii ↔ IV; V ↔ vii°), en mayor y menor natural, con la grafía y el tipo (tríada o cuatríada) de la escala. En mayor, IV y ii toman la subdominante menor (iv, bVII7, iiø7), y esta vuelve a IV. Confirmed 2026-10.
 

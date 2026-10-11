@@ -2,6 +2,20 @@
 
 Versions are git tags. Pin one (`#v0.4.1` in npm, `@v0.4.1` on jsDelivr); `main` may change.
 
+## 0.6.0 - 2026-10-12
+
+Readings reported from MODUS on the progressions of `PROGRESSIONS`.
+
+### Breaking changes
+
+- `NeoRiemannian.getTriadType`, `P`, `L` and `R` return `null` for anything but a major or minor triad (root, third and perfect fifth, in any inversion or doubling). G7, Cmaj7, Cadd9 and C7#9 passed as triads: `P(G7)` was Gm
+- `Harmony.analyzeProgression`: a passage whose foreign chords are all secondary dominants of the current key, followed by a return to that key, is a tonicization, not a modulation. The turnaround G7 Cm7 F7 Bb7 in Bb major (VI7 ii7 V7 I7) no longer modulates to C minor
+- `Harmony.analyzeCadence`: the authentic and deceptive cadences need the leading tone in the dominant chord; v → I (Fm7 → Bb7 in Bb) is no cadence
+
+### Added
+
+- `analyzeProgression(…, { style: 'blues' })`: dominant sevenths on I, IV and V belong to the key (I7, IV7, V7 with functions T, S, D), not secondary dominants nor borrowed chords, and do not start a modulation. I7 preceded by its ii stays V7/IV (Fm7 Bb7 → Eb7 in Bb)
+
 ## 0.5.1 - 2026-10-11
 
 ### Fixed
