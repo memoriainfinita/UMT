@@ -2,9 +2,9 @@
 
 ## What is this
 
-A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 961 tests, zero runtime dependencies.
+A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 994 tests, zero runtime dependencies.
 
-The library compiles to a standalone IIFE (`dist/umt.js`, 130 kb) for script tags and jsDelivr, and to an ESM bundle (`dist/umt.mjs`) with bundled types (`dist/umt.d.ts`). Releases are git tags with notes in `CHANGELOG.md`.
+The library compiles to a standalone IIFE (`dist/umt.js`, 142 kb) for script tags and jsDelivr, and to an ESM bundle (`dist/umt.mjs`) with bundled types (`dist/umt.d.ts`). Releases are git tags with notes in `CHANGELOG.md`.
 
 The demo is a single vanilla HTML file (`index.html`) with 7 interactive sections. The original Next.js scaffolding and old demo versions are in `archive/` (gitignored).
 
@@ -28,7 +28,7 @@ npm run typecheck    # tsc --noEmit (covers lib/ and tests/)
 ## Project structure
 
 ```
-lib/music-theory/         # Core library - all TypeScript (42 modules)
+lib/music-theory/         # Core library - all TypeScript (46 modules)
   types.ts                # Cents, Hertz, Ratio
   interval.ts             # Interval math (cents, ratios)
   tuning.ts               # TuningSystem (abstract), EDO, JustIntonation, CentTuning, NonOctaveTuning
@@ -41,7 +41,7 @@ lib/music-theory/         # Core library - all TypeScript (42 modules)
   harmony.ts              # Voice leading, chord detection, cadences, negative harmony, Coltrane axis
   circle.ts               # CircleOfFifths
   set-theory.ts           # Normal/prime form, interval vector, Forte catalogue, Z-relations
-  key-detection.ts        # Krumhansl-Schmuckler algorithm
+  key-detection.ts        # Correlation key finding, five key profiles (KEY_PROFILES)
   neo-riemannian.ts       # PLR transformations
   substitution.ts         # Chord substitutions (tritone, sus4, deceptive, diatonic)
   progressions.ts         # 16 named progressions
@@ -49,6 +49,9 @@ lib/music-theory/         # Core library - all TypeScript (42 modules)
   upper-structures.ts     # USTs, slash chord analysis, chord-scale completeness
   figured-bass.ts         # Figured bass parsing and realization
   spelling.ts             # Pitches spelled in a key, chord tones by interval
+  voicing.ts              # Voicing analysis: inversion, position, drop voicings, doubled/omitted
+  scale-finder.ts         # Scales of SCALE_PATTERNS that hold a set of notes, ranked
+  chord-names.ts          # Chord symbol styles, solfège roots, long names (en, es)
   twelve-tone.ts          # ToneRow, P/I/R/RI, 12x12 matrix
   counterpoint.ts         # Species counterpoint, Canon
   melody.ts               # Contour analysis, motif detection
@@ -56,6 +59,7 @@ lib/music-theory/         # Core library - all TypeScript (42 modules)
   scala.ts                # Scala (.scl) file parser
   rhythm.ts               # Duration, TimeSignature, Polyrhythm, Euclidean, MetricModulation
   clave-patterns.ts       # 10 clave presets
+  rhythmic-cycles.ts      # Talas, flamenco compás, aksak meters
   ragas.ts                # 10 Hindustani ragas
   maqamat.ts              # 8 Arabic maqamat (24-EDO)
   solfege.ts              # Fixed-do and movable-do

@@ -1,12 +1,12 @@
 # UMT
 
-[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.2.0/dist/umt.js)
+[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.3.0/dist/umt.js)
 [![Live demo](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://memoriainfinita.github.io/UMT)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
 A TypeScript library for music theory computation that works across any tuning system -
 12-TET, microtonal, historical temperaments, world music traditions, and post-tonal systems.
-Zero runtime dependencies. 130 kb compiled bundle (IIFE), plus an ESM build with bundled types.
+Zero runtime dependencies. 142 kb compiled bundle (IIFE), plus an ESM build with bundled types.
 
 **[Live demo](https://memoriainfinita.github.io/UMT)** · **[API docs](https://memoriainfinita.github.io/UMT/api-docs/)**
 
@@ -43,11 +43,11 @@ SetTheory.getZRelated([0, 1, 4, 6]);      // Z-related sets
 
 ## Installation
 
-Releases are git tags (`v0.2.0`); pin one, since `main` may change. Breaking changes are listed in `CHANGELOG.md`.
+Releases are git tags (`v0.3.0`); pin one, since `main` may change. Breaking changes are listed in `CHANGELOG.md`.
 
 **Browser - CDN (jsDelivr)**
 ```html
-<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.2.0/dist/umt.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.3.0/dist/umt.js"></script>
 <script>
   const chord = UMT.parseChordSymbol('Cmaj9');
   console.log(chord.getNotes().map(n => n.name));
@@ -61,7 +61,7 @@ Releases are git tags (`v0.2.0`); pin one, since `main` may change. Breaking cha
 
 **npm (from GitHub) - ESM with types**
 ```bash
-npm install github:memoriainfinita/UMT#v0.2.0
+npm install github:memoriainfinita/UMT#v0.3.0
 ```
 ```typescript
 import { parseChordSymbol, TET12, Harmony, SetTheory } from 'universal-music-theory-library';
@@ -70,7 +70,7 @@ import { parseChordSymbol, TET12, Harmony, SetTheory } from 'universal-music-the
 **Browser - ESM from the CDN**
 ```html
 <script type="module">
-  import { parseChordSymbol } from 'https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.2.0/dist/umt.mjs';
+  import { parseChordSymbol } from 'https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.3.0/dist/umt.mjs';
 </script>
 ```
 
@@ -108,16 +108,19 @@ npm run build   # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
 | `progressions.ts` | 16 named progressions (ii-V-I, Coltrane changes, blues 12, rhythm changes...) |
 | `form.ts` | Formal analysis - AABA, ABAB, binary, ternary, through-composed |
 | `upper-structures.ts` | Upper structure triads, slash chord analysis, chord-scale completeness |
-| `key-detection.ts` | Krumhansl-Schmuckler key detection algorithm |
+| `key-detection.ts` | Correlation key finding with five key profiles (Krumhansl-Kessler, Aarden-Essen, Bellman-Budge, Temperley-Kostka-Payne, simple) |
 | `neo-riemannian.ts` | P, L, R transformations in any tuning |
 | `figured-bass.ts` | Figured bass parsing and realization |
 | `spelling.ts` | Pitches spelled in a key (harmonic chromatic scale), chord tones by interval |
+| `voicing.ts` | Voicing analysis: inversion, close/open position, drop 2/3/2+4, doubled, omitted and added notes |
+| `scale-finder.ts` | Every scale of the dictionary, on every root, that holds a set of notes, ranked |
+| `chord-names.ts` | Chord symbol styles (Cmaj7 / CΔ7 / CM7), solfège roots, long names in English and Spanish |
 
 ### Post-tonal
 
 | Module | What it does |
 |--------|-------------|
-| `set-theory.ts` | Normal/prime form, interval vector, Forte catalogue (208 sets), Z-relations, Tn/TnI |
+| `set-theory.ts` | Normal/prime form, interval vector, Forte catalogue (223 set classes), Z-relations, Tn/TnI |
 | `twelve-tone.ts` | Tone rows, P/I/R/RI forms, 12x12 matrix, all-interval and combinatorial detection |
 | `counterpoint.ts` | Species counterpoint checker, Canon |
 | `schenker.ts` | Basic Schenkerian reduction |
@@ -138,6 +141,7 @@ npm run build   # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
 |--------|-------------|
 | `rhythm.ts` | Euclidean rhythms, polyrhythm, metric modulation, isorhythm |
 | `clave-patterns.ts` | 10 clave presets (son, rumba, bossa nova, tresillo, habanera...) |
+| `rhythmic-cycles.ts` | Hindustani and Carnatic talas, flamenco compás (bulerías, soleá, seguiriya), aksak meters |
 
 ### Microtonal / Xenharmonic
 
@@ -289,7 +293,7 @@ scaleToMusicXML(scale);            // MusicXML document
 ## Tests
 
 ```bash
-npm run test:unit    # 961 unit tests via vitest, one file per module
+npm run test:unit    # 994 unit tests via vitest, one file per module
 npm run typecheck    # TypeScript type checking
 ```
 

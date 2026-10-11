@@ -382,6 +382,17 @@ export declare class Chord {
  */
 export declare function chordQualityFromIntervals(chord: Chord, oct?: number): string;
 /**
+ * Name of a chord member by its interval above the root (12-TET semitones, as in
+ * `CHORD_FORMULAS`): `'R'`, `'b3'`, `'3'`, `'5'`, `'b7'`, `'7'`, `'9'`, `'#11'`, `'13'`…
+ * Ninths, elevenths and thirteenths are named as such when the formula writes them above
+ * the octave (14 = `'9'`); below it they are `'2'`, `'4'`, `'6'` (sus2, sus4, sixth chords).
+ * The rest of the formula decides two cases: 9 semitones is `'bb7'` in a diminished seventh
+ * chord, and 3 semitones is `'#9'` beside a major third.
+ * @param interval - Semitones above the root (0-23; larger values are reduced by octaves).
+ * @param formula - All intervals of the chord.
+ */
+export declare function chordDegreeLabel(interval: number, formula: readonly number[]): string;
+/**
  * Characteristic analysis of a modal scale: brightness relative to Ionian,
  * degrees that differ from the parallel major, jazz avoid notes, and parent-family info.
  */
@@ -973,6 +984,22 @@ export interface SixFourAnalysis {
  * A chord borrowed from a parallel mode (modal mixture).
  * Includes the source mode, brightness value, and harmonic function.
  */
+/** One reading of a set of notes as a chord, with what ranks it (see `Harmony.detectChordsScored`). */
+export interface ChordCandidate {
+	/** Chord symbol, with a slash bass when the lowest note is not the root: `'C7'`, `'C7/E'`. */
+	name: string;
+	root: string;
+	bass: string;
+	/** Key of the formula in `CHORD_FORMULAS` (`'M'`, `'7'`, `'maj9'`…). */
+	quality: string;
+	/** 1 for a complete chord over its root; less for each omitted member, another bass, and each tension. */
+	score: number;
+	rootInBass: boolean;
+	/** Formula members that do not sound (`'5'`; `'9'` and `'11'` in eleventh and thirteenth chords). */
+	omitted: string[];
+	/** Members above the octave: `'9'`, `'#11'`, `'b13'`… */
+	tensions: string[];
+}
 export interface BorrowedChord {
 	chord: Chord;
 	sourceMode: string;
@@ -1101,6 +1128,19 @@ export declare class Harmony {
 	 */
 	static detectChords(notes: Note[]): string[];
 	/**
+	 * Reads a set of notes as chords and ranks the readings, with the reasons. Besides exact
+	 * matches (those of `detectChords`), a reading may leave out the fifth, and an eleventh or
+	 * thirteenth chord its ninth or eleventh, when at least three different notes sound.
+	 * The lowest note (by pitch) is the bass. Readings are ranked by, in order: fewer omitted
+	 * members, root in the bass, fewer tensions, fewer formula notes; `score` follows the same
+	 * order (1 − 0.3 per omitted member − 0.15 off the root − 0.03 per tension, at least 0).
+	 * 12-TET only: other tunings return [].
+	 * @example
+	 * Harmony.detectChordsScored(['E3', 'C4', 'Bb4'].map(n => parseNote(n)))[0]
+	 * // → { name: 'C7/E', omitted: ['5'], rootInBass: false, score: 0.55, … }
+	 */
+	static detectChordsScored(notes: Note[]): ChordCandidate[];
+	/**
 	 * Returns the Negative Harmony equivalent of a chord in a given key.
 	 */
 	static getNegativeHarmony(chord: Chord, keyCenter: string): Chord;
@@ -1114,10 +1154,12 @@ export declare class Harmony {
 	 * @param keySymbol - e.g. `'C major'`, `'A minor'`
 	 * @param options.sources - Limit results to these mode names only.
 	 * @param options.tuning - Defaults to TET12; returns [] for non-12-TET.
+	 * @param options.type - `'seventh'` (default) or `'triad'`, as in `Scale.getDiatonicChords`.
 	 */
 	static getBorrowedChords(keySymbol: string, options?: {
 		sources?: string[];
 		tuning?: TuningSystem;
+		type?: "triad" | "seventh";
 	}): BorrowedChord[];
 	/**
 	 * Finds chords that are diatonic to both keys and can therefore serve as pivot chords
@@ -1666,23 +1708,198 @@ export declare class NeoRiemannian {
 	 */
 	static R(chord: Chord): Chord | null;
 }
+/** A pair of key profiles: weights of the 12 pitch classes above the tonic, major and minor. */
+export interface KeyProfile {
+	major: readonly number[];
+	minor: readonly number[];
+	source: string;
+}
+/**
+ * Key profiles for correlation key finding, as listed by Craig Sapp for Humdrum's `keycor`
+ * (extras.humdrum.org/man/keycor). Index 0 is the tonic.
+ */
+export declare const KEY_PROFILES: {
+	readonly krumhansl: {
+		readonly major: readonly [
+			6.35,
+			2.23,
+			3.48,
+			2.33,
+			4.38,
+			4.09,
+			2.52,
+			5.19,
+			2.39,
+			3.66,
+			2.29,
+			2.88
+		];
+		readonly minor: readonly [
+			6.33,
+			2.68,
+			3.52,
+			5.38,
+			2.6,
+			3.53,
+			2.54,
+			4.75,
+			3.98,
+			2.69,
+			3.34,
+			3.17
+		];
+		readonly source: "Krumhansl and Kessler probe-tone ratings (Krumhansl, Cognitive Foundations of Musical Pitch, 1990)";
+	};
+	readonly aarden: {
+		readonly major: readonly [
+			17.7661,
+			0.145624,
+			14.9265,
+			0.160186,
+			19.8049,
+			11.3587,
+			0.291248,
+			22.062,
+			0.145624,
+			8.15494,
+			0.232998,
+			4.95122
+		];
+		readonly minor: readonly [
+			18.2648,
+			0.737619,
+			14.0499,
+			16.8599,
+			0.702494,
+			14.4362,
+			0.702494,
+			18.6161,
+			4.56621,
+			1.93186,
+			7.37619,
+			1.75623
+		];
+		readonly source: "Aarden-Essen continuity profiles (Aarden, Dynamic Melodic Expectancy, 2003)";
+	};
+	readonly bellman: {
+		readonly major: readonly [
+			16.8,
+			0.86,
+			12.95,
+			1.41,
+			13.49,
+			11.93,
+			1.25,
+			20.28,
+			1.8,
+			8.04,
+			0.62,
+			10.57
+		];
+		readonly minor: readonly [
+			18.16,
+			0.69,
+			12.99,
+			13.34,
+			1.07,
+			11.15,
+			1.38,
+			21.07,
+			7.49,
+			1.53,
+			0.92,
+			10.21
+		];
+		readonly source: "Bellman-Budge chord-based profiles (Bellman, CMMR 2005)";
+	};
+	readonly temperley: {
+		readonly major: readonly [
+			0.748,
+			0.06,
+			0.488,
+			0.082,
+			0.67,
+			0.46,
+			0.096,
+			0.715,
+			0.104,
+			0.366,
+			0.057,
+			0.4
+		];
+		readonly minor: readonly [
+			0.712,
+			0.084,
+			0.474,
+			0.618,
+			0.049,
+			0.46,
+			0.105,
+			0.747,
+			0.404,
+			0.067,
+			0.133,
+			0.33
+		];
+		readonly source: "Temperley-Kostka-Payne chord-based profiles (Temperley, Music and Probability, 2007)";
+	};
+	readonly simple: {
+		readonly major: readonly [
+			2,
+			0,
+			1,
+			0,
+			1,
+			1,
+			0,
+			2,
+			0,
+			1,
+			0,
+			1
+		];
+		readonly minor: readonly [
+			2,
+			0,
+			1,
+			1,
+			0,
+			1,
+			0,
+			2,
+			1,
+			0,
+			0.5,
+			0.5
+		];
+		readonly source: "Simple weights (Sapp, Key-Profile Comparisons in Key-Finding by Correlation, ICMPC 2008)";
+	};
+};
+/** Name of a preset in `KEY_PROFILES`. */
+export type KeyProfileName = keyof typeof KEY_PROFILES;
+/** Options for key detection. */
+export interface KeyDetectionOptions {
+	/** Key profile to correlate with (default `'krumhansl'`), or a custom pair. */
+	profile?: KeyProfileName | KeyProfile;
+}
 /**
  * Key Detection Module
- * Implements the Krumhansl-Schmuckler key-finding algorithm.
+ * Implements correlation key finding (Krumhansl-Schmuckler) with a choice of key profiles.
  */
 export declare class KeyDetection {
-	static readonly majorProfile: number[];
-	static readonly minorProfile: number[];
+	static readonly majorProfile: (6.35 | 2.23 | 3.48 | 2.33 | 4.38 | 4.09 | 2.52 | 5.19 | 2.39 | 3.66 | 2.29 | 2.88)[];
+	static readonly minorProfile: (6.33 | 2.68 | 3.52 | 5.38 | 2.6 | 3.53 | 2.54 | 4.75 | 3.98 | 2.69 | 3.34 | 3.17)[];
 	/**
 	 * Detects the most likely key based on an array of notes.
 	 * Each note counts once, or by its duration when `durations` is given (as in the original
 	 * Krumhansl-Schmuckler algorithm). Notes outside 12-TET count for the nearest 12-TET pitch class.
 	 * @param notes - The notes to analyse.
 	 * @param durations - Optional duration of each note, in any unit (only proportions matter).
+	 * @param options - `profile`: which key profile to correlate with (default Krumhansl-Kessler).
 	 * @returns Array of possible keys sorted by confidence (Pearson correlation coefficient).
 	 * @throws RangeError if `durations` does not match `notes` in length, or holds a negative or non-finite value.
 	 */
-	static detect(notes: Note[], durations?: readonly number[]): {
+	static detect(notes: Note[], durations?: readonly number[], options?: KeyDetectionOptions): {
 		key: string;
 		confidence: number;
 	}[];
@@ -1690,10 +1907,11 @@ export declare class KeyDetection {
 	 * Detects the most likely key from a pitch class histogram (index 0 = C, 1 = C#/Db, … 11 = B),
 	 * e.g. total durations per pitch class accumulated over a piece.
 	 * @param weights - 12 non-negative weights.
+	 * @param options - `profile`: which key profile to correlate with (default Krumhansl-Kessler).
 	 * @returns Array of possible keys sorted by confidence; empty when all weights are 0.
 	 * @throws RangeError if there are not 12 weights, or one is negative or non-finite.
 	 */
-	static detectFromHistogram(weights: readonly number[]): {
+	static detectFromHistogram(weights: readonly number[], options?: KeyDetectionOptions): {
 		key: string;
 		confidence: number;
 	}[];
@@ -2776,5 +2994,144 @@ export declare function getFretboardScale(scale: Scale, tuning: readonly number[
  * @returns Array of position boxes ordered by starting fret, each with at least one note.
  */
 export declare function getFretboardScalePositions(scale: Scale, tuning: readonly number[], options?: FretboardVoicingOptions): FretboardScaleResult[];
+/** One sounding note of a voicing, bottom to top. */
+export interface VoicedNote {
+	note: string;
+	/** Chord member (`'R'`, `'3'`, `'b7'`, `'9'`…), or null for a note outside the chord. */
+	degree: string | null;
+}
+/** Result of `analyzeVoicing`. */
+export interface VoicingAnalysis {
+	chord: string;
+	/** Notes from the bass up. */
+	voices: VoicedNote[];
+	bass: string;
+	bassDegree: string | null;
+	/** 0 root position, 1 first (third in the bass), 2 second (fifth), 3 third (seventh); null for any other bass. */
+	inversion: number | null;
+	/** Upper voices (all but the bass) within an octave: `'close'`; wider: `'open'`. Null with fewer than three voices. */
+	position: "close" | "open" | null;
+	/** Four-voice jazz voicings derived from a close voicing by dropping voices an octave. */
+	drop: "drop 2" | "drop 3" | "drop 2+4" | null;
+	/** Chord members that sound more than once. */
+	doubled: string[];
+	/** Chord members that do not sound. */
+	omitted: string[];
+	/** Sounding notes outside the chord. */
+	added: string[];
+	/** Semitones from the lowest to the highest note. */
+	span: number;
+}
+/**
+ * Analyzes how a chord is voiced: inversion, close or open position, drop 2 / drop 3 /
+ * drop 2+4, and which members are doubled, omitted or added.
+ * Notes may come in any order. Without `chord`, the first reading of
+ * `Harmony.detectChords` is used. Other tunings are read by the nearest 12-TET semitone.
+ * @returns null when no chord is given and none is detected.
+ * @example
+ * analyzeVoicing(['G3', 'C4', 'E4', 'B4'].map(n => parseNote(n)), parseChordSymbol('Cmaj7'))
+ * // → inversion 2, drop 'drop 2' (from B G E C, G dropped), position 'close'
+ */
+export declare function analyzeVoicing(notes: Note[], chord?: Chord): VoicingAnalysis | null;
+/** A scale that contains every note of the set. */
+export interface ScaleMatch {
+	/** Scale symbol, readable by `parseScaleSymbol`: `'C major'`. */
+	name: string;
+	root: string;
+	type: string;
+	/** Other names of the same pattern in SCALE_PATTERNS (`'ionian'`, `'greek-hypolydian'`). */
+	aliases: string[];
+	/** Notes of the scale, spelled. */
+	notes: string[];
+	/** Scale notes that are not in the set. */
+	extra: string[];
+	/** The scale's root is the tonic (given, or the lowest note). */
+	rootIsTonic: boolean;
+	/** 0 common (diatonic modes, harmonic and melodic minor, pentatonics, blues), 1 other families, 2 regional and symmetric collections, 3 chromatic. */
+	tier: number;
+}
+/** Options for `findScalesForNotes`. */
+export interface FindScalesOptions {
+	/** Tonic to rank first (`'D'`, `'F#'`); default: the lowest note. */
+	tonic?: string;
+	/** Only scales whose root is the tonic. */
+	tonicOnly?: boolean;
+	/** At most this many results. */
+	limit?: number;
+}
+/**
+ * Returns the scales of SCALE_PATTERNS, on every root, that contain all the given notes,
+ * ranked: root on the tonic first, then by tier (common scales before other families and
+ * regional collections), then by fewer notes added to the set. Aliases of one pattern are
+ * one result. Roots take the letter of a given note when one has that pitch class.
+ * Other tunings are read by the nearest 12-TET pitch class.
+ * @example
+ * findScalesForNotes(['C4', 'E4', 'G4', 'Bb4'].map(n => parseNote(n)))[0].name // 'C mixolydian'
+ */
+export declare function findScalesForNotes(notes: Note[], options?: FindScalesOptions): ScaleMatch[];
+/** How `formatChordSymbol` writes qualities. */
+export type ChordSymbolStyle = "standard" | "symbols" | "short";
+/** Languages of `chordLongName` and `localizeNoteName`. */
+export type ChordNameLanguage = "en" | "es";
+/**
+ * A note name in another language. Short form keeps the accidental sign (`'F#'` → `'Fa#'`);
+ * long form spells it (`'F#'` → `'F sharp'` / `'Fa sostenido'`). An octave number is kept.
+ */
+export declare function localizeNoteName(name: string, language: ChordNameLanguage, long?: boolean): string;
+/**
+ * Writes a chord symbol in another style, optionally with the root (and slash bass) in
+ * solfège.
+ * - `'standard'`: as the library writes it (Cmaj7, Cm7, Cm7b5, Cdim7, Caug)
+ * - `'symbols'`: jazz symbols (CΔ7, C-7, Cø7, C°7, C+, C-Δ7)
+ * - `'short'`: M for major seventh (CM7, CM9)
+ * @example formatChordSymbol('F#m7b5', { style: 'symbols', roots: 'solfege' }) // 'Fa#ø7'
+ */
+export declare function formatChordSymbol(chord: Chord | string, options?: {
+	style?: ChordSymbolStyle;
+	roots?: "letters" | "solfege";
+}): string;
+/**
+ * A chord's name in words: `'C major seventh'`, `'Do séptima mayor'`, `'F sharp minor'`,
+ * `'Fa sostenido menor'`. A slash bass reads "over E" / "con bajo en Mi". Qualities beyond
+ * triads, sixths, suspensions and seventh chords keep their symbol after the root
+ * (`'C 7#9'`, `'Do 7#9'`).
+ */
+export declare function chordLongName(chord: Chord | string, language?: ChordNameLanguage): string;
+/** A repeating rhythmic cycle. */
+export interface RhythmicCycle {
+	name: string;
+	tradition: "hindustani" | "carnatic" | "flamenco" | "aksak";
+	/** Pulses in one cycle (matras, aksharas, beats of the compás, or eighths). */
+	beats: number;
+	/** Divisions of the cycle (vibhag, anga, groups of the compás, aksak cells), adding up to `beats`. */
+	groups: number[];
+	/** Hindustani tala: the sign of each vibhag, `'X'` sam, `'0'` khali (wave), a number for a clap (tali). */
+	vibhag?: string[];
+	/** Hindustani tala whose sam falls on a khali vibhag (Rupak). */
+	samIsKhali?: boolean;
+	/** Count spoken on the first pulse (flamenco: 12 in bulerías and seguiriya, 1 in soleá); default 1. */
+	firstCount?: number;
+	/** Accented counts, in the cycle's own counting (flamenco). Without it the group starts are accented. */
+	accents?: number[];
+	source: string;
+}
+/** Talas, flamenco compás and aksak meters. */
+export declare const RHYTHMIC_CYCLES: Record<string, RhythmicCycle>;
+/** What a metronome plays on one pulse of a cycle. */
+export type CycleStroke = "sam" | "tali" | "khali" | "accent" | "beat";
+/** The spoken count of each pulse: 1…n, or from `firstCount` (bulerías: 12, 1, 2 … 11). */
+export declare function cycleCounts(cycle: RhythmicCycle): number[];
+/**
+ * The stroke of each pulse, for a metronome. Hindustani talas: `'sam'` on the first pulse,
+ * `'tali'` (clap) or `'khali'` (wave) on the first pulse of each other vibhag (Rupak's sam,
+ * also khali, is `'sam'`). Flamenco: `'accent'` on the accented counts. Others:
+ * `'accent'` on the first pulse of each group. Every other pulse is `'beat'`.
+ */
+export declare function cycleStrokes(cycle: RhythmicCycle): CycleStroke[];
+/**
+ * An additive time signature for the cycle: its groups over `denominator` (default 8,
+ * the usual unit of aksak meters: Račenica is 2+2+3/8).
+ */
+export declare function cycleTimeSignature(cycle: RhythmicCycle, denominator?: number): TimeSignature;
 
 export {};

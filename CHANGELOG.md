@@ -1,6 +1,21 @@
 # Changelog
 
-Versions are git tags. Pin one (`#v0.2.0` in npm, `@v0.2.0` on jsDelivr); `main` may change.
+Versions are git tags. Pin one (`#v0.3.0` in npm, `@v0.3.0` on jsDelivr); `main` may change.
+
+## 0.3.0 - 2026-10-11
+
+Functions requested by MODUS. No breaking changes.
+
+### Added
+
+- `analyzeVoicing(notes, chord?)`: inversion, close or open position (upper voices within an octave), drop 2 / drop 3 / drop 2+4, doubled, omitted and added members
+- `Harmony.detectChordsScored(notes)`: chord readings with `score`, `rootInBass`, `omitted` and `tensions`; readings may leave out the fifth (and the ninth or eleventh of eleventh and thirteenth chords). `detectChords` is unchanged
+- `findScalesForNotes(notes, { tonic, tonicOnly, limit })`: every `SCALE_PATTERNS` scale on every root that contains the notes, aliases merged, ranked by tonic, tier and added notes
+- `formatChordSymbol` (styles `standard` Cmaj7, `symbols` CΔ7 / C-7 / Cø7 / C°7 / C+, `short` CM7; roots in letters or solfège), `chordLongName` (English, Spanish), `localizeNoteName`
+- `RHYTHMIC_CYCLES`: Hindustani talas (Teental, Jhoomra, Dhamar, Ektal, Jhaptal, Keherwa, Rupak, Dadra), Carnatic Adi and Rupaka, flamenco compás (bulerías, soleá, alegrías, seguiriya), aksak meters (Paidushko, Račenica, Lesnoto, Daychovo, Grancharsko, Gankino, Elenino, Krivo Sadovsko), each with its source; `cycleCounts`, `cycleStrokes`, `cycleTimeSignature`
+- `KEY_PROFILES` and `KeyDetection.detect(notes, durations, { profile })`: Krumhansl-Kessler (default), Aarden-Essen, Bellman-Budge, Temperley-Kostka-Payne and simple profiles, from Humdrum's `keycor`
+- `Harmony.getBorrowedChords(key, { type: 'triad' | 'seventh' })`
+- `chordDegreeLabel(interval, formula)`: chord member names (`'b3'`, `'#11'`, `'bb7'`…)
 
 ## 0.2.0 - 2026-10-11
 
