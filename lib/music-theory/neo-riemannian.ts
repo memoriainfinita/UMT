@@ -13,24 +13,19 @@ import { get12TETBaseName, preferFlatsForKey, NOTE_NAMES_12TET_FLAT } from './ut
  */
 export class NeoRiemannian {
   /**
-   * Identifies if a chord is a major or minor triad and returns its root step.
+   * Identifies a major or minor triad and returns its root step: exactly a root, a third and a
+   * perfect fifth, in any inversion or doubling. Anything else is `null` (G7, Cmaj7, Cadd9,
+   * Cdim, Csus4), so P, L and R return `null` for it too.
    */
   static getTriadType(chord: Chord): { rootStep: number, isMajor: boolean } | null {
-    const notes = chord.getNotes();
-    if (notes.length < 3) return null;
-
     const oct = chord.tuningSystem.octaveSteps;
     const ts = chord.tuningSystem;
-    const intervals = notes.map(n => ((n.stepsFromBase - chord.rootStep) % oct + oct) % oct);
+    const pcs = new Set(chord.intervalsInSteps.map(i => ((i % oct) + oct) % oct));
+    if (pcs.size !== 3 || !pcs.has(0) || !pcs.has(ts.getStepFromStandard(7))) return null;
 
-    const hasMajorThird  = intervals.includes(ts.getStepFromStandard(4));
-    const hasMinorThird  = intervals.includes(ts.getStepFromStandard(3));
-    const hasPerfectFifth = intervals.includes(ts.getStepFromStandard(7));
-
-    if (hasPerfectFifth && hasMajorThird) return { rootStep: chord.rootStep, isMajor: true };
-    if (hasPerfectFifth && hasMinorThird) return { rootStep: chord.rootStep, isMajor: false };
-
-    return null; // Not a pure major/minor triad
+    if (pcs.has(ts.getStepFromStandard(4))) return { rootStep: chord.rootStep, isMajor: true };
+    if (pcs.has(ts.getStepFromStandard(3))) return { rootStep: chord.rootStep, isMajor: false };
+    return null;
   }
 
   /**
