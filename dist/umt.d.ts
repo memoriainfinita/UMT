@@ -1005,6 +1005,10 @@ export interface BorrowedChord {
 	sourceMode: string;
 	brightness: number;
 	function: "T" | "S" | "D" | "unknown";
+	/**
+	 * The chord holds a degree that sets the source mode apart from its reference scale
+	 * (#4 lydian, b7 mixolydian, 6 dorian, b6 aeolian, b2 phrygian, b2 or b5 locrian…).
+	 */
 	characteristic: boolean;
 }
 /**
@@ -1150,6 +1154,8 @@ export declare class Harmony {
 	 * Returns `BorrowedChord[]`.
 	 * Each entry includes the source mode, brightness, harmonic function in the
 	 * home key, and whether the chord is characteristic of its source mode.
+	 * Chords that `analyzeProgression` reads as diatonic are left out: in a minor key, the
+	 * dominant and leading-tone chords of the harmonic minor (E7 and G#dim7 in A minor).
 	 *
 	 * @param keySymbol - e.g. `'C major'`, `'A minor'`
 	 * @param options.sources - Limit results to these mode names only.

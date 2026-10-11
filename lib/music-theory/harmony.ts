@@ -23,14 +23,16 @@ const EXTENDED_MODE_BRIGHTNESS: Record<string, number> = {
   'harmonic minor':  -3,
 };
 
-// Characteristic pitch offsets (semitones from home tonic) for each parallel mode.
-// A borrowed chord is "characteristic" if it contains one of these PCs.
+// Characteristic pitch offsets (semitones from home tonic) for each parallel mode: the
+// degrees that set it apart from its reference scale (major modes against Ionian, minor
+// modes against Aeolian; Aeolian against Dorian). A borrowed chord is "characteristic"
+// if it contains one of them. Source: Berklee Online, "Modes" (Take Note).
 const MODE_CHARACTERISTIC_PC: Record<string, number[]> = {
   'lydian':          [6],         // #4
   'mixolydian':      [10],        // b7
   'dorian':          [9],         // natural 6 in minor context
-  'aeolian':         [8, 10],     // b6, b7
-  'minor':           [8, 10],
+  'aeolian':         [8],         // b6
+  'minor':           [8],
   'phrygian':        [1],         // b2
   'locrian':         [1, 6],      // b2, b5
   'harmonic minor':  [11],        // raised 7
@@ -132,6 +134,10 @@ export interface BorrowedChord {
   sourceMode: string;
   brightness: number;
   function: 'T' | 'S' | 'D' | 'unknown';
+  /**
+   * The chord holds a degree that sets the source mode apart from its reference scale
+   * (#4 lydian, b7 mixolydian, 6 dorian, b6 aeolian, b2 phrygian, b2 or b5 locrian…).
+   */
   characteristic: boolean;
 }
 
@@ -1057,6 +1063,8 @@ export class Harmony {
    * Returns `BorrowedChord[]`.
    * Each entry includes the source mode, brightness, harmonic function in the
    * home key, and whether the chord is characteristic of its source mode.
+   * Chords that `analyzeProgression` reads as diatonic are left out: in a minor key, the
+   * dominant and leading-tone chords of the harmonic minor (E7 and G#dim7 in A minor).
    *
    * @param keySymbol - e.g. `'C major'`, `'A minor'`
    * @param options.sources - Limit results to these mode names only.
@@ -1109,10 +1117,9 @@ export class Harmony {
 
       for (const c of diatonicChords) {
         const cPcs = c.getPitchClasses();
-        // Skip if all PCs already in home key (not borrowed)
-        if (cPcs.every(pc => homeKey.scalePcs.includes(pc))) continue;
-
-        const { degree, quality, accidental } = getRomanForChord(c, homeKey);
+        // Skip chords diatonic to the home key, as analyzeProgression reads them
+        const { degree, quality, accidental, isDiatonic } = getRomanForChord(c, homeKey);
+        if (isDiatonic) continue;
         const fn = getFunction(degree, quality, homeKey.isMinor, accidental);
 
         // characteristic = chord contains a mode-defining PC (relative to home tonic)

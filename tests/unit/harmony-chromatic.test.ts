@@ -354,3 +354,28 @@ describe('Harmony.getBorrowedChords - type option', () => {
     expect(Harmony.getBorrowedChords('C major').every(b => b.chord.getPitchClasses().length === 4)).toBe(true);
   });
 });
+
+describe('Harmony.getBorrowedChords - diatonic in minor, characteristic degrees', () => {
+  it('the harmonic-minor V and vii° of a minor key are diatonic, as in analyzeProgression', () => {
+    const names = Harmony.getBorrowedChords('A minor').map(b => b.chord.name);
+    expect(names).not.toContain('E7');
+    expect(names).not.toContain('G#dim7');
+    expect(names).toContain('AmM7');
+    const triads = Harmony.getBorrowedChords('A minor', { type: 'triad' }).map(b => b.chord.name);
+    expect(triads).not.toContain('E');
+    expect(triads).not.toContain('G#dim');
+    const e7 = Harmony.analyzeProgression([parseChordSymbol('E7')], 'A minor').analysis[0];
+    expect(e7.isDiatonic).toBe(true);
+  });
+
+  it('aeolian chords are characteristic only with the b6', () => {
+    const aeolian = Harmony.getBorrowedChords('C major', { sources: ['aeolian'] });
+    const flagged = aeolian.filter(b => b.characteristic).map(b => b.chord.name);
+    expect(flagged.sort()).toEqual(['Abmaj7', 'Bb7', 'Dm7b5', 'Fm7']);
+  });
+
+  it('dorian chords are characteristic with the natural 6', () => {
+    const dorian = Harmony.getBorrowedChords('C major', { sources: ['dorian'] });
+    expect(dorian.filter(b => b.characteristic).map(b => b.chord.name).sort()).toEqual(['Am7b5', 'Bbmaj7', 'F7']);
+  });
+});
