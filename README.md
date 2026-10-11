@@ -193,6 +193,20 @@ Harmony.getColtraneAxis('C major');
 // { root: 'C', majorThirds: ['C', 'E', 'Ab'] }
 ```
 
+Names for an interface in English or Spanish:
+
+```typescript
+import { formatChordSymbol, chordLongName, scaleName, cadenceName, substitutionTypeName } from './lib/music-theory';
+
+formatChordSymbol('F#m7b5', { style: 'symbols', roots: 'solfege' });  // 'Fa#ø7'
+chordLongName('F#m7b5', 'es');                                        // 'Fa sostenido semidisminuido'
+scaleName('G mixolydian', 'es');                                      // 'Sol mixolidio'
+scaleName(analysis[5].borrowedFrom, 'es');                            // 'menor'
+cadenceName(analysis[1].cadenceWithNext, 'es');                       // 'Cadencia auténtica (V -> I)'
+cadenceName(analysis[1].cadenceWithNext, 'es', { short: true });      // 'Auténtica'
+substitutionTypeName('tritone', 'es');                                // 'tritonal'
+```
+
 ### Tuning
 
 ![Tunings in the demo: C major in 12-TET, with the deviation of 5-limit just intonation and Werckmeister III in cents](docs/UMT-tuning.png)
