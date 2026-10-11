@@ -72,7 +72,7 @@ last_updated: 2026-10-10
 - [x] ESLint — `typescript-eslint` instalado, parser configurado con tsconfig. 4 errores corregidos. Commit `84cdafa`.
 - [x] `SetTheory.getZRelated` — implementado via búsqueda dinámica en FORTE_TABLE por interval vector. 6 tests. Commit `d1e7d12`.
 - [x] `Polymeter` — `cycleBeats`, `naturalCycle`, `cycleLength`, `generateGrid()`. 7 tests. Commit `549920d`.
-- [ ] Auditoría 2026-10: arreglar fallos en 8 fases (0 fallos de MODUS, núcleo, datos, análisis, xen, exportadores, distribución, funciones de MODUS). Fases 0 (`6750e23`), 1 (`a0494bd`…`e893bc3`), 2 (`1c67882`), 3 (`b3d2390`…`65641ad`, más `37f1473` por las notas de MODUS) 4 (`3449c91`…`88171ea`), 5 (`6a8d4fa`), 6 (`3f3fd6c`…`v0.2.0`) y 7 (`12c73c7`…`v0.3.0`, más `bc3b157`) hechas. Queda decidir si notae fija UMT a un tag. Detalle y plan en `docs/auditoria-2026-10.md`; peticiones de MODUS en `docs/notas-desde-modus-2026-10.md`
+- [x] Auditoría 2026-10: arreglar fallos en 8 fases (0 fallos de MODUS, núcleo, datos, análisis, xen, exportadores, distribución, funciones de MODUS). Fases 0 (`6750e23`), 1 (`a0494bd`…`e893bc3`), 2 (`1c67882`), 3 (`b3d2390`…`65641ad`, más `37f1473` por las notas de MODUS) 4 (`3449c91`…`88171ea`), 5 (`6a8d4fa`), 6 (`3f3fd6c`…`v0.2.0`) y 7 (`12c73c7`…`v0.3.0`, más `bc3b157`) hechas. notae fijada a `v0.3.0`. Detalle y plan en `docs/auditoria-2026-10.md`; peticiones de MODUS en `docs/notas-desde-modus-2026-10.md`
 
 ## History
 
