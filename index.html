@@ -3,854 +3,1210 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Universal Music Theory Library</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Universal Music Theory</title>
+  <meta name="description" content="UMT, a TypeScript music theory library: harmony analysis, scales, tunings, rhythm, world music, set theory and notation export.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/abcjs@6.6.2/dist/abcjs-basic-min.js"></script>
   <script src="./dist/umt.js"></script>
   <style>
-    .out {
-      font-family: ui-monospace, monospace;
-      font-size: 0.8rem;
-      color: #34d399;
-      background: #0a0a0a;
-      padding: 1rem;
-      border-radius: 0.5rem;
-      border: 1px solid #1f1f1f;
-      min-height: 5rem;
-      white-space: pre;
-      overflow-x: auto;
-      line-height: 1.6;
+    :root {
+      --bg: #f4f1ea;
+      --surface: #fffdf8;
+      --surface-2: #f8f5ee;
+      --ink: #1f1c18;
+      --muted: #6d665b;
+      --faint: #9b9488;
+      --line: #e2dccf;
+      --accent: #b0502a;
+      --accent-soft: #f6e3d8;
+      --on-accent: #fff;
+      --f-T: #2f6f9f;
+      --f-S: #4a8445;
+      --f-D: #b8432f;
+      --f-x: #8a8377;
+      --key-white: #fffefb;
+      --key-black: #2a2621;
+      --key-line: #cfc8ba;
+      --paper: #fffdf6;
+      --shadow: 0 1px 2px rgba(40, 30, 10, .06), 0 2px 8px rgba(40, 30, 10, .05);
+      --mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --serif: "Fraunces", Georgia, serif;
+      color-scheme: light;
     }
-    .inp {
-      background: #1c1c1c;
-      border: 1px solid #333;
-      color: #f5f5f5;
-      border-radius: 0.375rem;
-      padding: 0.45rem 0.75rem;
-      font-size: 0.875rem;
-      width: 100%;
-      box-sizing: border-box;
-      outline: none;
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #131210; --surface: #1c1a17; --surface-2: #23211d; --ink: #ece6da; --muted: #a39b8d;
+        --faint: #6f685d; --line: #312e29; --accent: #e38b5c; --accent-soft: #3a2519; --on-accent: #1a120c;
+        --f-T: #6aa8d6; --f-S: #84bd7c; --f-D: #e57b64; --f-x: #8f887c;
+        --key-white: #e9e4d9; --key-black: #151310; --key-line: #8d8577; --paper: #f3eee2;
+        --shadow: 0 1px 2px rgba(0, 0, 0, .3); color-scheme: dark;
+      }
     }
-    .inp:focus { border-color: #6366f1; }
-    .sel {
-      background: #1c1c1c;
-      border: 1px solid #333;
-      color: #f5f5f5;
-      border-radius: 0.375rem;
-      padding: 0.45rem 0.75rem;
-      font-size: 0.875rem;
-      outline: none;
-      width: 100%;
+    :root[data-theme="dark"] {
+      --bg: #131210; --surface: #1c1a17; --surface-2: #23211d; --ink: #ece6da; --muted: #a39b8d;
+      --faint: #6f685d; --line: #312e29; --accent: #e38b5c; --accent-soft: #3a2519; --on-accent: #1a120c;
+      --f-T: #6aa8d6; --f-S: #84bd7c; --f-D: #e57b64; --f-x: #8f887c;
+      --key-white: #e9e4d9; --key-black: #151310; --key-line: #8d8577; --paper: #f3eee2;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3); color-scheme: dark;
     }
-    .btn {
-      background: #4f46e5;
-      color: #fff;
-      padding: 0.45rem 1.1rem;
-      border-radius: 0.375rem;
-      font-weight: 500;
-      font-size: 0.875rem;
-      cursor: pointer;
-      border: none;
-      transition: background 0.15s;
-      white-space: nowrap;
-    }
-    .btn:hover { background: #6366f1; }
-    .btn-sm {
-      background: #1c1c1c;
-      color: #a3a3a3;
-      padding: 0.4rem 0.85rem;
-      border-radius: 0.375rem;
-      font-size: 0.8rem;
-      cursor: pointer;
-      border: 1px solid #333;
-      transition: background 0.15s;
-      white-space: nowrap;
-    }
-    .btn-sm:hover { background: #2a2a2a; color: #e5e5e5; }
-    .btn-tab {
-      background: transparent;
-      color: #525252;
-      padding: 0.35rem 0.85rem;
-      border-radius: 0.375rem;
-      font-size: 0.8rem;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: all 0.15s;
-    }
-    .btn-tab.active { background: #1c1c1c; color: #e5e5e5; border-color: #333; }
-    .sec { background: #111; border: 1px solid #1f1f1f; border-radius: 0.75rem; padding: 1.5rem; }
-    .sec-api { color: #404040; font-size: 0.72rem; font-family: ui-monospace, monospace; margin-bottom: 1rem; }
-    label { color: #737373; font-size: 0.78rem; display: block; margin-bottom: 0.2rem; }
-    .abcjs-container { color: #000; }
-    .abcjs-container svg { max-width: 100%; }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+    a { color: var(--accent); }
+    h1, h2, h3 { font-family: var(--serif); font-weight: 650; letter-spacing: -.01em; margin: 0; }
+    code, .mono { font-family: var(--mono); font-size: .85em; }
+
+    /* layout */
+    .shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); max-width: 1180px; margin: 0 auto; }
+    .side { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 1.75rem 1.25rem 1.5rem 1.5rem; border-right: 1px solid var(--line); }
+    .brand { display: flex; align-items: baseline; gap: .5rem; margin-bottom: 1.5rem; text-decoration: none; color: var(--ink); }
+    .brand b { font-family: var(--serif); font-size: 1.5rem; }
+    .brand span { color: var(--faint); font: .75rem var(--mono); }
+    .nav-group { margin-bottom: 1.1rem; }
+    .nav-group h4 { margin: 0 0 .3rem; font: 600 .68rem var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+    .nav-group a { display: block; padding: .18rem .5rem; margin-left: -.5rem; border-radius: .35rem; color: var(--muted); text-decoration: none; font-size: .88rem; }
+    .nav-group a:hover { color: var(--ink); background: var(--surface-2); }
+    .nav-group a.active { color: var(--accent); background: var(--accent-soft); }
+    .prefs { border-top: 1px solid var(--line); padding-top: 1rem; display: grid; gap: .6rem; }
+    .prefs label { margin: 0; }
+    main { padding: 2.5rem 2.5rem 4rem; min-width: 0; }
+    .content { max-width: 880px; }
+
+    /* hero */
+    .hero { padding: .5rem 0 2.5rem; }
+    .hero h1 { font-size: clamp(2rem, 4.5vw, 3rem); line-height: 1.1; margin-bottom: .75rem; }
+    .hero p { color: var(--muted); max-width: 40rem; margin: 0 0 1.25rem; font-size: 1.05rem; }
+    .stats { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: 0 0 1.5rem; padding: 0; list-style: none; }
+    .stats li { color: var(--muted); font-size: .85rem; }
+    .stats b { color: var(--ink); font-family: var(--serif); font-size: 1.25rem; margin-right: .25rem; }
+    .install { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+    .install code { background: var(--surface); border: 1px solid var(--line); border-radius: .45rem; padding: .45rem .7rem; font-size: .8rem; overflow-x: auto; max-width: 100%; white-space: nowrap; }
+
+    /* sections */
+    .group-title { font: 600 .72rem var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin: 2.5rem 0 .75rem; }
+    .sec { background: var(--surface); border: 1px solid var(--line); border-radius: .9rem; padding: 1.5rem; margin-bottom: 1.25rem; box-shadow: var(--shadow); }
+    .sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: .25rem; }
+    .sec h2 { font-size: 1.35rem; }
+    .new { font: 600 .65rem var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent); border-radius: 99px; padding: .05rem .45rem; vertical-align: .3em; margin-left: .4rem; }
+    .lead { color: var(--muted); margin: .25rem 0 1rem; font-size: .92rem; }
+    .api { color: var(--faint); font: .72rem var(--mono); }
+
+    /* controls */
+    .controls { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-end; margin-bottom: 1rem; }
+    .field { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+    .field.grow { flex: 1 1 16rem; }
+    label { color: var(--muted); font-size: .75rem; font-weight: 500; }
+    input, select, textarea { font: inherit; font-size: .9rem; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: .45rem; padding: .45rem .65rem; outline: none; min-width: 0; }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    input[type=number] { width: 5.5rem; }
+    textarea { resize: vertical; font-family: var(--mono); font-size: .82rem; }
+    button { font: inherit; font-size: .85rem; cursor: pointer; border-radius: .45rem; padding: .45rem .9rem; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); white-space: nowrap; }
+    button:hover { border-color: var(--faint); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+    button.primary:hover { filter: brightness(1.07); }
+    button.play::before { content: ""; display: inline-block; width: 0; height: 0; border-left: 7px solid currentColor; border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent; margin-right: .45rem; vertical-align: 0; }
+    button.stop::before { content: ""; display: inline-block; width: 7px; height: 7px; background: currentColor; margin-right: .45rem; }
+    .seg { display: inline-flex; border: 1px solid var(--line); border-radius: .45rem; overflow: hidden; }
+    .seg button { border: 0; border-radius: 0; background: transparent; color: var(--muted); padding: .4rem .75rem; }
+    .seg button + button { border-left: 1px solid var(--line); }
+    .seg button.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+    .presets { display: flex; flex-wrap: wrap; gap: .35rem; margin: -.35rem 0 1rem; }
+    .presets button { font-size: .75rem; padding: .2rem .6rem; border-radius: 99px; color: var(--muted); }
+
+    /* output blocks */
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 1rem; }
+    .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 1rem; }
+    .panel { background: var(--surface-2); border: 1px solid var(--line); border-radius: .6rem; padding: .9rem 1rem; min-width: 0; }
+    .panel h3 { font-size: .95rem; margin-bottom: .5rem; }
+    .muted { color: var(--muted); }
+    .faint { color: var(--faint); }
+    .small { font-size: .8rem; }
+    .err { color: var(--f-D); font-size: .88rem; padding: .5rem 0; }
+    .kv { display: grid; grid-template-columns: auto 1fr; gap: .2rem .9rem; font-size: .88rem; margin: 0; }
+    .kv dt { color: var(--muted); }
+    .kv dd { margin: 0; }
+    .chips { display: flex; flex-wrap: wrap; gap: .3rem; }
+    .chip { display: inline-flex; align-items: baseline; gap: .3rem; padding: .15rem .55rem; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); font-size: .82rem; }
+    .chip small { color: var(--faint); font-size: .7rem; }
+    .chip.hl { border-color: var(--accent); color: var(--accent); }
+    .chip.dim { color: var(--faint); }
+    .list { list-style: none; margin: 0; padding: 0; }
+    .list li { padding: .3rem 0; border-top: 1px solid var(--line); font-size: .88rem; display: flex; justify-content: space-between; gap: .75rem; align-items: baseline; }
+    .list li:first-child { border-top: 0; }
+    .list li > span:first-child { min-width: 0; }
+    .list li > span + span { flex: none; }
+    .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; width: 5rem; flex: none; align-self: center; }
+    .bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+    .tabs { display: flex; gap: .25rem; border-bottom: 1px solid var(--line); margin-bottom: 1rem; }
+    .tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted); padding: .4rem .75rem; margin-bottom: -1px; }
+    .tabs button.on { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
     .hidden { display: none !important; }
-    .pill { font-size: 0.68rem; background: #161616; color: #737373; border: 1px solid #222; padding: 0.2rem 0.6rem; border-radius: 9999px; }
-    .dot { color: #2a2a2a; margin: 0 0.3rem; }
+    .scroll-x { overflow-x: auto; }
+
+    /* progression cards */
+    .prog { display: flex; flex-wrap: wrap; gap: 1.6rem .6rem; padding-top: 1.1rem; }
+    .card { position: relative; width: 7.4rem; border: 1px solid var(--line); border-top: 4px solid var(--f-x); border-radius: .55rem; background: var(--surface); padding: .5rem .6rem .55rem; transition: transform .12s, box-shadow .12s; }
+    .card.f-T { border-top-color: var(--f-T); } .card.f-S { border-top-color: var(--f-S); } .card.f-D { border-top-color: var(--f-D); }
+    .card.now { transform: translateY(-3px); box-shadow: 0 4px 14px rgba(0,0,0,.15); border-color: var(--accent); }
+    .card .sym { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card .rn { font-family: var(--serif); font-size: 1.3rem; line-height: 1.2; }
+    .card .fn { font-size: .7rem; color: var(--muted); }
+    .card .tag { display: block; font-size: .68rem; color: var(--accent); margin-top: .2rem; }
+    .card .cad { position: absolute; left: 100%; top: 50%; width: .6rem; height: 1px; background: var(--faint); }
+    .card .cad-label { position: absolute; left: 0; right: -5.5rem; bottom: -1.35rem; font-size: .68rem; color: var(--muted); white-space: nowrap; }
+    .card .keymark { position: absolute; left: -1px; top: -1.45rem; font-size: .7rem; font-weight: 600; color: var(--accent); white-space: nowrap; }
+    .legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .75rem; color: var(--muted); margin-top: 1.4rem; }
+    .legend i { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .3rem; vertical-align: -1px; }
+
+    /* piano */
+    .piano { display: block; width: 100%; height: auto; user-select: none; }
+    .piano .w { fill: var(--key-white); stroke: var(--key-line); }
+    .piano .b { fill: var(--key-black); }
+    .piano .on { fill: var(--accent); }
+    .piano .lbl { font: 600 9px var(--sans); fill: var(--ink); pointer-events: none; text-anchor: middle; }
+    .piano .lbl.onk { fill: var(--on-accent); }
+    .piano .oct { font: 9px var(--sans); fill: var(--faint); pointer-events: none; text-anchor: middle; }
+    .piano.click rect { cursor: pointer; }
+    .piano.click .w:hover { fill: var(--accent-soft); }
+    .piano.click .w.on:hover { fill: var(--accent); }
+
+    /* tables */
+    table { border-collapse: collapse; font-size: .85rem; width: 100%; }
+    th, td { padding: .35rem .5rem; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th { color: var(--muted); font-weight: 500; font-size: .75rem; }
+    td.num { font-family: var(--mono); font-size: .8rem; }
+    .dev { display: inline-flex; align-items: center; gap: .35rem; font-family: var(--mono); font-size: .78rem; }
+    .dev svg { width: 44px; height: 10px; }
+    .matrix td, .matrix th { text-align: center; padding: .2rem .25rem; font-family: var(--mono); font-size: .75rem; }
+    .matrix td.p0 { color: var(--accent); font-weight: 700; }
+    .matrix th { color: var(--faint); }
+
+    /* rhythm */
+    .steps { display: flex; flex-wrap: wrap; gap: .3rem; }
+    .steps .s { width: 1.9rem; height: 1.9rem; border-radius: .35rem; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; font: .72rem var(--mono); color: var(--faint); transition: background .05s; }
+    .steps .s.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+    .steps .s.now { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .cycle { display: flex; flex-wrap: wrap; gap: .9rem .6rem; }
+    .vib { display: flex; flex-direction: column; gap: .25rem; }
+    .vib .sign { font: 600 .8rem var(--serif); color: var(--muted); height: 1.1rem; }
+    .vib .cells { display: flex; gap: .2rem; }
+    .pulse { width: 2.1rem; border-radius: .4rem; border: 1px solid var(--line); background: var(--surface); text-align: center; padding: .25rem 0; transition: background .05s; }
+    .pulse .n { font: 600 .85rem var(--sans); }
+    .pulse .k { font-size: .62rem; color: var(--faint); height: .9rem; }
+    .pulse.sam { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+    .pulse.sam .k { color: var(--on-accent); }
+    .pulse.tali, .pulse.accent { border-color: var(--ink); border-width: 2px; }
+    .pulse.khali { border-style: dashed; }
+    .pulse.now { box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 4px var(--accent); }
+    .necklace { width: 180px; height: 180px; flex: none; }
+    .necklace circle { stroke: var(--line); }
+    .necklace .on { fill: var(--ink); stroke: var(--ink); }
+    .necklace .off { fill: var(--surface); }
+    .necklace .now { stroke: var(--accent); stroke-width: 3; }
+    .necklace polygon { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+
+    /* pc clock */
+    .clock { width: 210px; height: 210px; flex: none; }
+    .clock .pc { cursor: pointer; }
+    .clock .pc circle { fill: var(--surface); stroke: var(--line); }
+    .clock .pc.on circle { fill: var(--accent); stroke: var(--accent); }
+    .clock .pc text { font: 600 11px var(--sans); fill: var(--muted); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+    .clock .pc.on text { fill: var(--on-accent); }
+    .clock polygon { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+    .clock .ring { fill: none; stroke: var(--line); }
+
+    /* meter */
+    .meter { position: relative; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #3c4d6b, var(--line) 50%, #e2b04a); margin: .6rem 0 .3rem; }
+    .meter i { position: absolute; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: var(--ink); transform: translateX(-2px); }
+
+    /* notation */
+    .paper { background: var(--paper); color: #1d1a15; border-radius: .5rem; padding: .75rem 1rem; border: 1px solid var(--line); min-height: 4rem; margin-bottom: 1rem; }
+    .paper svg { max-width: 100%; }
+    .code { position: relative; }
+    .code pre { margin: 0; background: var(--surface-2); border: 1px solid var(--line); border-radius: .5rem; padding: .9rem 1rem; font: .76rem/1.55 var(--mono); max-height: 22rem; overflow: auto; white-space: pre; }
+    .code .copy { position: absolute; top: .5rem; right: .5rem; font-size: .72rem; padding: .2rem .55rem; }
+
+    footer { color: var(--faint); font-size: .8rem; padding: 2rem 0 0; border-top: 1px solid var(--line); margin-top: 2.5rem; }
+
+    @media (max-width: 860px) {
+      .shell { display: block; }
+      .side { position: sticky; top: 0; z-index: 10; height: auto; padding: .6rem 1rem; border-right: 0; border-bottom: 1px solid var(--line); background: var(--bg); display: flex; gap: 1rem; align-items: center; overflow-x: auto; white-space: nowrap; }
+      .brand { margin: 0; }
+      .side nav { display: flex; gap: .15rem; }
+      .nav-group { display: flex; gap: .15rem; margin: 0; align-items: center; }
+      .nav-group h4 { display: none; }
+      .nav-group a { margin: 0; font-size: .82rem; }
+      .prefs { display: none; }
+      .install code { flex: 1 1 100%; }
+      main { padding: 1.5rem 1rem 3rem; }
+      .sec { padding: 1.1rem; }
+      html { scroll-padding-top: 3.5rem; }
+    }
   </style>
 </head>
-<body class="bg-neutral-950 text-neutral-100 font-sans antialiased">
+<body>
+<div class="shell">
 
-<!-- NAV -->
-<nav class="sticky top-0 z-50 bg-neutral-950/95 backdrop-blur border-b border-neutral-900 px-6 py-3">
-  <div class="max-w-4xl mx-auto flex items-center gap-6 overflow-x-auto">
-    <span class="font-bold text-white shrink-0 text-sm tracking-tight">UMT</span>
-    <div class="flex gap-5 text-xs text-neutral-500 flex-nowrap">
-      <a href="#harmony"   class="hover:text-white transition-colors shrink-0">Harmony</a>
-      <a href="#tuning"    class="hover:text-white transition-colors shrink-0">Tuning</a>
-      <a href="#modal"     class="hover:text-white transition-colors shrink-0">Modal</a>
-      <a href="#settheory" class="hover:text-white transition-colors shrink-0">Set Theory</a>
-      <a href="#world"     class="hover:text-white transition-colors shrink-0">World Music</a>
-      <a href="#rhythm"    class="hover:text-white transition-colors shrink-0">Rhythm</a>
-      <a href="#notation"  class="hover:text-white transition-colors shrink-0">Notation</a>
+<aside class="side" aria-label="Sections">
+  <a class="brand" href="#top"><b>UMT</b><span id="version">v0.4.1</span></a>
+  <nav>
+    <div class="nav-group"><h4>Tonal harmony</h4>
+      <a href="#progression">Progressions</a>
+      <a href="#notes">Identify notes</a>
+      <a href="#chord">Chord</a>
+      <a href="#key">Key explorer</a>
+      <a href="#keydetect">Key detection</a>
     </div>
+    <div class="nav-group"><h4>Scales and tuning</h4>
+      <a href="#scales">Scales and modes</a>
+      <a href="#tuning">Tunings</a>
+    </div>
+    <div class="nav-group"><h4>Rhythm</h4>
+      <a href="#patterns">Patterns</a>
+      <a href="#cycles">Rhythmic cycles</a>
+    </div>
+    <div class="nav-group"><h4>Beyond</h4>
+      <a href="#world">Ragas and maqamat</a>
+      <a href="#settheory">Set theory</a>
+      <a href="#notation">Notation export</a>
+    </div>
+  </nav>
+  <div class="prefs">
+    <div class="field"><label for="pref-style">Chord symbols</label>
+      <select id="pref-style"><option value="standard">Cmaj7 · Cm7</option><option value="symbols">CΔ7 · C-7</option><option value="short">CM7 · Cm7</option></select></div>
+    <div class="field"><label for="pref-roots">Roots</label>
+      <select id="pref-roots"><option value="letters">C D E</option><option value="solfege">Do Re Mi</option></select></div>
+    <div class="field"><label for="pref-theme">Theme</label>
+      <select id="pref-theme"><option value="">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
   </div>
-</nav>
+</aside>
 
-<main class="max-w-4xl mx-auto px-6 py-14 space-y-8">
+<main id="top">
+<div class="content">
 
-  <!-- HERO -->
-  <section class="pb-4">
-    <h1 class="text-4xl font-bold text-white mb-3 tracking-tight">Universal Music Theory Library</h1>
-    <p class="text-neutral-500 text-base leading-relaxed mb-5 max-w-2xl">
-      A TypeScript library for music theory computation. Works across 12-TET, microtonal tunings,
-      world music traditions, and post-tonal systems. All from a single zero-dependency bundle.
-    </p>
-    <div class="flex flex-wrap gap-2 mb-5">
-      <span class="pill">130 kb bundle</span>
-      <span class="pill">zero dependencies</span>
-      <span class="pill">40+ modules</span>
-      <span class="pill">961 tests</span>
+  <header class="hero">
+    <h1>Universal Music Theory</h1>
+    <p>A TypeScript library for music theory: harmony analysis, scales and modes, any tuning, rhythm, world music, set theory and notation export. One bundle, no dependencies. Everything on this page runs on it.</p>
+    <ul class="stats">
+      <li><b>46</b>modules</li>
+      <li><b>997</b>tests</li>
+      <li><b>142</b>kb bundle</li>
+      <li><b>0</b>dependencies</li>
+    </ul>
+    <div class="install">
+      <code id="install-cmd">npm install github:memoriainfinita/UMT#v0.4.1</code>
+      <button onclick="copyText($('install-cmd').textContent, this)">Copy</button>
+      <a href="https://github.com/memoriainfinita/UMT">GitHub</a>
+      <a href="https://github.com/memoriainfinita/UMT/blob/main/CHANGELOG.md">Changelog</a>
     </div>
-    <p class="text-neutral-700 text-xs mb-6 leading-loose">
-      12-TET <span class="dot">·</span>
-      Microtonal <span class="dot">·</span>
-      Modal Analysis <span class="dot">·</span>
-      Harmony <span class="dot">·</span>
-      Voice Leading <span class="dot">·</span>
-      Neo-Riemannian <span class="dot">·</span>
-      Set Theory <span class="dot">·</span>
-      Twelve-Tone <span class="dot">·</span>
-      Counterpoint <span class="dot">·</span>
-      World Music <span class="dot">·</span>
-      Rhythm <span class="dot">·</span>
-      Spectral <span class="dot">·</span>
-      Tonnetz <span class="dot">·</span>
-      ABC / LilyPond / MusicXML
-    </p>
-    <div class="flex gap-3">
-      <a href="https://github.com/memoriainfinita/UMT" class="btn" style="text-decoration:none">GitHub</a>
-      <a href="https://github.com/memoriainfinita/UMT/wiki" class="btn-sm" style="text-decoration:none;padding:0.45rem 1.1rem">Wiki</a>
+  </header>
+
+  <!-- ═══════════════════════════ TONAL HARMONY ═══════════════════════════ -->
+  <div class="group-title">Tonal harmony</div>
+
+  <section id="progression" class="sec">
+    <div class="sec-head"><h2>Progression analysis <span class="new">new</span></h2></div>
+    <p class="lead">Roman numerals, functions, secondary dominants, borrowed chords, cadences and modulations. Type chord symbols or numerals.</p>
+    <div class="controls">
+      <div class="field grow"><label for="p-chords">Chords or numerals</label><input id="p-chords" value="Dm7 G7 Cmaj7 A7 Dm7 Fm6 Cmaj7"></div>
+      <div class="field"><label for="p-key">Key</label><input id="p-key" value="C major" size="10"></div>
+      <button class="primary" onclick="runProgression()">Analyze</button>
+      <button class="play" onclick="playProgression()">Play</button>
+      <button class="stop" onclick="stopAll()">Stop</button>
     </div>
+    <div class="presets" id="p-presets"></div>
+    <div id="out-progression"></div>
+    <div class="legend"><span><i style="background:var(--f-T)"></i>Tonic</span><span><i style="background:var(--f-S)"></i>Subdominant</span><span><i style="background:var(--f-D)"></i>Dominant</span><span><i style="background:var(--f-x)"></i>Other</span></div>
+    <p class="api" style="margin-top:1rem">Harmony.analyzeProgression · parseRomanProgression · formatChordSymbol</p>
   </section>
 
-  <!-- 1. HARMONY -->
-  <section id="harmony" class="sec">
-    <h2 class="text-base font-semibold text-white mb-1">Harmony Explorer</h2>
-    <p class="sec-api">parseChordSymbol · Harmony.getSuggestedScales · getSubstitutions · getTritoneSubstitution · Harmony.analyzeCadence</p>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-      <div class="sm:col-span-2">
-        <label>Chord symbol</label>
-        <input id="h-chord" value="Cmaj9" class="inp" onchange="runHarmony()">
-      </div>
-      <div>
-        <label>Key context</label>
-        <input id="h-key" value="C major" class="inp" onchange="runHarmony()">
-      </div>
+  <section id="notes" class="sec">
+    <div class="sec-head"><h2>Identify notes <span class="new">new</span></h2></div>
+    <p class="lead">Click keys or type notes. UMT names the chord with a score for each reading, describes the voicing, and lists the scales that hold the notes.</p>
+    <div id="notes-piano"></div>
+    <div class="controls" style="margin-top:.75rem">
+      <div class="field grow"><label for="n-notes">Notes, lowest first</label><input id="n-notes" value="E3 G3 C4 B4"></div>
+      <button class="primary" onclick="runNotes()">Identify</button>
+      <button class="play" onclick="playNoteInput()">Play</button>
+      <button onclick="$('n-notes').value=''; runNotes()">Clear</button>
     </div>
-    <div class="flex gap-2 mb-4">
-      <button onclick="runHarmony()" class="btn">Analyze</button>
-      <button onclick="playChordBtn('h-chord')" class="btn-sm">Play chord</button>
-    </div>
-    <pre id="out-harmony" class="out"></pre>
+    <div class="grid3" id="out-notes"></div>
+    <p class="api" style="margin-top:1rem">Harmony.detectChordsScored · analyzeVoicing · findScalesForNotes</p>
   </section>
 
-  <!-- 2. TUNING -->
+  <section id="chord" class="sec">
+    <div class="sec-head"><h2>Chord</h2></div>
+    <p class="lead">One chord in every spelling style, its names, the scales that fit it and its substitutes in a key.</p>
+    <div class="controls">
+      <div class="field grow"><label for="c-chord">Chord symbol</label><input id="c-chord" value="F#m7b5"></div>
+      <div class="field"><label for="c-key">Key</label><input id="c-key" value="E minor" size="10"></div>
+      <button class="primary" onclick="runChord()">Show</button>
+      <button class="play" onclick="playChordSymbol($('c-chord').value)">Play</button>
+    </div>
+    <div id="out-chord"></div>
+    <p class="api" style="margin-top:1rem">parseChordSymbol · formatChordSymbol · chordLongName · Harmony.getSuggestedScales · getSubstitutions · Harmony.getNegativeHarmony</p>
+  </section>
+
+  <section id="key" class="sec">
+    <div class="sec-head"><h2>Key explorer <span class="new">new</span></h2></div>
+    <p class="lead">The chords of a key, what it can borrow from its parallel modes, its negative harmony, and the pivot chords to another key.</p>
+    <div class="controls">
+      <div class="field"><label for="k-key">Key</label><input id="k-key" value="C major" size="10"></div>
+      <div class="field"><label>Chords</label><div class="seg" id="k-type"><button data-v="triad">Triads</button><button data-v="seventh" class="on">Sevenths</button></div></div>
+      <div class="field"><label for="k-target">Modulate to</label><input id="k-target" value="E minor" size="10"></div>
+      <button class="primary" onclick="runKey()">Explore</button>
+    </div>
+    <div id="out-key"></div>
+    <p class="api" style="margin-top:1rem">Scale.getDiatonicChords · Harmony.getBorrowedChords · Harmony.getNegativeHarmony · Harmony.findPivotChords · Harmony.getColtraneAxis</p>
+  </section>
+
+  <section id="keydetect" class="sec">
+    <div class="sec-head"><h2>Key detection <span class="new">new</span></h2></div>
+    <p class="lead">Correlates the notes of a melody, weighted by duration, with five key profiles. Write <code>note:beats</code>; the duration is optional.</p>
+    <div class="controls">
+      <div class="field grow"><label for="kd-notes">Melody</label><textarea id="kd-notes" rows="2">E5:0.5 D#5:0.5 E5:0.5 D#5:0.5 E5:0.5 B4:0.5 D5:0.5 C5:0.5 A4:1.5 C4:0.5 E4:0.5 A4:0.5 B4:1.5 E4:0.5 G#4:0.5 B4:0.5 C5:1.5</textarea></div>
+    </div>
+    <div class="controls">
+      <div class="field"><label for="kd-profile">Profile</label><select id="kd-profile"></select></div>
+      <button class="primary" onclick="runKeyDetect()">Detect</button>
+      <button class="play" onclick="playMelody()">Play</button>
+      <button class="stop" onclick="stopAll()">Stop</button>
+    </div>
+    <div class="grid2" id="out-keydetect"></div>
+    <p class="api" style="margin-top:1rem">KeyDetection.detect · KEY_PROFILES</p>
+  </section>
+
+  <!-- ═══════════════════════════ SCALES AND TUNING ═══════════════════════════ -->
+  <div class="group-title">Scales and tuning</div>
+
+  <section id="scales" class="sec">
+    <div class="sec-head"><h2>Scales and modes</h2></div>
+    <p class="lead">Notes, diatonic chords, brightness and parent scale. Over 80 scale patterns: try <code>E phrygian dominant</code>, <code>C hirajoshi</code> or <code>D lydian augmented</code>.</p>
+    <div class="controls">
+      <div class="field grow"><label for="s-scale">Scale</label><input id="s-scale" value="D dorian"></div>
+      <div class="field"><label>Chords</label><div class="seg" id="s-type"><button data-v="triad">Triads</button><button data-v="seventh" class="on">Sevenths</button></div></div>
+      <button class="primary" onclick="runScale()">Analyze</button>
+      <button class="play" onclick="playScale($('s-scale').value)">Play</button>
+    </div>
+    <div id="out-scale"></div>
+    <p class="api" style="margin-top:1rem">parseScaleSymbol · getDiatonicChords · getModalCharacteristics · getParentScale</p>
+  </section>
+
   <section id="tuning" class="sec">
-    <h2 class="text-base font-semibold text-white mb-1">Universal Tuning</h2>
-    <p class="sec-api">EDO · JustIntonation · CentTuning · parseScaleSymbol(symbol, tuning) · tuning.getInterval(steps).cents</p>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-      <div>
-        <label>Scale</label>
-        <input id="t-scale" value="C major" class="inp" onchange="runTuning()">
-      </div>
+    <div class="sec-head"><h2>Tunings</h2></div>
+    <p class="lead">The same scale in equal temperament, 5-limit just intonation and Werckmeister III: how far each note moves, in cents.</p>
+    <div class="controls">
+      <div class="field grow"><label for="t-scale">Scale</label><input id="t-scale" value="C major"></div>
+      <button class="primary" onclick="runTuning()">Compare</button>
+      <button class="play" onclick="playTuning(UMT.TET12)">12-TET</button>
+      <button class="play" onclick="playTuning(UMT.FiveLimitJI)">Just</button>
+      <button class="play" onclick="playTuning(UMT.WerckmeisterIII)">Werckmeister</button>
     </div>
-    <div class="flex flex-wrap gap-2 mb-4">
-      <button onclick="runTuning()" class="btn">Compare tunings</button>
-      <button onclick="playTuningBtn(UMT.TET12)" class="btn-sm">Play 12-TET</button>
-      <button onclick="playTuningBtn(UMT.FiveLimitJI)" class="btn-sm">Play JI</button>
-      <button onclick="playTuningBtn(UMT.WerckmeisterIII)" class="btn-sm">Play Werckmeister</button>
-    </div>
-    <pre id="out-tuning" class="out"></pre>
+    <div id="out-tuning" class="scroll-x"></div>
+    <p class="api" style="margin-top:1rem">EDO · JustIntonation · CentTuning · parseScaleSymbol(symbol, tuning)</p>
   </section>
 
-  <!-- 3. MODAL -->
-  <section id="modal" class="sec">
-    <h2 class="text-base font-semibold text-white mb-1">Scales & Modal Analysis</h2>
-    <p class="sec-api">getDiatonicChords · getModalCharacteristics · getParentScale · getRelativeMode · brightness</p>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-      <div class="sm:col-span-2">
-        <label>Scale symbol</label>
-        <input id="m-scale" value="D dorian" class="inp" onchange="runModal()">
-      </div>
-      <div>
-        <label>Chord type</label>
-        <select id="m-type" class="sel" onchange="runModal()">
-          <option value="triad">Triads</option>
-          <option value="seventh">Seventh chords</option>
-        </select>
-      </div>
+  <!-- ═══════════════════════════ RHYTHM ═══════════════════════════ -->
+  <div class="group-title">Rhythm</div>
+
+  <section id="patterns" class="sec">
+    <div class="sec-head"><h2>Patterns</h2></div>
+    <p class="lead">Euclidean rhythms spread k onsets as evenly as possible over n steps; many traditional patterns are one of them.</p>
+    <div class="tabs" id="rp-tabs"><button data-v="euclid" class="on">Euclidean</button><button data-v="clave">Clave patterns</button></div>
+    <div class="controls">
+      <div class="field" data-tab="euclid"><label for="r-k">Onsets (k)</label><input id="r-k" type="number" value="5" min="1" max="24"></div>
+      <div class="field" data-tab="euclid"><label for="r-n">Steps (n)</label><input id="r-n" type="number" value="8" min="2" max="32"></div>
+      <div class="field hidden" data-tab="clave"><label for="r-clave">Pattern</label><select id="r-clave"></select></div>
+      <div class="field"><label for="r-bpm">BPM</label><input id="r-bpm" type="number" value="110" min="40" max="240"></div>
+      <button class="play" onclick="playPattern()">Play</button>
+      <button class="stop" onclick="stopAll()">Stop</button>
     </div>
-    <div class="flex gap-2 mb-4">
-      <button onclick="runModal()" class="btn">Analyze</button>
-      <button onclick="playScaleBtn('m-scale')" class="btn-sm">Play scale</button>
-    </div>
-    <pre id="out-modal" class="out"></pre>
+    <div id="out-pattern"></div>
+    <p class="api" style="margin-top:1rem">Polyrhythm.euclidean · CLAVE_PATTERNS · RhythmAnalysis.detectSyncopation</p>
   </section>
 
-  <!-- 4. SET THEORY & TWELVE-TONE -->
-  <section id="settheory" class="sec">
-    <h2 class="text-base font-semibold text-white mb-1">Set Theory & Twelve-Tone</h2>
-    <p class="sec-api">SetTheory.normalForm · SetTheory.getForteNumber · SetTheory.getZRelated · ToneRow · row.getMatrix()</p>
-    <div class="flex gap-1 mb-4" id="st-tabs">
-      <button class="btn-tab active" onclick="stTab('set')">Pitch Class Sets</button>
-      <button class="btn-tab"        onclick="stTab('row')">Twelve-Tone Row</button>
+  <section id="cycles" class="sec">
+    <div class="sec-head"><h2>Rhythmic cycles <span class="new">new</span></h2></div>
+    <p class="lead">Hindustani and Carnatic talas, flamenco compás and Balkan aksak meters, with the stroke of every pulse: a metronome that counts like the tradition does.</p>
+    <div class="controls">
+      <div class="field grow"><label for="cy-sel">Cycle</label><select id="cy-sel"></select></div>
+      <div class="field"><label for="cy-bpm">BPM</label><input id="cy-bpm" type="number" value="140" min="40" max="300"></div>
+      <button class="play" onclick="playCycle()">Play</button>
+      <button class="stop" onclick="stopAll()">Stop</button>
     </div>
-
-    <div id="st-set">
-      <div class="mb-3">
-        <label>Pitch classes (space or comma separated, C=0, range 0-11)</label>
-        <input id="st-pcs" value="0 3 6 9" class="inp" onchange="runSetTheory()">
-      </div>
-      <div class="flex gap-2 mb-4">
-        <button onclick="runSetTheory()" class="btn">Analyze set</button>
-        <button onclick="playPCSBtn()" class="btn-sm">Play</button>
-      </div>
-      <pre id="out-set" class="out"></pre>
-    </div>
-
-    <div id="st-row" class="hidden">
-      <div class="mb-3">
-        <label>Tone row (12 pitch classes 0-11, space separated)</label>
-        <input id="st-row-in" value="0 11 3 4 8 7 9 5 6 1 2 10" class="inp" onchange="runToneRow()">
-      </div>
-      <div class="flex gap-2 mb-4">
-        <button onclick="runToneRow()" class="btn">Generate matrix</button>
-      </div>
-      <pre id="out-row" class="out" style="font-size:0.7rem;line-height:1.5"></pre>
-    </div>
+    <div id="out-cycle"></div>
+    <p class="api" style="margin-top:1rem">RHYTHMIC_CYCLES · cycleStrokes · cycleCounts · cycleTimeSignature</p>
   </section>
 
-  <!-- 5. WORLD MUSIC -->
+  <!-- ═══════════════════════════ BEYOND ═══════════════════════════ -->
+  <div class="group-title">Beyond</div>
+
   <section id="world" class="sec">
-    <h2 class="text-base font-semibold text-white mb-1">World Music</h2>
-    <p class="sec-api">RAGAS (10 Hindustani) · MAQAMAT (8 maqamat, 24-EDO quarter-tones) · CLAVE_PATTERNS (10 rhythmic presets)</p>
-    <div class="flex gap-1 mb-4" id="wm-tabs">
-      <button class="btn-tab active" onclick="wmTab('raga')">Ragas</button>
-      <button class="btn-tab"        onclick="wmTab('maqam')">Maqamat</button>
-      <button class="btn-tab"        onclick="wmTab('clave')">Clave</button>
+    <div class="sec-head"><h2>Ragas and maqamat</h2></div>
+    <div class="tabs" id="wm-tabs"><button data-v="raga" class="on">Hindustani ragas</button><button data-v="maqam">Arabic maqamat</button></div>
+    <div class="controls">
+      <div class="field grow" data-tab="raga"><label for="wm-raga">Raga</label><select id="wm-raga"></select></div>
+      <div class="field grow hidden" data-tab="maqam"><label for="wm-maqam">Maqam</label><select id="wm-maqam"></select></div>
+      <button class="play" onclick="playWorld()">Play</button>
     </div>
-
-    <div id="wm-raga">
-      <div class="mb-3">
-        <label>Raga</label>
-        <select id="wm-raga-sel" class="sel" onchange="runRaga()"></select>
-      </div>
-      <div class="flex gap-2 mb-4">
-        <button onclick="runRaga()" class="btn">Info</button>
-        <button onclick="playRagaBtn()" class="btn-sm">Play aroha</button>
-      </div>
-      <pre id="out-raga" class="out"></pre>
-    </div>
-
-    <div id="wm-maqam" class="hidden">
-      <div class="mb-3">
-        <label>Maqam</label>
-        <select id="wm-maqam-sel" class="sel" onchange="runMaqam()"></select>
-      </div>
-      <div class="flex gap-2 mb-4">
-        <button onclick="runMaqam()" class="btn">Info</button>
-        <button onclick="playMaqamBtn()" class="btn-sm">Play (24-EDO)</button>
-      </div>
-      <pre id="out-maqam" class="out"></pre>
-    </div>
-
-    <div id="wm-clave" class="hidden">
-      <div class="mb-3">
-        <label>Clave pattern</label>
-        <select id="wm-clave-sel" class="sel" onchange="runClave()"></select>
-      </div>
-      <div class="flex gap-2 mb-4">
-        <button onclick="runClave()" class="btn">Show</button>
-        <button onclick="playClaveBtn()" class="btn-sm">Play</button>
-        <button onclick="stopTransport()" class="btn-sm">Stop</button>
-      </div>
-      <pre id="out-clave" class="out"></pre>
-    </div>
+    <div id="out-world"></div>
+    <p class="api" style="margin-top:1rem">RAGAS · SVARA_NAMES · MAQAMAT (24-EDO)</p>
   </section>
 
-  <!-- 6. RHYTHM -->
-  <section id="rhythm" class="sec">
-    <h2 class="text-base font-semibold text-white mb-1">Rhythm</h2>
-    <p class="sec-api">Polyrhythm.euclidean · RhythmAnalysis.detectClave · RhythmAnalysis.detectSyncopation · MetricModulation</p>
-    <div class="grid grid-cols-3 gap-3 mb-3">
-      <div>
-        <label>Pulses (k)</label>
-        <input id="r-k" type="number" value="5" min="1" max="24" class="inp" onchange="runRhythm()">
-      </div>
-      <div>
-        <label>Steps (n)</label>
-        <input id="r-n" type="number" value="8" min="2" max="32" class="inp" onchange="runRhythm()">
-      </div>
-      <div>
-        <label>BPM</label>
-        <input id="r-bpm" type="number" value="120" min="40" max="240" class="inp">
+  <section id="settheory" class="sec">
+    <div class="sec-head"><h2>Set theory and twelve-tone rows</h2></div>
+    <div class="tabs" id="st-tabs"><button data-v="set" class="on">Pitch-class sets</button><button data-v="row">Twelve-tone row</button></div>
+    <div data-tab="set">
+      <p class="lead">Click the clock to build a set. C = 0.</p>
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+        <div id="st-clock"></div>
+        <div style="flex:1 1 260px;min-width:0">
+          <div class="controls">
+            <div class="field grow"><label for="st-pcs">Pitch classes</label><input id="st-pcs" value="0 4 7 10"></div>
+            <button class="play" onclick="playPcs()">Play</button>
+          </div>
+          <div id="out-set"></div>
+        </div>
       </div>
     </div>
-    <div class="flex gap-2 mb-4">
-      <button onclick="runRhythm()" class="btn">Generate</button>
-      <button onclick="playRhythmBtn()" class="btn-sm">Play</button>
-      <button onclick="stopTransport()" class="btn-sm">Stop</button>
+    <div data-tab="row" class="hidden">
+      <div class="controls">
+        <div class="field grow"><label for="st-row">Row (12 pitch classes)</label><input id="st-row" value="0 11 3 4 8 7 9 5 6 1 2 10"></div>
+        <button class="primary" onclick="runRow()">Matrix</button>
+      </div>
+      <div id="out-row"></div>
     </div>
-    <pre id="out-rhythm" class="out"></pre>
+    <p class="api" style="margin-top:1rem">SetTheory.normalForm · primeForm · getForteNumber · intervalVector · getZRelated · ToneRow</p>
   </section>
 
-  <!-- 7. NOTATION -->
   <section id="notation" class="sec">
-    <h2 class="text-base font-semibold text-white mb-1">Notation Export</h2>
-    <p class="sec-api">ABCBridge.scaleToABC · ABCBridge.wrapInHeaders · scaleToLilyPond · chordToLilyPond · scaleToMusicXML · chordToMusicXML</p>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-      <div class="sm:col-span-2">
-        <label>Scale or chord symbol</label>
-        <input id="n-input" value="C major" class="inp" onchange="runNotation()">
-      </div>
-      <div>
-        <label>Type</label>
-        <select id="n-type" class="sel" onchange="runNotation()">
-          <option value="scale">Scale</option>
-          <option value="chord">Chord</option>
-        </select>
-      </div>
+    <div class="sec-head"><h2>Notation export</h2></div>
+    <p class="lead">ABC, LilyPond and MusicXML from the same source: key signatures, accidentals within the measure, ties across barlines and rests. A melody is written <code>note:beats</code>, with <code>r</code> for a rest.</p>
+    <div class="controls">
+      <div class="field"><label>Source</label><div class="seg" id="nt-type"><button data-v="melody" class="on">Melody</button><button data-v="scale">Scale</button><button data-v="chord">Chord</button></div></div>
+      <div class="field grow"><label for="nt-input">Input</label><input id="nt-input" value="D4:1 E4:0.5 F#4:1.5 A4:2 G4:1.5 r:0.5 F#4:1 E4:3 D4:1"></div>
+      <div class="field"><label for="nt-key">Key</label><input id="nt-key" value="D major" size="10"></div>
+      <button class="primary" onclick="runNotation()">Export</button>
     </div>
-    <button onclick="runNotation()" class="btn mb-4">Export all formats</button>
-    <div id="staff-notation" class="rounded-md p-3 mb-4" style="background:#fff;color:#000;min-height:2rem"></div>
-    <pre id="out-notation" class="out"></pre>
+    <div class="paper" id="nt-staff"></div>
+    <div class="tabs" id="nt-tabs"><button data-v="abc" class="on">ABC</button><button data-v="ly">LilyPond</button><button data-v="xml">MusicXML</button></div>
+    <div class="code"><button class="copy" onclick="copyText($('nt-code').textContent, this)">Copy</button><pre id="nt-code"></pre></div>
+    <p class="api" style="margin-top:1rem">MusicStream · ABCBridge.streamToABC · streamToLilyPond · streamToMusicXML · scaleToABC · chordToABC</p>
   </section>
 
-</main>
+  <footer>
+    Universal Music Theory · TypeScript · GPL-3.0 ·
+    <a href="https://github.com/memoriainfinita/UMT">GitHub</a> ·
+    <a href="https://github.com/memoriainfinita/UMT/blob/main/CHANGELOG.md">Changelog</a>.
+    Sound by <a href="https://tonejs.github.io/">Tone.js</a>, staves by <a href="https://www.abcjs.net/">abcjs</a>.
+  </footer>
 
-<footer class="border-t border-neutral-900 mt-8 py-8 text-center text-neutral-700 text-xs">
-  Universal Music Theory Library &nbsp;·&nbsp; TypeScript &nbsp;·&nbsp; GPL-3.0 License &nbsp;·&nbsp;
-  <a href="https://github.com/memoriainfinita/UMT" class="hover:text-neutral-500 transition-colors">GitHub</a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/memoriainfinita/UMT/wiki" class="hover:text-neutral-500 transition-colors">Wiki</a>
-</footer>
+</div>
+</main>
+</div>
 
 <script>
-
+'use strict';
+const U = UMT;
 const $ = id => document.getElementById(id);
-const out = (id, text) => $(id).textContent = text;
-const outErr = (id, e) => $(id).textContent = 'Error: ' + (e?.message || String(e));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fail = (id, e) => { $(id).innerHTML = `<div class="err">${esc(e?.message || e)}</div>`; };
+const store = {
+  get(k) { try { return localStorage.getItem('umt-demo-' + k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem('umt-demo-' + k, v); } catch {} },
+};
 
-// ── Audio helpers ─────────────────────────────────────────────────────────────
+// ── Preferences: chord symbol style, roots, theme ────────────────────────────
 
-async function playFreqs(freqs, mode = 'chord') {
-  if (!freqs?.length) return;
-  await Tone.start();
-  if (mode === 'arpeggio') {
-    const synth = new Tone.Synth({
-      oscillator: { type: 'triangle' },
-      envelope: { attack: 0.02, decay: 0.1, sustain: 0.5, release: 0.5 }
-    }).toDestination();
-    const dur = 0.28;
-    const now = Tone.now();
-    freqs.forEach((f, i) => synth.triggerAttackRelease(f, dur, now + i * dur));
-    setTimeout(() => synth.dispose(), (freqs.length + 2) * dur * 1000);
-  } else {
-    const poly = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: 'triangle' },
-      envelope: { attack: 0.04, decay: 0.2, sustain: 0.6, release: 1.5 }
-    }).toDestination();
-    poly.triggerAttackRelease(freqs, '2n');
-    setTimeout(() => poly.dispose(), 4000);
+const prefs = { style: store.get('style') || 'standard', roots: store.get('roots') || 'letters' };
+function sym(chord) {
+  try { return U.formatChordSymbol(chord, { style: prefs.style, roots: prefs.roots }); }
+  catch { return typeof chord === 'string' ? chord : chord.name; }
+}
+function noteLabel(name) {
+  if (prefs.roots !== 'solfege') return name;
+  try { return U.localizeNoteName(name, 'es'); } catch { return name; }
+}
+function applyTheme(v) {
+  if (v) document.documentElement.dataset.theme = v; else delete document.documentElement.dataset.theme;
+}
+function initPrefs() {
+  $('pref-style').value = prefs.style;
+  $('pref-roots').value = prefs.roots;
+  $('pref-theme').value = store.get('theme') || '';
+  applyTheme($('pref-theme').value);
+  $('pref-style').onchange = e => { prefs.style = e.target.value; store.set('style', prefs.style); rerenderChordViews(); };
+  $('pref-roots').onchange = e => { prefs.roots = e.target.value; store.set('roots', prefs.roots); rerenderChordViews(); };
+  $('pref-theme').onchange = e => { store.set('theme', e.target.value); applyTheme(e.target.value); };
+}
+function rerenderChordViews() { runProgression(); runNotes(); runChord(); runKey(); runScale(); }
+
+// ── Small UI helpers ─────────────────────────────────────────────────────────
+
+function segValue(id) { return $(id).querySelector('button.on')?.dataset.v; }
+function initSeg(id, onChange) {
+  $(id).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    onChange(b.dataset.v);
+  });
+}
+function initTabs(id, scope, onChange) {
+  initSeg(id, v => {
+    $(scope).querySelectorAll('[data-tab]').forEach(el => el.classList.toggle('hidden', el.dataset.tab !== v));
+    onChange?.(v);
+  });
+}
+function onEnter(id, fn) { $(id).addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); fn(); } }); }
+function copyText(text, btn) {
+  navigator.clipboard?.writeText(text).then(() => { const t = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => btn.textContent = t, 1200); }).catch(() => {});
+}
+const FN_NAME = { T: 'tonic', S: 'subdominant', D: 'dominant', unknown: '' };
+const midiOf = note => Math.round(note.stepsFromBase) + 69;
+const SHARP_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const midiName = m => SHARP_NAMES[m % 12] + (Math.floor(m / 12) - 1);
+const stripOct = n => n.replace(/-?\d+$/, '');
+function parseNotes(str) {
+  return str.trim().split(/[\s,]+/).filter(Boolean).map(t => U.parseNote(t));
+}
+
+// ── Piano (SVG) ──────────────────────────────────────────────────────────────
+
+const BLACK = new Set([1, 3, 6, 8, 10]);
+function pianoSVG({ from, to, on = new Set(), labels = new Map(), clickable = false, height = 96 }) {
+  const ww = 22, bw = 13, bh = height * 0.6;
+  const whites = []; const blacks = [];
+  let x = 0;
+  for (let m = from; m <= to; m++) {
+    if (BLACK.has(m % 12)) blacks.push({ m, x: x - bw / 2 });
+    else { whites.push({ m, x }); x += ww; }
   }
+  const W = x;
+  let s = `<svg class="piano${clickable ? ' click' : ''}" viewBox="-1 -1 ${W + 2} ${height + 14}" role="img" aria-label="Piano keyboard">`;
+  for (const k of whites) {
+    s += `<rect class="w${on.has(k.m) ? ' on' : ''}" data-midi="${k.m}" x="${k.x}" y="0" width="${ww}" height="${height}" rx="2"/>`;
+    if (labels.has(k.m)) s += `<text class="lbl${on.has(k.m) ? ' onk' : ''}" x="${k.x + ww / 2}" y="${height - 8}">${esc(labels.get(k.m))}</text>`;
+    if (k.m % 12 === 0) s += `<text class="oct" x="${k.x + ww / 2}" y="${height + 11}">C${Math.floor(k.m / 12) - 1}</text>`;
+  }
+  for (const k of blacks) {
+    s += `<rect class="b${on.has(k.m) ? ' on' : ''}" data-midi="${k.m}" x="${k.x}" y="0" width="${bw}" height="${bh}" rx="1.5"/>`;
+    if (labels.has(k.m)) s += `<text class="lbl onk" x="${k.x + bw / 2}" y="${bh - 6}" style="font-size:7px">${esc(labels.get(k.m))}</text>`;
+  }
+  return s + '</svg>';
+}
+/** A piano spanning the notes (at least two octaves from a C). */
+function pianoFor(notes, labelOf) {
+  const ms = notes.map(midiOf);
+  let from = Math.min(...ms), to = Math.max(...ms);
+  from = from - (from % 12); to = Math.max(to + (11 - (to % 12)), from + 23);
+  const labels = new Map(notes.map(n => [midiOf(n), labelOf(n)]));
+  return pianoSVG({ from, to, on: new Set(ms), labels });
 }
 
-async function playChordBtn(inputId) {
+// ── Audio ────────────────────────────────────────────────────────────────────
+
+let inst = null;
+const timers = [];
+async function audio() {
+  await Tone.start();
+  if (!inst) {
+    const rev = new Tone.Reverb({ decay: 1.6, wet: 0.18 }).toDestination();
+    inst = {
+      poly: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle8' }, envelope: { attack: 0.02, decay: 0.3, sustain: 0.45, release: 1.1 }, volume: -12 }).connect(rev),
+      low: new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 5, volume: -4 }).toDestination(),
+      mid: new Tone.MembraneSynth({ pitchDecay: 0.02, octaves: 3, volume: -10 }).toDestination(),
+      click: new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.02 }, volume: -22 }).toDestination(),
+    };
+  }
+  return inst;
+}
+function stopAll() {
+  timers.splice(0).forEach(clearTimeout);
+  if (!inst) return; // nothing has played: leave the AudioContext untouched
+  inst.poly.releaseAll();
+  Tone.Transport.stop(); Tone.Transport.cancel();
+  document.querySelectorAll('.now').forEach(el => el.classList.remove('now'));
+}
+/** Schedules events {at (s), run(time), show?()} on the transport; show() runs in sync on screen. */
+async function sequence(events, totalSec) {
+  await audio();
+  stopAll();
+  for (const ev of events) {
+    Tone.Transport.schedule(time => {
+      ev.run?.(time);
+      if (ev.show) Tone.Draw.schedule(ev.show, time);
+    }, ev.at);
+  }
+  Tone.Transport.schedule(() => Tone.Draw.schedule(() => stopAll(), Tone.now()), totalSec);
+  Tone.Transport.start('+0.05');
+}
+async function playFreqs(freqs, mode = 'chord') {
+  if (!freqs.length) return;
+  const { poly } = await audio();
+  stopAll();
+  const now = Tone.now() + 0.03;
+  if (mode === 'chord') poly.triggerAttackRelease(freqs, 1.6, now);
+  else freqs.forEach((f, i) => poly.triggerAttackRelease(f, 0.3, now + i * 0.28));
+}
+const playChordSymbol = s => { try { playFreqs(U.parseChordSymbol(s.trim()).getNotes().map(n => n.frequency)); } catch (e) { console.warn(e); } };
+const playScale = s => { try { const f = U.parseScaleSymbol(s.trim()).getNotes().map(n => n.frequency); playFreqs([...f, f[0] * 2], 'arp'); } catch (e) { console.warn(e); } };
+
+// ── 1. Progression analysis ──────────────────────────────────────────────────
+
+const PROG_PRESETS = [
+  ['ii-V-I with a secondary dominant', 'Dm7 G7 Cmaj7 A7 Dm7 Fm6 Cmaj7', 'C major'],
+  ['Numerals', 'I vi ii V7 iii VI7 ii V7 I', 'C major'],
+  ['Modal mixture', 'C Ab Bb C Fm C', 'C major'],
+  ['Modulation to the dominant', 'C F G C Am D7 G Em Am D7 G', 'C major'],
+  ['Minor with harmonic V', 'Am Dm6 E7 Am F Dm E7 Am', 'A minor'],
+];
+let lastProg = null;
+function readProgression() {
+  const key = $('p-key').value.trim();
+  const tokens = $('p-chords').value.replace(/\|/g, ' ').trim().split(/\s+/).filter(Boolean);
+  const chords = /^[A-G]/.test(tokens[0] || '')
+    ? tokens.map(t => U.parseChordSymbol(t))
+    : U.parseRomanProgression(tokens.join(' '), key);
+  return { key, chords };
+}
+function runProgression() {
   try {
-    const chord = UMT.parseChordSymbol($(inputId).value.trim());
-    await playFreqs(chord.getNotes().map(n => n.frequency), 'chord');
-  } catch(e) { console.error(e); }
+    const { key, chords } = readProgression();
+    const r = U.Harmony.analyzeProgression(chords, key);
+    lastProg = chords;
+    let curKey = key;
+    const cards = r.analysis.map((a, i) => {
+      const keymark = a.key !== curKey ? `<span class="keymark">→ ${esc(a.key)}</span>` : '';
+      curKey = a.key;
+      const tags = [];
+      if (a.isSecondary && a.secondaryTarget) tags.push(a.secondaryTarget);
+      if (a.isBorrowed) tags.push('from ' + (a.borrowedFrom || 'parallel mode'));
+      if (a.substitutionCandidate) tags.push(a.substitutionCandidate);
+      const cad = a.cadenceWithNext ? `<span class="cad"></span><span class="cad-label">${esc(a.cadenceWithNext.replace(/ \(.*\)$/, '').toLowerCase())}</span>` : '';
+      return `<div class="card f-${a.function}" data-i="${i}">${keymark}
+        <div class="sym">${esc(sym(a.chord))}</div>
+        <div class="rn">${esc(a.roman)}</div>
+        <div class="fn">${FN_NAME[a.function] || 'chromatic'}</div>
+        ${tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}${cad}</div>`;
+    }).join('');
+    const mods = r.modulations.map(m =>
+      `<li><span>Chord ${m.atIndex + 1}: <b>${esc(m.fromKey)}</b> → <b>${esc(m.toKey)}</b></span><span class="muted">${esc(m.type)}${m.pivotChord ? ', pivot ' + esc(sym(m.pivotChord)) : ''}</span></li>`).join('');
+    $('out-progression').innerHTML = `<div class="prog">${cards}</div>` +
+      (mods ? `<div class="panel" style="margin-top:1.75rem"><h3>Modulations</h3><ul class="list">${mods}</ul></div>` : '');
+  } catch (e) { fail('out-progression', e); }
 }
-
-async function playScaleBtn(inputId) {
+function playProgression() {
   try {
-    const scale = UMT.parseScaleSymbol($(inputId).value.trim());
-    await playFreqs(scale.getNotes().map(n => n.frequency), 'arpeggio');
-  } catch(e) { console.error(e); }
+    if (!lastProg) runProgression();
+    const dur = 1.1;
+    const cards = [...document.querySelectorAll('#out-progression .card')];
+    const events = lastProg.map((c, i) => ({
+      at: i * dur,
+      run: t => inst.poly.triggerAttackRelease(c.getNotes().map(n => n.frequency), dur * 0.95, t),
+      show: () => { cards.forEach(x => x.classList.remove('now')); cards[i]?.classList.add('now'); },
+    }));
+    sequence(events, lastProg.length * dur + 0.4);
+  } catch (e) { console.warn(e); }
 }
 
-async function playTuningBtn(tuning) {
+// ── 2. Identify notes ────────────────────────────────────────────────────────
+
+const INV = ['root position', 'first inversion', 'second inversion', 'third inversion'];
+function runNotes() {
+  let notes = [];
+  try { notes = parseNotes($('n-notes').value); }
+  catch (e) { renderNotesPiano([]); return fail('out-notes', e); }
+  renderNotesPiano(notes);
+  if (!notes.length) { $('out-notes').innerHTML = '<p class="muted small">Click some keys.</p>'; return; }
   try {
-    const scale = UMT.parseScaleSymbol($('t-scale').value.trim(), tuning);
-    await playFreqs(scale.getNotes().map(n => n.frequency), 'arpeggio');
-  } catch(e) { console.error(e); }
+    const cands = U.Harmony.detectChordsScored(notes).slice(0, 6);
+    const v = U.analyzeVoicing(notes);
+    const scales = U.findScalesForNotes(notes, { limit: 8 });
+    const chordList = cands.length ? cands.map(c => {
+      const why = [c.rootInBass ? '' : 'bass ' + c.bass, c.omitted.length ? 'no ' + c.omitted.join(', ') : '', c.tensions.length ? c.tensions.join(' ') : ''].filter(Boolean).join(' · ');
+      return `<li><span><b>${esc(sym(c.name))}</b> <span class="faint small">${esc(why)}</span></span><span class="bar" title="score ${c.score.toFixed(2)}"><i style="width:${Math.max(4, c.score * 100)}%"></i></span></li>`;
+    }).join('') : '<li class="muted">No chord in the dictionary</li>';
+    const voicing = v ? `<dl class="kv">
+        <dt>Reading</dt><dd>${esc(sym(v.chord))}</dd>
+        <dt>Bass</dt><dd>${esc(v.bass)}${v.bassDegree ? ' (' + esc(v.bassDegree) + ')' : ''}</dd>
+        <dt>Inversion</dt><dd>${v.inversion == null ? 'other bass' : INV[v.inversion]}</dd>
+        ${v.position ? `<dt>Position</dt><dd>${v.position}${v.drop ? ', ' + v.drop : ''}</dd>` : ''}
+        ${v.doubled.length ? `<dt>Doubled</dt><dd>${esc(v.doubled.join(', '))}</dd>` : ''}
+        ${v.omitted.length ? `<dt>Omitted</dt><dd>${esc(v.omitted.join(', '))}</dd>` : ''}
+        ${v.added.length ? `<dt>Added</dt><dd>${esc(v.added.join(', '))}</dd>` : ''}
+        <dt>Span</dt><dd>${v.span} semitones</dd>
+      </dl>
+      <div class="chips" style="margin-top:.6rem">${v.voices.slice().reverse().map(x => `<span class="chip">${esc(x.note)} <small>${esc(x.degree ?? '')}</small></span>`).join('')}</div>` : '<p class="muted small">Needs a recognised chord.</p>';
+    const scaleList = scales.map(s => `<li><span><b>${esc(s.root)} ${esc(s.type)}</b>${s.rootIsTonic ? ' <span class="chip hl" style="font-size:.65rem;padding:0 .35rem">tonic</span>' : ''}<br>
+        <span class="small faint">${s.extra.length ? 'adds ' + esc(s.extra.join(' ')) : 'exactly these notes'}</span></span></li>`).join('');
+    $('out-notes').innerHTML = `
+      <div class="panel"><h3>Chord readings</h3><ul class="list">${chordList}</ul></div>
+      <div class="panel"><h3>Voicing</h3>${voicing}</div>
+      <div class="panel"><h3>Scales that hold them</h3><ul class="list">${scaleList}</ul></div>`;
+  } catch (e) { fail('out-notes', e); }
 }
+function renderNotesPiano(notes) {
+  const on = new Set(notes.map(midiOf));
+  const labels = new Map(notes.map(n => [midiOf(n), noteLabel(stripOct(n.name))]));
+  $('notes-piano').innerHTML = pianoSVG({ from: 48, to: 83, on, labels, clickable: true, height: 110 });
+}
+function initNotesPiano() {
+  $('notes-piano').addEventListener('click', e => {
+    const m = Number(e.target.dataset?.midi); if (!m) return;
+    let notes = []; try { notes = parseNotes($('n-notes').value); } catch {}
+    const ms = new Set(notes.map(midiOf));
+    let names = notes.map(n => n.name);
+    if (ms.has(m)) names = notes.filter(n => midiOf(n) !== m).map(n => n.name);
+    else { names.push(midiName(m)); names.sort((a, b) => midiOf(U.parseNote(a)) - midiOf(U.parseNote(b))); }
+    $('n-notes').value = names.join(' ');
+    runNotes();
+    try { const n = U.parseNote(midiName(m)); if (!ms.has(m)) playFreqs([n.frequency]); } catch {}
+  });
+}
+function playNoteInput() { try { playFreqs(parseNotes($('n-notes').value).map(n => n.frequency)); } catch (e) { console.warn(e); } }
 
-// ── 1. Harmony ────────────────────────────────────────────────────────────────
+// ── 3. Chord ─────────────────────────────────────────────────────────────────
 
-function runHarmony() {
+function runChord() {
   try {
-    const sym = $('h-chord').value.trim();
-    const key = $('h-key').value.trim();
-    const chord = UMT.parseChordSymbol(sym);
-    const notes = chord.getNotes().map(n => n.name.replace(/\d+/, ''));
-    const scales = UMT.Harmony.getSuggestedScales(chord).slice(0, 5);
-    const subs   = UMT.getSubstitutions(chord, key);
-    const tri    = chord.getTritoneSubstitution();
-
-    let t = `${chord.name}  →  ${notes.join(' – ')}\n`;
-    t += `Intervals: [${chord.intervalsInSteps.join(', ')}] semitones\n\n`;
-
-    t += `Suggested scales:\n`;
-    scales.forEach(s => { t += `  ${s.scale}${s.hint ? `  (${s.hint})` : ''}\n`; });
-
-    if (tri) t += `\nTritone substitution: ${tri.name}\n`;
-
-    if (subs.length) {
-      t += `\nSubstitutions:\n`;
-      subs.forEach(s => { t += `  ${s.chord.name.padEnd(12)} [${s.type}]\n`; });
-    }
-
-    out('out-harmony', t);
-  } catch(e) { outErr('out-harmony', e); }
+    const chord = U.parseChordSymbol($('c-chord').value.trim());
+    const key = $('c-key').value.trim();
+    const notes = chord.getNotes();
+    const v = U.analyzeVoicing(notes, chord);
+    const degreeOf = new Map(v ? v.voices.map(x => [x.note, x.degree]) : []);
+    const styles = ['standard', 'symbols', 'short'].map(st => {
+      let s; try { s = U.formatChordSymbol(chord, { style: st, roots: prefs.roots }); } catch { s = chord.name; }
+      return `<span class="chip${st === prefs.style ? ' hl' : ''}">${esc(s)} <small>${st}</small></span>`;
+    }).join('');
+    const names = ['en', 'es'].map(l => { try { return U.chordLongName(chord, l); } catch { return ''; } });
+    const scales = U.Harmony.getSuggestedScales(chord).slice(0, 6);
+    let subs = []; try { subs = U.getSubstitutions(chord, key); } catch {}
+    const tri = chord.getTritoneSubstitution?.();
+    let neg = ''; try { neg = sym(U.Harmony.getNegativeHarmony(chord, key.split(/\s+/)[0])); } catch {}
+    $('out-chord').innerHTML = `
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
+        <div><div style="font-family:var(--serif);font-size:2.4rem;line-height:1">${esc(sym(chord))}</div>
+          <div class="muted">${esc(names[0])}<br><span class="faint">${esc(names[1])}</span></div></div>
+        <div class="chips">${styles}</div>
+      </div>
+      <div style="max-width:520px;margin-bottom:1rem">${pianoFor(notes, n => degreeOf.get(n.name) ?? stripOct(n.name))}</div>
+      <div class="grid3">
+        <div class="panel"><h3>Notes</h3><div class="chips">${notes.map(n => `<span class="chip">${esc(noteLabel(stripOct(n.name)))} <small>${esc(degreeOf.get(n.name) ?? '')}</small></span>`).join('')}</div></div>
+        <div class="panel"><h3>Scales over it</h3><ul class="list">${scales.map(s => `<li><span>${esc(s.scale)}</span><span class="small faint">${esc(s.hint || '')}</span></li>`).join('')}</ul></div>
+        <div class="panel"><h3>Substitutes in ${esc(key)}</h3><ul class="list">
+          ${tri ? `<li><span>${esc(sym(tri))}</span><span class="small faint">tritone</span></li>` : ''}
+          ${subs.filter(s => s.type !== 'tritone').map(s => `<li><span>${esc(sym(s.chord))}</span><span class="small faint">${esc(s.type)}</span></li>`).join('')}
+          ${neg ? `<li><span>${esc(neg)}</span><span class="small faint">negative harmony</span></li>` : ''}
+        </ul></div>
+      </div>`;
+  } catch (e) { fail('out-chord', e); }
 }
 
-// ── 2. Tuning ─────────────────────────────────────────────────────────────────
+// ── 4. Key explorer ──────────────────────────────────────────────────────────
 
+const analyzeOne = (c, key) => U.Harmony.analyzeProgression([c], key).analysis[0];
+function chordCard(c, a, extra = '') {
+  return `<div class="card f-${a.function}" style="width:6.4rem"><div class="sym">${esc(sym(c))}</div><div class="rn">${esc(a.roman)}</div><div class="fn">${FN_NAME[a.function] || 'chromatic'}</div>${extra}</div>`;
+}
+function runKey() {
+  try {
+    const key = $('k-key').value.trim();
+    const target = $('k-target').value.trim();
+    const type = segValue('k-type');
+    const root = key.split(/\s+/)[0];
+    const diatonic = U.parseScaleSymbol(key).getDiatonicChords(type);
+    const borrowed = U.Harmony.getBorrowedChords(key, { type });
+    const byMode = new Map();
+    for (const b of borrowed) { if (!byMode.has(b.sourceMode)) byMode.set(b.sourceMode, { brightness: b.brightness, list: [] }); byMode.get(b.sourceMode).list.push(b); }
+    const modes = [...byMode.entries()].sort((a, b) => b[1].brightness - a[1].brightness);
+    const borrowRows = modes.map(([mode, { brightness, list }]) => `<tr><td><b>${esc(mode)}</b><br><span class="faint small">brightness ${brightness > 0 ? '+' : ''}${brightness}</span></td>
+      <td style="white-space:normal"><div class="chips">${list.map(b => { const a = analyzeOne(b.chord, key); return `<span class="chip${b.characteristic ? ' hl' : ''}" title="${b.characteristic ? 'holds the degree that sets the mode apart' : ''}">${esc(sym(b.chord))} <small>${esc(a.roman)}</small></span>`; }).join('')}</div></td></tr>`).join('');
+    let pivots = []; try { pivots = U.Harmony.findPivotChords(key, target, type); } catch {}
+    const negs = diatonic.map(c => { try { return [c, U.Harmony.getNegativeHarmony(c, root)]; } catch { return null; } }).filter(Boolean);
+    let axis = ''; try { axis = U.Harmony.getColtraneAxis(root).majorThirds.join(' · '); } catch {}
+    $('out-key').innerHTML = `
+      <h3 style="font-size:1rem;margin-bottom:.5rem">Diatonic chords</h3>
+      <div class="prog" style="padding-top:0">${diatonic.map(c => chordCard(c, analyzeOne(c, key))).join('')}</div>
+      <h3 style="font-size:1rem;margin:1.5rem 0 .25rem">Borrowed from parallel modes</h3>
+      <p class="small muted" style="margin:0 0 .5rem">Outlined: the chord holds the degree that sets the mode apart (#4 lydian, b7 mixolydian, 6 dorian, b6 aeolian, b2 phrygian…).</p>
+      <div class="scroll-x"><table>${borrowRows || '<tr><td class="muted">None</td></tr>'}</table></div>
+      <div class="grid2" style="margin-top:1.25rem">
+        <div class="panel"><h3>Negative harmony</h3><ul class="list">${negs.map(([c, n]) => `<li><span>${esc(sym(c))}</span><span>→ ${esc(sym(n))}</span></li>`).join('')}</ul>
+          ${axis ? `<p class="small muted" style="margin:.6rem 0 0">Coltrane axis: ${esc(axis)}</p>` : ''}</div>
+        <div class="panel"><h3>Pivot chords to ${esc(target)}</h3><ul class="list">${pivots.length ? pivots.map(p => `<li><span>${esc(sym(p.chord))}</span><span class="small muted">${p.functionInA.degree} (${p.functionInA.function}) → ${p.functionInB.degree} (${p.functionInB.function})</span></li>`).join('') : '<li class="muted">No common chord</li>'}</ul></div>
+      </div>`;
+  } catch (e) { fail('out-key', e); }
+}
+
+// ── 5. Key detection ─────────────────────────────────────────────────────────
+
+const keyName = k => k.replace(/ (Major|Minor)$/, m => m.toLowerCase());
+const PROFILE_NAMES = { krumhansl: 'Krumhansl-Kessler', aarden: 'Aarden-Essen', bellman: 'Bellman-Budge', temperley: 'Temperley-Kostka-Payne', simple: 'Simple' };
+function readMelody(id) {
+  const notes = [], durs = [];
+  for (const tok of $(id).value.trim().split(/\s+/).filter(Boolean)) {
+    const [n, d] = tok.split(':');
+    const dur = d === undefined ? 1 : Number(d);
+    if (!(dur > 0)) throw new Error(`Bad duration in "${tok}"`);
+    notes.push(n.toLowerCase() === 'r' ? null : U.parseNote(n));
+    durs.push(dur);
+  }
+  return { notes, durs };
+}
+function runKeyDetect() {
+  try {
+    const { notes, durs } = readMelody('kd-notes');
+    const ns = notes.filter(Boolean), ds = durs.filter((_, i) => notes[i]);
+    const profile = $('kd-profile').value;
+    const res = U.KeyDetection.detect(ns, ds, { profile }).slice(0, 8);
+    const max = res[0]?.confidence || 1;
+    const bars = res.map((r, i) => `<li><span>${i === 0 ? '<b>' : ''}${esc(keyName(r.key))}${i === 0 ? '</b>' : ''}</span><span style="display:flex;gap:.5rem;align-items:center"><span class="mono small faint">${r.confidence.toFixed(3)}</span><span class="bar"><i style="width:${Math.max(3, r.confidence / max * 100)}%"></i></span></span></li>`).join('');
+    const all = Object.keys(U.KEY_PROFILES).map(p => {
+      const top = U.KeyDetection.detect(ns, ds, { profile: p })[0];
+      return `<li><span>${esc(PROFILE_NAMES[p] || p)}</span><span>${esc(top ? keyName(top.key) : '-')}</span></li>`;
+    }).join('');
+    $('out-keydetect').innerHTML = `<div class="panel"><h3>${esc(PROFILE_NAMES[profile] || profile)}</h3><ul class="list">${bars}</ul></div>
+      <div class="panel"><h3>Best key by profile</h3><ul class="list">${all}</ul></div>`;
+  } catch (e) { fail('out-keydetect', e); }
+}
+function playMelody() {
+  try {
+    const { notes, durs } = readMelody('kd-notes');
+    const beat = 60 / 120; let t = 0; const events = [];
+    notes.forEach((n, i) => { const at = t, d = durs[i] * beat; if (n) events.push({ at, run: tm => inst.poly.triggerAttackRelease(n.frequency, d * 0.9, tm) }); t += d; });
+    sequence(events, t + 0.3);
+  } catch (e) { console.warn(e); }
+}
+
+// ── 6. Scales and modes ──────────────────────────────────────────────────────
+
+function runScale() {
+  try {
+    const scale = U.parseScaleSymbol($('s-scale').value.trim());
+    const type = segValue('s-type');
+    const notes = scale.getNotes();
+    // getNotes() closes the octave: the degrees stop before the repeated root
+    const names = notes.map(n => stripOct(n.name));
+    if (names.length > 1 && midiOf(notes[notes.length - 1]) - midiOf(notes[0]) === 12) names.pop();
+    let chords = [], romans = [];
+    try { chords = scale.getDiatonicChords(type); romans = U.Harmony.analyzeProgression(chords, scale.name).analysis.map(a => a.roman); } catch {}
+    const modal = scale.getModalCharacteristics?.();
+    let parent = null; try { parent = scale.getParentScale(); } catch {}
+    const charDeg = new Set(modal?.characteristicDegrees || []);
+    const deg = names.map((n, i) => `<span class="chip${charDeg.has(i + 1) ? ' hl' : ''}">${esc(noteLabel(n))} <small>${i + 1}</small></span>`).join('');
+    const b = modal?.brightness;
+    $('out-scale').innerHTML = `
+      <div style="max-width:560px;margin-bottom:1rem">${pianoFor(notes, n => noteLabel(stripOct(n.name)))}</div>
+      <div class="chips" style="margin-bottom:1rem">${deg}</div>
+      ${chords.length ? `<div class="prog" style="padding-top:0;margin-bottom:1.25rem">${chords.map((c, i) => `<div class="card" style="width:6.4rem"><div class="sym">${esc(sym(c))}</div><div class="rn">${esc(romans[i] || i + 1)}</div></div>`).join('')}</div>` : ''}
+      <div class="grid2">
+        ${modal ? `<div class="panel"><h3>Brightness</h3><div class="meter"><i style="left:${50 + (b / 6) * 50}%"></i></div>
+          <div class="small muted" style="display:flex;justify-content:space-between"><span>darker</span><span>${b > 0 ? '+' : ''}${b}</span><span>brighter</span></div>
+          ${modal.characteristicIntervals?.length ? `<p class="small" style="margin:.6rem 0 0">Against major: <b>${esc(modal.characteristicIntervals.join(' '))}</b> (outlined degrees)</p>` : ''}</div>` : ''}
+        <div class="panel"><dl class="kv">
+          <dt>Notes</dt><dd>${names.length}</dd>
+          ${parent ? `<dt>Parent</dt><dd>${esc(parent.name)}${modal?.parentModeDegree ? ', mode ' + modal.parentModeDegree : ''}</dd>` : ''}
+          ${modal?.avoidNotes?.length ? `<dt>Avoid</dt><dd>${esc(modal.avoidNotes.join(', '))}</dd>` : ''}
+        </dl></div>
+      </div>`;
+  } catch (e) { fail('out-scale', e); }
+}
+
+// ── 7. Tunings ───────────────────────────────────────────────────────────────
+
+function devBar(c) {
+  const w = Math.min(20, Math.abs(c)) / 20 * 20;
+  const x = c >= 0 ? 22 : 22 - w;
+  return `<span class="dev"><svg viewBox="0 0 44 10"><line x1="22" y1="0" x2="22" y2="10" stroke="var(--faint)"/><rect x="${x}" y="2" width="${w}" height="6" fill="${c >= 0 ? 'var(--f-D)' : 'var(--f-T)'}"/></svg>${c >= 0 ? '+' : ''}${c.toFixed(1)}</span>`;
+}
 function runTuning() {
   try {
-    const sym = $('t-scale').value.trim();
-    const TUNINGS = [
-      { label: '12-TET',           obj: UMT.TET12 },
-      { label: '5-limit JI (A)',   obj: UMT.FiveLimitJI },
-      { label: 'Werckmeister III', obj: UMT.WerckmeisterIII },
-    ];
-
-    const ref      = UMT.parseScaleSymbol(sym, UMT.TET12);
+    const symb = $('t-scale').value.trim();
+    const ref = U.parseScaleSymbol(symb, U.TET12);
     const refNotes = ref.getNotes();
-    const refCents = refNotes.map(n => UMT.TET12.getInterval(n.stepsFromBase - ref.rootStep).cents);
-
-    const C = 9;
-    let t = `${sym} -- three tuning systems compared\n\n`;
-    t += ''.padEnd(22) + refNotes.map(n => n.name.replace(/\d+/, '').padEnd(C)).join('') + '\n';
-    t += '─'.repeat(22 + refNotes.length * C) + '\n';
-
-    TUNINGS.forEach(({ label, obj }, ti) => {
+    const refCents = refNotes.map(n => (n.stepsFromBase - ref.rootStep) * 100);
+    const rows = [['5-limit just', U.FiveLimitJI], ['Werckmeister III', U.WerckmeisterIII]].map(([label, t]) => {
       try {
-        const scale = UMT.parseScaleSymbol(sym, obj);
-        const notes = scale.getNotes();
-        if (ti === 0) {
-          t += `${label} (Hz)`.padEnd(22);
-          t += notes.map(n => n.frequency.toFixed(1).padEnd(C)).join('') + '\n';
-          t += `${label} (¢ from root)`.padEnd(22);
-          t += refCents.map(c => Math.round(c).toString().padEnd(C)).join('') + '\n\n';
-        } else {
-          t += `${label} (Δ¢)`.padEnd(22);
-          t += notes.map((n, i) => {
-            const cents = obj.getInterval(n.stepsFromBase).cents - obj.getInterval(scale.rootStep).cents;
-            const dev   = cents - refCents[i];
-            return `${dev >= 0 ? '+' : ''}${dev.toFixed(1)}`.padEnd(C);
-          }).join('') + '\n';
-        }
-      } catch {
-        t += `${label.padEnd(22)} (not compatible with this scale)\n`;
-      }
-    });
+        const sc = U.parseScaleSymbol(symb, t);
+        const base = t.getInterval(sc.rootStep).cents;
+        return `<tr><th>${label}</th>${sc.getNotes().map((n, i) => `<td>${devBar(t.getInterval(n.stepsFromBase).cents - base - refCents[i])}</td>`).join('')}</tr>`;
+      } catch { return `<tr><th>${label}</th><td colspan="${refNotes.length}" class="muted">not available for this scale</td></tr>`; }
+    }).join('');
+    $('out-tuning').innerHTML = `<table>
+      <tr><th></th>${refNotes.map(n => `<th>${esc(noteLabel(stripOct(n.name)))}</th>`).join('')}</tr>
+      <tr><th>12-TET Hz</th>${refNotes.map(n => `<td class="num">${n.frequency.toFixed(1)}</td>`).join('')}</tr>
+      <tr><th>Cents</th>${refCents.map(c => `<td class="num">${c}</td>`).join('')}</tr>
+      ${rows}</table>
+      <p class="small muted">Bars: cents above (red) or below (blue) equal temperament, measured from the root.</p>`;
+  } catch (e) { fail('out-tuning', e); }
+}
+function playTuning(t) { try { playFreqs(U.parseScaleSymbol($('t-scale').value.trim(), t).getNotes().map(n => n.frequency), 'arp'); } catch (e) { console.warn(e); } }
 
-    t += '\n(Δ¢ = deviation in cents from equal temperament)';
-    out('out-tuning', t);
-  } catch(e) { outErr('out-tuning', e); }
+// ── 8. Patterns ──────────────────────────────────────────────────────────────
+
+function currentPattern() {
+  if (segValue('rp-tabs') === 'clave') { const c = U.CLAVE_PATTERNS[$('r-clave').value]; return { steps: c.steps, title: c.name, note: c.description }; }
+  const k = parseInt($('r-k').value, 10), n = parseInt($('r-n').value, 10);
+  return { steps: U.Polyrhythm.euclidean(k, n), title: `E(${k}, ${n})`, note: '' };
+}
+function necklace(steps) {
+  const n = steps.length, R = 72, c = 90;
+  const pts = steps.map((_, i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [c + R * Math.cos(a), c + R * Math.sin(a)]; });
+  const poly = pts.filter((_, i) => steps[i]).map(p => p.join(',')).join(' ');
+  return `<svg class="necklace" viewBox="0 0 180 180">${poly ? `<polygon points="${poly}"/>` : ''}${pts.map((p, i) => `<circle data-i="${i}" class="${steps[i] ? 'on' : 'off'}" cx="${p[0]}" cy="${p[1]}" r="${n > 20 ? 5 : 7}"/>`).join('')}</svg>`;
+}
+function runPattern() {
+  try {
+    const { steps, title, note } = currentPattern();
+    const onsets = steps.map((s, i) => s ? i : -1).filter(i => i >= 0);
+    let sync = ''; try { sync = (U.RhythmAnalysis.detectSyncopation(onsets, new U.TimeSignature([4], 4)) * 100).toFixed(0) + '%'; } catch {}
+    $('out-pattern').innerHTML = `<div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center">
+      ${necklace(steps)}
+      <div style="flex:1 1 260px;min-width:0">
+        <h3 style="font-size:1.1rem;margin-bottom:.5rem">${esc(title)}</h3>
+        <div class="steps" style="margin-bottom:.75rem">${steps.map((s, i) => `<span class="s${s ? ' on' : ''}" data-i="${i}">${i + 1}</span>`).join('')}</div>
+        <dl class="kv"><dt>Onsets</dt><dd>${onsets.length} of ${steps.length}</dd><dt>Binary</dt><dd class="mono">${steps.map(s => s ? 1 : 0).join('')}</dd>${sync ? `<dt>Syncopation</dt><dd>${sync}</dd>` : ''}</dl>
+        ${note ? `<p class="small muted" style="margin:.5rem 0 0">${esc(note)}</p>` : ''}
+      </div></div>`;
+  } catch (e) { fail('out-pattern', e); }
+}
+function playPattern() {
+  try {
+    const { steps } = currentPattern();
+    const bpm = parseInt($('r-bpm').value, 10) || 110, d = 60 / bpm / 4, reps = 4;
+    const cells = i => document.querySelectorAll(`#out-pattern [data-i="${i}"]`);
+    const events = [];
+    for (let r = 0; r < reps; r++) steps.forEach((s, i) => events.push({
+      at: (r * steps.length + i) * d,
+      run: t => s ? inst.low.triggerAttackRelease('C2', '16n', t) : inst.click.triggerAttackRelease('C6', '64n', t),
+      show: () => { document.querySelectorAll('#out-pattern .now').forEach(x => x.classList.remove('now')); cells(i).forEach(x => x.classList.add('now')); },
+    }));
+    sequence(events, reps * steps.length * d + 0.2);
+  } catch (e) { console.warn(e); }
 }
 
-// ── 3. Modal ──────────────────────────────────────────────────────────────────
+// ── 9. Rhythmic cycles ───────────────────────────────────────────────────────
 
-function runModal() {
+const TRADITIONS = { hindustani: 'Hindustani tala', carnatic: 'Carnatic tala', flamenco: 'Flamenco compás', aksak: 'Aksak (Balkan)' };
+const STROKE_KEY = { sam: 'sam', tali: 'clap', khali: 'wave', accent: '>', beat: '' };
+function initCycles() {
+  const groups = {};
+  for (const [id, c] of Object.entries(U.RHYTHMIC_CYCLES)) (groups[c.tradition] ??= []).push([id, c]);
+  $('cy-sel').innerHTML = Object.entries(groups).map(([t, list]) =>
+    `<optgroup label="${esc(TRADITIONS[t] || t)}">${list.map(([id, c]) => `<option value="${id}">${esc(c.name)} · ${c.beats}</option>`).join('')}</optgroup>`).join('');
+  $('cy-sel').value = 'bulerias';
+}
+function runCycle() {
   try {
-    const sym   = $('m-scale').value.trim();
-    const type  = $('m-type').value;
-    const scale = UMT.parseScaleSymbol(sym);
-    const notes = scale.getNotes().map(n => n.name.replace(/\d+/, ''));
-    const chords = scale.getDiatonicChords(type);
-    const modal  = scale.getModalCharacteristics();
-    const parent = scale.getParentScale();
+    const c = U.RHYTHMIC_CYCLES[$('cy-sel').value];
+    const strokes = U.cycleStrokes(c), counts = U.cycleCounts(c);
+    let i = 0;
+    const groups = c.groups.map((g, gi) => {
+      const sign = c.vibhag ? c.vibhag[gi] : '';
+      let cells = '';
+      for (let k = 0; k < g; k++, i++) cells += `<div class="pulse ${strokes[i]}" data-i="${i}"><div class="n">${counts[i]}</div><div class="k">${STROKE_KEY[strokes[i]]}</div></div>`;
+      return `<div class="vib"><div class="sign">${esc(sign)}</div><div class="cells">${cells}</div></div>`;
+    }).join('');
+    let ts = ''; try { ts = U.cycleTimeSignature(c).toString(); } catch {}
+    $('out-cycle').innerHTML = `<div class="cycle">${groups}</div>
+      <dl class="kv" style="margin-top:1rem"><dt>Tradition</dt><dd>${esc(TRADITIONS[c.tradition])}</dd><dt>Pulses</dt><dd>${c.beats} = ${c.groups.join(' + ')}</dd>
+      ${c.tradition === 'aksak' && ts ? `<dt>Meter</dt><dd>${esc(ts)}</dd>` : ''}${c.samIsKhali ? '<dt>Note</dt><dd>sam falls on a khali (wave)</dd>' : ''}
+      <dt>Source</dt><dd class="small muted">${esc(c.source)}</dd></dl>`;
+  } catch (e) { fail('out-cycle', e); }
+}
+function playCycle() {
+  try {
+    const c = U.RHYTHMIC_CYCLES[$('cy-sel').value];
+    const strokes = U.cycleStrokes(c);
+    const bpm = parseInt($('cy-bpm').value, 10) || 140, d = 60 / bpm, reps = 2;
+    const events = [];
+    for (let r = 0; r < reps; r++) strokes.forEach((s, i) => events.push({
+      at: (r * strokes.length + i) * d,
+      run: t => {
+        if (s === 'sam') inst.low.triggerAttackRelease('A1', '8n', t);
+        else if (s === 'tali' || s === 'accent') inst.mid.triggerAttackRelease('E3', '16n', t);
+        else if (s === 'khali') inst.click.triggerAttackRelease('A5', '64n', t);
+        else inst.click.triggerAttackRelease('E6', '64n', t);
+      },
+      show: () => { document.querySelectorAll('#out-cycle .now').forEach(x => x.classList.remove('now')); document.querySelector(`#out-cycle [data-i="${i}"]`)?.classList.add('now'); },
+    }));
+    sequence(events, reps * strokes.length * d + 0.2);
+  } catch (e) { console.warn(e); }
+}
 
-    const ROMAN = ['I','II','III','IV','V','VI','VII'];
-    let t = `${scale.name}\nNotes: ${notes.join(' – ')}\n\n`;
+// ── 10. Ragas and maqamat ────────────────────────────────────────────────────
 
-    t += `Diatonic ${type}s:\n`;
-    chords.forEach((c, i) => {
-      const mark = modal?.characteristicDegrees?.includes(i + 1) ? '  ← characteristic' : '';
-      t += `  ${ROMAN[i].padEnd(5)} ${c.name}${mark}\n`;
-    });
-
-    if (modal) {
-      const b = modal.brightness;
-      const bStr = b > 0 ? `+${b} (bright)` : b < 0 ? `${b} (dark)` : `0 (neutral)`;
-      t += `\nBrightness: ${bStr}\n`;
-      if (modal.avoidNotes?.length)           t += `Avoid notes: ${modal.avoidNotes.join(', ')}\n`;
-      if (modal.characteristicIntervals?.length) t += `Characteristic intervals: ${modal.characteristicIntervals.join(', ')}\n`;
-      if (parent)                             t += `Parent scale: ${parent.name}\n`;
-      if (modal.parentModeDegree)             t += `Degree in parent: ${modal.parentModeDegree}\n`;
+const SVARA = ['Sa', 're', 'Re', 'ga', 'Ga', 'ma', 'Ma′', 'Pa', 'dha', 'Dha', 'ni', 'Ni'];
+const svara = st => SVARA[((st % 12) + 12) % 12] + (st >= 12 ? '′' : '');
+function initWorld() {
+  $('wm-raga').innerHTML = Object.entries(U.RAGAS).map(([id, r]) => `<option value="${id}">${esc(r.name)} · ${esc(r.thaat)} thaat</option>`).join('');
+  $('wm-maqam').innerHTML = Object.entries(U.MAQAMAT).map(([id, m]) => `<option value="${id}">${esc(m.name)}</option>`).join('');
+}
+function runWorld() {
+  try {
+    if (segValue('wm-tabs') === 'raga') {
+      const r = U.RAGAS[$('wm-raga').value];
+      const line = arr => arr.map(st => `<span class="chip">${esc(svara(st))}</span>`).join('');
+      $('out-world').innerHTML = `<div class="grid2">
+        <div class="panel"><h3>Aroha (ascending)</h3><div class="chips">${line(r.aroha)}</div>
+          <h3 style="margin-top:.8rem">Avaroha (descending)</h3><div class="chips">${line(r.avaroha)}</div>
+          <p class="small faint" style="margin:.6rem 0 0">Lower case: komal (flat); Ma′: tivra (sharp).</p></div>
+        <div class="panel"><dl class="kv"><dt>Thaat</dt><dd>${esc(r.thaat)}</dd><dt>Vadi</dt><dd>${esc(U.SVARA_NAMES[r.vadi])}</dd><dt>Samvadi</dt><dd>${esc(U.SVARA_NAMES[r.samvadi])}</dd>${r.time ? `<dt>Time</dt><dd>${esc(r.time)}</dd>` : ''}</dl>
+          <p class="small muted" style="margin:.6rem 0 0">${esc(r.description)}</p></div></div>`;
+    } else {
+      const m = U.MAQAMAT[$('wm-maqam').value];
+      const steps = m.notes.slice(1).map((q, i) => q - m.notes[i]);
+      $('out-world').innerHTML = `<div class="grid2">
+        <div class="panel"><h3>Degrees (cents from the tonic)</h3><div class="chips">${m.notes.map(q => `<span class="chip${q % 2 ? ' hl' : ''}">${q * 50}</span>`).join('')}</div>
+          <h3 style="margin-top:.8rem">Steps (quarter tones)</h3><div class="chips">${steps.map(s => `<span class="chip${s % 2 ? ' hl' : ''}">${s}</span>`).join('')}</div>
+          <p class="small faint" style="margin:.6rem 0 0">Outlined: quarter-tone (neutral) values.</p></div>
+        <div class="panel"><dl class="kv">${m.ajnas?.length ? `<dt>Ajnas</dt><dd>${esc(m.ajnas.map(j => j.name).join(' + '))}</dd>` : ''}${m.character ? `<dt>Character</dt><dd>${esc(m.character)}</dd>` : ''}</dl></div></div>`;
     }
-
-    out('out-modal', t);
-  } catch(e) { outErr('out-modal', e); }
+  } catch (e) { fail('out-world', e); }
+}
+function playWorld() {
+  const C4 = 261.63;
+  if (segValue('wm-tabs') === 'raga') { const r = U.RAGAS[$('wm-raga').value]; playFreqs([...r.aroha, ...r.avaroha.slice(1)].map(st => C4 * 2 ** (st / 12)), 'arp'); }
+  else { const m = U.MAQAMAT[$('wm-maqam').value]; playFreqs(m.notes.map(q => C4 * 2 ** (q / 24)), 'arp'); }
 }
 
-// ── 4. Set Theory & Twelve-Tone ───────────────────────────────────────────────
+// ── 11. Set theory ───────────────────────────────────────────────────────────
 
-function stTab(tab) {
-  ['set', 'row'].forEach(t => $(`st-${t}`).classList.toggle('hidden', t !== tab));
-  document.querySelectorAll('#st-tabs .btn-tab').forEach((btn, i) => {
-    btn.classList.toggle('active', ['set', 'row'][i] === tab);
-  });
-  if (tab === 'set') runSetTheory(); else runToneRow();
+const PC_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+const readPcs = () => [...new Set($('st-pcs').value.trim().split(/[\s,]+/).filter(Boolean).map(Number).filter(n => Number.isInteger(n)).map(n => ((n % 12) + 12) % 12))];
+function clockSVG(pcs) {
+  const on = new Set(pcs), R = 80, c = 105;
+  const pos = i => { const a = -Math.PI / 2 + i * Math.PI / 6; return [c + R * Math.cos(a), c + R * Math.sin(a)]; };
+  const poly = [...on].sort((a, b) => a - b).map(i => pos(i).join(',')).join(' ');
+  let s = `<svg class="clock" viewBox="0 0 210 210"><circle class="ring" cx="${c}" cy="${c}" r="${R}"/>${on.size > 1 ? `<polygon points="${poly}"/>` : ''}`;
+  for (let i = 0; i < 12; i++) { const [x, y] = pos(i); s += `<g class="pc${on.has(i) ? ' on' : ''}" data-pc="${i}"><circle cx="${x}" cy="${y}" r="15"/><text x="${x}" y="${y}">${i}</text></g>`; }
+  return s + '</svg>';
 }
-
-function runSetTheory() {
+function runSet() {
+  const pcs = readPcs();
+  $('st-clock').innerHTML = clockSVG(pcs);
+  if (!pcs.length) { $('out-set').innerHTML = '<p class="muted small">Pick some pitch classes.</p>'; return; }
   try {
-    const pcs    = $('st-pcs').value.trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
-    const normal = UMT.SetTheory.normalForm(pcs);
-    const prime  = UMT.SetTheory.primeForm(pcs);
-    const forte  = UMT.SetTheory.getForteNumber(pcs);
-    const iv     = UMT.SetTheory.intervalVector(pcs);
-    const comp   = UMT.SetTheory.getComplement(pcs);
-    const zr     = UMT.SetTheory.getZRelated(pcs);
-
-    let t = `Set: {${pcs.join(', ')}}\n\n`;
-    t += `Normal form:     [${normal.join(', ')}]\n`;
-    t += `Prime form:      [${prime.join(', ')}]\n`;
-    t += `Forte number:    ${forte || 'n/a'}\n`;
-    t += `Interval vector: <${iv.join('')}>\n`;
-    t += `Complement:      {${comp.join(', ')}}\n`;
-    t += `Z-related:       ${zr?.length ? zr.map(z => '{'+z.join(',')+'}').join(', ') : '(none)'}\n`;
-    t += `\nOperations:\n`;
-    t += `  T3:  {${UMT.SetTheory.Tn(pcs, 3).join(', ')}}\n`;
-    t += `  T0I: {${UMT.SetTheory.TnI(pcs, 0).join(', ')}}\n`;
-
-    out('out-set', t);
-  } catch(e) { outErr('out-set', e); }
+    const S = U.SetTheory;
+    const zr = S.getZRelated(pcs);
+    $('out-set').innerHTML = `<dl class="kv">
+      <dt>Notes</dt><dd>${pcs.slice().sort((a, b) => a - b).map(p => PC_NAMES[p]).join(' ')}</dd>
+      <dt>Normal form</dt><dd class="mono">[${S.normalForm(pcs).join(', ')}]</dd>
+      <dt>Prime form</dt><dd class="mono">[${S.primeForm(pcs).join(', ')}]</dd>
+      <dt>Forte</dt><dd><b>${esc(S.getForteNumber(pcs) || 'n/a')}</b></dd>
+      <dt>Interval vector</dt><dd class="mono">&lt;${S.intervalVector(pcs).join('')}&gt;</dd>
+      <dt>Complement</dt><dd class="mono">{${S.getComplement(pcs).join(', ')}}</dd>
+      <dt>Z-related</dt><dd class="mono">${zr?.length ? zr.map(z => '{' + z.join(',') + '}').join(' ') : 'none'}</dd>
+      <dt>T3 · I</dt><dd class="mono">{${S.Tn(pcs, 3).join(', ')}} · {${S.TnI(pcs, 0).join(', ')}}</dd></dl>`;
+  } catch (e) { fail('out-set', e); }
 }
-
-async function playPCSBtn() {
-  try {
-    const pcs   = $('st-pcs').value.trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
-    const C4    = 261.63;
-    const freqs = pcs.map(pc => C4 * Math.pow(2, pc / 12));
-    await playFreqs(freqs, 'chord');
-  } catch(e) { console.error(e); }
-}
-
-function runToneRow() {
-  try {
-    const pcs = $('st-row-in').value.trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
-    if (pcs.length !== 12) { out('out-row', 'Need exactly 12 pitch classes (0–11).'); return; }
-
-    const row    = new UMT.ToneRow(pcs);
-    const matrix = row.getMatrix();
-    const NAMES  = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
-    const n2s    = p => NAMES[((p % 12) + 12) % 12];
-
-    const [h1, h2] = row.getHexachords();
-    const first = pcs[0];
-    let t = `P${first}: ${row.P(first).map(n2s).join('  ')}\n`;
-    t += `I${first}: ${row.I(first).map(n2s).join('  ')}\n`;
-    t += `R${first}: ${row.R().map(n2s).join('  ')}\n`;
-    t += `RI${first}: ${row.RI(first).map(n2s).join('  ')}\n\n`;
-    t += `All-interval: ${row.isAllInterval()}  ·  Combinatorial: ${row.isCombinatorial() ?? 'no'}\n`;
-    t += `Hexachords: [${h1.join(',')}] / [${h2.join(',')}]\n\n`;
-
-    // 12×12 matrix
-    t += '      ' + matrix[0].map(p => n2s(p).padEnd(4)).join('') + '\n';
-    t += '      ' + '────'.repeat(12) + '\n';
-    matrix.forEach((rowArr) => {
-      t += `P${String(rowArr[0]).padStart(2)}  ` + rowArr.map(p => n2s(p).padEnd(4)).join('') + '\n';
-    });
-
-    out('out-row', t);
-  } catch(e) { outErr('out-row', e); }
-}
-
-// ── 5. World Music ────────────────────────────────────────────────────────────
-
-function wmTab(tab) {
-  ['raga', 'maqam', 'clave'].forEach(t => $(`wm-${t}`).classList.toggle('hidden', t !== tab));
-  document.querySelectorAll('#wm-tabs .btn-tab').forEach((btn, i) => {
-    btn.classList.toggle('active', ['raga', 'maqam', 'clave'][i] === tab);
+function initClock() {
+  $('st-clock').addEventListener('click', e => {
+    const g = e.target.closest('[data-pc]'); if (!g) return;
+    const pc = Number(g.dataset.pc), pcs = new Set(readPcs());
+    pcs.has(pc) ? pcs.delete(pc) : pcs.add(pc);
+    $('st-pcs').value = [...pcs].sort((a, b) => a - b).join(' ');
+    runSet();
   });
 }
-
-function initWorldMusic() {
-  Object.entries(UMT.RAGAS).forEach(([id, raga]) => {
-    const o = document.createElement('option');
-    o.value = id;
-    o.textContent = `${raga.name} (${raga.thaat} thaat)`;
-    $('wm-raga-sel').appendChild(o);
-  });
-  Object.entries(UMT.MAQAMAT).forEach(([id, maqam]) => {
-    const o = document.createElement('option');
-    o.value = id;
-    o.textContent = maqam.name;
-    $('wm-maqam-sel').appendChild(o);
-  });
-  Object.entries(UMT.CLAVE_PATTERNS).forEach(([id, pat]) => {
-    const o = document.createElement('option');
-    o.value = id;
-    o.textContent = pat.name;
-    $('wm-clave-sel').appendChild(o);
-  });
-  runRaga();
-}
-
-function runRaga() {
+function playPcs() { playFreqs(readPcs().sort((a, b) => a - b).map(pc => 261.63 * 2 ** (pc / 12))); }
+function runRow() {
   try {
-    const id   = $('wm-raga-sel').value;
-    const raga = UMT.RAGAS[id];
-    if (!raga) return;
-    let t = `${raga.name}  (${raga.thaat} thaat)\n\n`;
-    t += `Aroha (ascending):    ${raga.aroha.join(' – ')} semitones\n`;
-    t += `Avaroha (descending): ${raga.avaroha.join(' – ')} semitones\n\n`;
-    t += `Vadi (primary note):    ${UMT.SVARA_NAMES[raga.vadi]}\n`;
-    t += `Samvadi (secondary):    ${UMT.SVARA_NAMES[raga.samvadi]}\n`;
-    if (raga.time) t += `Time of performance:    ${raga.time}\n`;
-    t += `\n${raga.description}`;
-    out('out-raga', t);
-  } catch(e) { outErr('out-raga', e); }
+    const pcs = $('st-row').value.trim().split(/[\s,]+/).map(Number);
+    const row = new U.ToneRow(pcs);
+    const M = row.getMatrix();
+    const n = p => PC_NAMES[((p % 12) + 12) % 12];
+    const head = `<tr><th></th>${M[0].map(p => `<th>I${p}</th>`).join('')}<th></th></tr>`;
+    const body = M.map(r => `<tr><th>P${r[0]}</th>${r.map(p => `<td class="${p === pcs[0] ? 'p0' : ''}">${n(p)}</td>`).join('')}<th>R${r[0]}</th></tr>`).join('');
+    const foot = `<tr><th></th>${M[0].map(p => `<th>RI${p}</th>`).join('')}<th></th></tr>`;
+    let comb = ''; try { comb = row.isCombinatorial() || 'no'; } catch {}
+    $('out-row').innerHTML = `<div class="scroll-x"><table class="matrix">${head}${body}${foot}</table></div>
+      <dl class="kv" style="margin-top:.75rem"><dt>All-interval</dt><dd>${row.isAllInterval() ? 'yes' : 'no'}</dd><dt>Combinatorial</dt><dd>${esc(comb)}</dd></dl>`;
+  } catch (e) { fail('out-row', e); }
 }
 
-async function playRagaBtn() {
-  try {
-    const raga = UMT.RAGAS[$('wm-raga-sel').value];
-    if (!raga) return;
-    const C4    = 261.63;
-    const freqs = raga.aroha.map(st => C4 * Math.pow(2, st / 12));
-    await playFreqs(freqs, 'arpeggio');
-  } catch(e) { console.error(e); }
-}
+// ── 12. Notation export ──────────────────────────────────────────────────────
 
-function runMaqam() {
-  try {
-    const id    = $('wm-maqam-sel').value;
-    const maqam = UMT.MAQAMAT[id];
-    if (!maqam) return;
-    let t = `${maqam.name}\n\n`;
-    t += `Quarter-tone intervals: ${maqam.notes.join(' – ')}\n`;
-    if (maqam.ajnas?.length) {
-      t += `\nAjnas (tetrachords):\n`;
-      maqam.ajnas.forEach(j => { t += `  ${j.name}\n`; });
-    }
-    if (maqam.character) t += `\nCharacter: ${maqam.character}`;
-    out('out-maqam', t);
-  } catch(e) { outErr('out-maqam', e); }
-}
-
-async function playMaqamBtn() {
-  try {
-    const maqam = UMT.MAQAMAT[$('wm-maqam-sel').value];
-    if (!maqam) return;
-    const C4    = 261.63;
-    // Quarter-tone steps → 24-EDO: one quarter-tone = 50 cents = 2^(1/24)
-    const freqs = maqam.notes.map(qt => C4 * Math.pow(2, qt / 24));
-    await playFreqs(freqs, 'arpeggio');
-  } catch(e) { console.error(e); }
-}
-
-function runClave() {
-  try {
-    const id    = $('wm-clave-sel').value;
-    const clave = UMT.CLAVE_PATTERNS[id];
-    if (!clave) return;
-    const vis    = clave.steps.map(s => s ? '█' : '·').join(' ');
-    const binary = clave.steps.map(s => s ? '1' : '0').join('');
-    let t = `${clave.name}\n\n`;
-    t += `${vis}\n\n`;
-    t += `Steps: ${clave.steps.length}  ·  Pulses: ${clave.steps.filter(Boolean).length}\n`;
-    t += `Binary: ${binary}\n\n`;
-    t += clave.description;
-    out('out-clave', t);
-  } catch(e) { outErr('out-clave', e); }
-}
-
-let _rhythmPart = null, _rhythmSynths = [];
-
-async function playClaveBtn() {
-  try {
-    const clave = UMT.CLAVE_PATTERNS[$('wm-clave-sel').value];
-    if (!clave) return;
-    await Tone.start();
-    stopTransport();
-    Tone.Transport.bpm.value = 100;
-    Tone.Transport.position  = 0;
-
-    const membrane = new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 5 }).toDestination();
-    const hihat    = new Tone.MetalSynth({
-      frequency: 400, harmonicity: 5.1, modulationIndex: 32,
-      resonance: 4000, octaves: 1.5,
-      envelope: { attack: 0.001, decay: 0.04, release: 0.01 }
-    }).toDestination();
-    hihat.volume.value = -14;
-    _rhythmSynths = [membrane, hihat];
-
-    const stepDur = 60 / 100 / 4;
-    const events  = [];
-    for (let rep = 0; rep < 4; rep++) {
-      clave.steps.forEach((pulse, i) => {
-        events.push({ time: (rep * clave.steps.length + i) * stepDur, type: pulse ? 'kick' : 'hat' });
-      });
-    }
-
-    _rhythmPart = new Tone.Part((time, ev) => {
-      if (ev.type === 'kick') membrane.triggerAttackRelease('C1', '32n', time);
-      else                    hihat.triggerAttackRelease('16n', time);
-    }, events);
-    _rhythmPart.start(0);
-    Tone.Transport.start('+0.1');
-
-    setTimeout(stopTransport, (4 * clave.steps.length * stepDur + 0.6) * 1000);
-  } catch(e) { console.error(e); }
-}
-
-// ── 6. Rhythm ─────────────────────────────────────────────────────────────────
-
-function runRhythm() {
-  try {
-    const k       = parseInt($('r-k').value, 10);
-    const n       = parseInt($('r-n').value, 10);
-    const pattern = UMT.Polyrhythm.euclidean(k, n);
-    const binary  = pattern.map(p => p ? '1' : '0').join('');
-    const vis     = pattern.map(p => p ? '█' : '·').join(' ');
-
-    const NAMED = {
-      '10010010': 'Tresillo (3+3+2)',
-      '10110100': 'Son clave 3-2',
-      '10110110': 'Rumba clave 3-2',
-      '10101010': 'Habanera',
-      '10010100': 'Bossa nova clave',
-    };
-
-    let t = `E(${k}, ${n})  ${k} pulses evenly distributed in ${n} steps\n\n`;
-    t += `${vis}\n\n`;
-    t += `Binary:  ${binary}\n`;
-    t += `Density: ${(k / n * 100).toFixed(0)}%\n`;
-    if (NAMED[binary]) t += `Pattern: ${NAMED[binary]}\n`;
-
-    // Syncopation index
-    try {
-      const ts    = new UMT.TimeSignature([4], 4);
-      const onsets = pattern.map((p, i) => p ? i : -1).filter(i => i >= 0);
-      const sync  = UMT.RhythmAnalysis.detectSyncopation(onsets, ts);
-      t += `Syncopation index: ${(sync * 100).toFixed(0)}%\n`;
-    } catch {}
-
-    out('out-rhythm', t);
-  } catch(e) { outErr('out-rhythm', e); }
-}
-
-async function playRhythmBtn() {
-  try {
-    const k       = parseInt($('r-k').value, 10);
-    const n       = parseInt($('r-n').value, 10);
-    const bpm     = parseInt($('r-bpm').value, 10) || 120;
-    const pattern = UMT.Polyrhythm.euclidean(k, n);
-
-    await Tone.start();
-    stopTransport();
-    Tone.Transport.bpm.value = bpm;
-    Tone.Transport.position  = 0;
-
-    const membrane = new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 5 }).toDestination();
-    const hihat    = new Tone.MetalSynth({
-      frequency: 400, harmonicity: 5.1, modulationIndex: 32,
-      resonance: 4000, octaves: 1.5,
-      envelope: { attack: 0.001, decay: 0.04, release: 0.01 }
-    }).toDestination();
-    hihat.volume.value = -12;
-    _rhythmSynths = [membrane, hihat];
-
-    const stepDur = 60 / bpm / 4;
-    const events  = [];
-    for (let rep = 0; rep < 4; rep++) {
-      pattern.forEach((pulse, i) => {
-        events.push({ time: (rep * n + i) * stepDur, type: pulse ? 'kick' : 'hat' });
-      });
-    }
-
-    _rhythmPart = new Tone.Part((time, ev) => {
-      if (ev.type === 'kick') membrane.triggerAttackRelease('C1', '32n', time);
-      else                    hihat.triggerAttackRelease('16n', time);
-    }, events);
-    _rhythmPart.start(0);
-    Tone.Transport.start('+0.1');
-
-    setTimeout(stopTransport, (4 * n * stepDur + 0.6) * 1000);
-  } catch(e) { console.error(e); }
-}
-
-function stopTransport() {
-  Tone.Transport.stop();
-  Tone.Transport.cancel();
-  if (_rhythmPart) { try { _rhythmPart.dispose(); } catch {} _rhythmPart = null; }
-  _rhythmSynths.forEach(s => { try { s.dispose(); } catch {} });
-  _rhythmSynths = [];
-}
-
-// ── 7. Notation ───────────────────────────────────────────────────────────────
-
+const NT_DEFAULTS = {
+  melody: ['D4:1 E4:0.5 F#4:1.5 A4:2 G4:1.5 r:0.5 F#4:1 E4:3 D4:1', 'D major'],
+  scale: ['Bb harmonic minor', 'Bb minor'],
+  chord: ['C7#9', 'C major'],
+};
+let ntOut = { abc: '', ly: '', xml: '' };
 function runNotation() {
   try {
-    const input = $('n-input').value.trim();
-    const type  = $('n-type').value;
-    let abc = '', lily = '', xml = '';
-
-    if (type === 'scale') {
-      const scale   = UMT.parseScaleSymbol(input);
-      const keyNote = scale.getNotes()[0].name.replace(/\d+/, '');
-      // the scale's own key when it has a signature (D dorian, Bb harmonic minor), else its root
-      const abcIn   = key => UMT.ABCBridge.wrapInHeaders(UMT.ABCBridge.scaleToABC(scale, 1, key) + ' |]', input, '4/4', key);
-      try { abc = abcIn(input); } catch { abc = abcIn(keyNote); }
-      lily = UMT.scaleToLilyPond(scale);
-      xml  = UMT.scaleToMusicXML(scale, 1, { title: input });
+    const type = segValue('nt-type'), input = $('nt-input').value.trim(), key = $('nt-key').value.trim() || 'C major';
+    if (type === 'melody') {
+      const { notes, durs } = readMelody('nt-input');
+      const s = new U.MusicStream(new U.TimeSignature([4], 4), 90);
+      let t = 0;
+      notes.forEach((n, i) => { if (n) s.addEventAt(t, [n], new U.Duration(durs[i] / 4)); t += durs[i]; });
+      ntOut = {
+        abc: U.ABCBridge.wrapInHeaders(U.ABCBridge.streamToABC(s, { key }), 'Melody', '4/4', key),
+        ly: U.streamToLilyPond(s, { title: 'Melody' }, { key }),
+        xml: U.streamToMusicXML(s, { title: 'Melody' }, { key }),
+      };
+    } else if (type === 'scale') {
+      const sc = U.parseScaleSymbol(input);
+      ntOut = {
+        abc: U.ABCBridge.wrapInHeaders(U.ABCBridge.scaleToABC(sc, 1, key) + ' |]', input, '4/4', key),
+        ly: U.scaleToLilyPond(sc),
+        xml: U.scaleToMusicXML(sc, 1, { title: input }),
+      };
     } else {
-      const chord  = UMT.parseChordSymbol(input);
-      const body   = UMT.ABCBridge.chordToABC(chord) + '4 |]';
-      abc  = UMT.ABCBridge.wrapInHeaders(body, input, '4/4', 'C');
-      lily = UMT.chordToLilyPond(chord);
-      xml  = UMT.chordToMusicXML(chord);
+      const ch = U.parseChordSymbol(input);
+      ntOut = {
+        abc: U.ABCBridge.wrapInHeaders(U.ABCBridge.chordToABC(ch, key) + '4 |]', input, '4/4', key),
+        ly: U.chordToLilyPond(ch),
+        xml: U.chordToMusicXML(ch),
+      };
     }
+    ABCJS.renderAbc('nt-staff', ntOut.abc, { responsive: 'resize', paddingtop: 0, paddingbottom: 0 });
+    showNotationCode();
+  } catch (e) { fail('nt-staff', e); $('nt-code').textContent = ''; }
+}
+function showNotationCode() { $('nt-code').textContent = ntOut[segValue('nt-tabs')] || ''; }
 
-    ABCJS.renderAbc('staff-notation', abc, { responsive: 'resize', add_classes: true });
+// ── Init ─────────────────────────────────────────────────────────────────────
 
-    let t = '─── ABC Notation ──────────────────────\n' + abc;
-    t += '\n\n─── LilyPond ──────────────────────────\n' + lily;
-    t += '\n\n─── MusicXML (excerpt) ────────────────\n' + xml.slice(0, 700) + (xml.length > 700 ? '\n…' : '');
-    out('out-notation', t);
-  } catch(e) { outErr('out-notation', e); }
+function initActiveNav() {
+  const links = [...document.querySelectorAll('.nav-group a')];
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) if (e.isIntersecting) links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  document.querySelectorAll('section.sec').forEach(s => io.observe(s));
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-
 window.addEventListener('load', () => {
-  initWorldMusic();
-  runHarmony();
-  runTuning();
-  runModal();
-  runSetTheory();
-  runRhythm();
-  runNotation();
+  initPrefs();
+  $('p-presets').innerHTML = PROG_PRESETS.map((p, i) => `<button data-i="${i}">${esc(p[0])}</button>`).join('');
+  $('p-presets').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const p = PROG_PRESETS[b.dataset.i]; $('p-chords').value = p[1]; $('p-key').value = p[2]; runProgression(); });
+  $('kd-profile').innerHTML = Object.keys(U.KEY_PROFILES).map(p => `<option value="${p}">${esc(PROFILE_NAMES[p] || p)}</option>`).join('');
+  $('kd-profile').onchange = runKeyDetect;
+  $('r-clave').innerHTML = Object.entries(U.CLAVE_PATTERNS).map(([id, c]) => `<option value="${id}">${esc(c.name)}</option>`).join('');
+  initCycles(); initWorld(); initNotesPiano(); initClock();
+  initSeg('k-type', runKey); initSeg('s-type', runScale);
+  initTabs('rp-tabs', 'patterns', () => { stopAll(); runPattern(); });
+  initTabs('wm-tabs', 'world', runWorld);
+  initTabs('st-tabs', 'settheory', v => v === 'row' ? runRow() : runSet());
+  initSeg('nt-type', v => { [$('nt-input').value, $('nt-key').value] = NT_DEFAULTS[v]; runNotation(); });
+  initSeg('nt-tabs', showNotationCode);
+  for (const [id, fn] of [['p-chords', runProgression], ['p-key', runProgression], ['n-notes', runNotes], ['c-chord', runChord], ['c-key', runChord],
+    ['k-key', runKey], ['k-target', runKey], ['kd-notes', runKeyDetect], ['s-scale', runScale], ['t-scale', runTuning], ['st-pcs', runSet], ['st-row', runRow],
+    ['nt-input', runNotation], ['nt-key', runNotation]]) onEnter(id, fn);
+  for (const id of ['r-k', 'r-n', 'r-clave']) $(id).addEventListener('change', runPattern);
+  $('cy-sel').addEventListener('change', () => { stopAll(); runCycle(); });
+  $('wm-raga').addEventListener('change', runWorld); $('wm-maqam').addEventListener('change', runWorld);
+  $('st-pcs').addEventListener('change', runSet);
+  runProgression(); runNotes(); runChord(); runKey(); runKeyDetect(); runScale(); runTuning();
+  runPattern(); runCycle(); runWorld(); runSet(); runNotation();
+  initActiveNav();
 });
-
 </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # UMT
 
-[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.4.0/dist/umt.js)
+[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.4.1/dist/umt.js)
 [![Live demo](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://memoriainfinita.github.io/UMT)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
@@ -10,7 +10,7 @@ Zero runtime dependencies. 142 kb compiled bundle (IIFE), plus an ESM build with
 
 **[Live demo](https://memoriainfinita.github.io/UMT)** · **[API docs](https://memoriainfinita.github.io/UMT/api-docs/)**
 
-![UMT demo page with the Harmony Explorer analysing Cmaj9 in C major: chord tones, suggested scales, tritone substitution and diatonic substitutions](docs/UMT-demo.png)
+![UMT demo page: navigation by topic and the progression analysis of Dm7 G7 Cmaj7 A7 Dm7 Fm6 Cmaj7 in C major, with Roman numerals coloured by function](docs/UMT-demo.png)
 
 ---
 
@@ -43,11 +43,11 @@ SetTheory.getZRelated([0, 1, 4, 6]);      // Z-related sets
 
 ## Installation
 
-Releases are git tags (`v0.4.0`); pin one, since `main` may change. Breaking changes are listed in `CHANGELOG.md`.
+Releases are git tags (`v0.4.1`); pin one, since `main` may change. Breaking changes are listed in `CHANGELOG.md`.
 
 **Browser - CDN (jsDelivr)**
 ```html
-<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.4.0/dist/umt.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.4.1/dist/umt.js"></script>
 <script>
   const chord = UMT.parseChordSymbol('Cmaj9');
   console.log(chord.getNotes().map(n => n.name));
@@ -61,7 +61,7 @@ Releases are git tags (`v0.4.0`); pin one, since `main` may change. Breaking cha
 
 **npm (from GitHub) - ESM with types**
 ```bash
-npm install github:memoriainfinita/UMT#v0.4.0
+npm install github:memoriainfinita/UMT#v0.4.1
 ```
 ```typescript
 import { parseChordSymbol, TET12, Harmony, SetTheory } from 'universal-music-theory-library';
@@ -70,7 +70,7 @@ import { parseChordSymbol, TET12, Harmony, SetTheory } from 'universal-music-the
 **Browser - ESM from the CDN**
 ```html
 <script type="module">
-  import { parseChordSymbol } from 'https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.4.0/dist/umt.mjs';
+  import { parseChordSymbol } from 'https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.4.1/dist/umt.mjs';
 </script>
 ```
 
@@ -170,37 +170,36 @@ npm run build   # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
 
 ### Harmony analysis
 
-![Harmony Explorer in the demo: Cmaj9 analysed in C major, with its notes, intervals, suggested scales, tritone substitution and diatonic substitutions](docs/UMT-harmony.png)
+![Progression analysis in the demo: Dm7 G7 Cmaj7 A7 Dm7 Fm6 Cmaj7 in C major, with numerals, functions, the secondary dominant V7/ii, Fm6 borrowed from minor, and the cadences](docs/UMT-harmony.png)
 
 ```typescript
 import { parseChordSymbol, Harmony, getSubstitutions } from './lib/music-theory';
 
-const chord = parseChordSymbol('Cmaj9');
+const chords = ['Dm7', 'G7', 'Cmaj7', 'A7', 'Dm7', 'Fm6', 'Cmaj7'].map(s => parseChordSymbol(s));
+const { analysis } = Harmony.analyzeProgression(chords, 'C major');
+analysis.map(a => a.roman);
+// ['ii7', 'V7', 'Imaj7', 'VI7', 'ii7', 'ivm', 'Imaj7']
+analysis[3].secondaryTarget;   // 'V7/ii'
+analysis[5].borrowedFrom;      // 'minor'
+analysis[1].cadenceWithNext;   // 'Authentic Cadence (V -> I)'
 
-// Suggested scales
-Harmony.getSuggestedScales(chord);
-// [{ scale: 'C major' }, { scale: 'C lydian' }, ...]
+const g7 = parseChordSymbol('G7');
+Harmony.getSuggestedScales(g7)[0];
+// { scale: 'G mixolydian', hint: 'standard V' }
+getSubstitutions(g7, 'C major').map(s => `${s.chord.name} (${s.type})`);
+// ['Db7 (tritone)', 'Gsus4 (sus4)', 'Am (deceptive)', 'Bm7b5 (diatonic)']
 
-// Substitutions
-getSubstitutions(chord, 'C major');
-// [{ chord: Db7, type: 'tritone' }, ...]
-
-// Cadence analysis
-Harmony.analyzeCadence(parseChordSymbol('G7'), parseChordSymbol('Cmaj7'), 'C major');
-// "Authentic (V7->I)"
-
-// Coltrane axis
 Harmony.getColtraneAxis('C major');
-// { root: 'C', axes: ['C', 'E', 'Ab'] }
+// { root: 'C', majorThirds: ['C', 'E', 'Ab'] }
 ```
 
 ### Tuning
 
-![Universal Tuning in the demo: C major compared across 12-TET, Ptolemaic just intonation and Werckmeister III](docs/UMT-tuning.png)
+![Tunings in the demo: C major in 12-TET, with the deviation of 5-limit just intonation and Werckmeister III in cents](docs/UMT-tuning.png)
 
 ### Modal analysis
 
-![Scales and modal analysis in the demo: D dorian with its diatonic triads, brightness, characteristic intervals and parent scale](docs/UMT-modal.png)
+![Scales and modes in the demo: D dorian on a keyboard, with its diatonic seventh chords, brightness and parent scale](docs/UMT-modal.png)
 
 ```typescript
 import { parseScaleSymbol } from './lib/music-theory';
@@ -208,18 +207,18 @@ import { parseScaleSymbol } from './lib/music-theory';
 const scale = parseScaleSymbol('D dorian');
 
 scale.getDiatonicChords('seventh');
-// [Dm7, Em7b5, Fmaj7, G7, Am7, Bbmaj7, C7]
+// [Dm7, Em7, Fmaj7, G7, Am7, Bm7b5, Cmaj7]
 
 const modal = scale.getModalCharacteristics();
-// { brightness: -1, avoidNotes: ['B'], characteristicIntervals: ['M6'] }
+// { brightness: -2, characteristicIntervals: ['b3', 'b7'] (against major), parentModeDegree: 2, ... }
 
 scale.getParentScale();   // C major
-scale.getRelativeMode('lydian');  // A lydian
+scale.getRelativeMode('lydian');  // F lydian
 ```
 
 ### Twelve-tone row
 
-![Set theory and twelve-tone in the demo: a tone row with its P, I, R and RI forms, hexachords and the 12x12 matrix](docs/UMT-settheory.png)
+![Twelve-tone row in the demo: the 12x12 matrix of a row, with P forms on the rows and I forms on the columns](docs/UMT-settheory.png)
 
 ```typescript
 import { ToneRow } from './lib/music-theory';
@@ -239,7 +238,7 @@ row.getHexachords();    // [first6, last6]
 
 ### World music
 
-![World music in the demo: raga Yaman with its aroha, avaroha, vadi, samvadi and time of performance](docs/UMT-world.png)
+![Ragas in the demo: raga Yaman with its aroha and avaroha in svaras, vadi, samvadi and time of performance](docs/UMT-world.png)
 
 ```typescript
 import { RAGAS, MAQAMAT, CLAVE_PATTERNS } from './lib/music-theory';
@@ -247,8 +246,8 @@ import { RAGAS, MAQAMAT, CLAVE_PATTERNS } from './lib/music-theory';
 // Hindustani raga
 const bhairav = RAGAS['bhairav'];
 bhairav.aroha;      // ascending scale in semitones
-bhairav.vadi;       // primary note
-bhairav.time;       // "morning"
+bhairav.vadi;       // primary note, a svara number (SVARA_NAMES[6] = 'Dha')
+bhairav.time;       // 'Early morning'
 
 // Arabic maqam (24-EDO quarter-tones)
 const rast = MAQAMAT['rast'];
@@ -262,11 +261,22 @@ clave.steps;        // boolean[16] - onset pattern
 
 ### Rhythm
 
-![Rhythm in the demo: the Euclidean rhythm E(5, 8) with its binary pattern, density, detected clave and syncopation index](docs/UMT-rhythm.png)
+![Rhythmic cycles in the demo: the bulerías compás counted from 12, with accents on 12, 3, 6, 8 and 10](docs/UMT-rhythm.png)
+
+```typescript
+import { RHYTHMIC_CYCLES, cycleCounts, cycleStrokes, Polyrhythm } from './lib/music-theory';
+
+const bulerias = RHYTHMIC_CYCLES.bulerias;
+cycleCounts(bulerias);    // [12, 1, 2, 3, ... 11]
+cycleStrokes(bulerias);   // ['accent', 'beat', 'beat', 'accent', ...]
+cycleStrokes(RHYTHMIC_CYCLES.teental)[8];   // 'khali'
+
+Polyrhythm.euclidean(5, 8);   // [true, false, true, true, false, true, true, false]
+```
 
 ### Notation export
 
-![Notation export in the demo: C major rendered as a staff and exported to ABC, LilyPond and MusicXML](docs/UMT-notation.png)
+![Notation export in the demo: a melody in D major rendered as a staff, with a tie across the barline and a rest, and its ABC source](docs/UMT-notation.png)
 
 ```typescript
 import { parseScaleSymbol, ABCBridge, scaleToLilyPond, scaleToMusicXML } from './lib/music-theory';

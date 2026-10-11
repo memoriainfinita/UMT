@@ -6,12 +6,12 @@ A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal
 
 The library compiles to a standalone IIFE (`dist/umt.js`, 142 kb) for script tags and jsDelivr, and to an ESM bundle (`dist/umt.mjs`) with bundled types (`dist/umt.d.ts`). Releases are git tags with notes in `CHANGELOG.md`.
 
-The demo is a single vanilla HTML file (`index.html`) with 7 interactive sections. The original Next.js scaffolding and old demo versions are in `archive/` (gitignored).
+The demo is a single vanilla HTML file (`index.html`) with 12 interactive sections in four groups (tonal harmony, scales and tuning, rhythm, beyond), its own CSS with light and dark themes. The original Next.js scaffolding and old demo versions are in `archive/` (gitignored).
 
 ## Stack
 
 - **Library**: TypeScript, compiled with esbuild → `dist/umt.js` (IIFE) and `dist/umt.mjs` (ESM); types by dts-bundle-generator → `dist/umt.d.ts`
-- **Demo**: Vanilla HTML (`index.html`) - no build step. CDN: Tone.js (audio), abcjs (sheet music), Tailwind. No Next.js/React.
+- **Demo**: Vanilla HTML (`index.html`) - no build step. CDN: Tone.js (audio), abcjs (sheet music), Fraunces from Google Fonts. No Tailwind, no Next.js/React.
 - **Deploy**: build locally (`npm run build`), commit `dist/`, push. CI (GitHub Actions) fails if `dist/` does not match the sources. A release bumps `package.json`, adds a `CHANGELOG.md` entry and a `vX.Y.Z` tag. GitHub Pages serves from root `/`. Repo: https://github.com/memoriainfinita/UMT
 
 ## Commands
@@ -81,7 +81,7 @@ lib/music-theory/         # Core library - all TypeScript (46 modules)
 dist/
   umt.js                  # Compiled bundle - tracked in git (CDN via jsDelivr)
 
-index.html                # Demo page - 7 interactive sections
+index.html                # Demo page - 12 interactive sections
 
 archive/                  # Old demos and Next.js scaffolding (gitignored)
 docs/
