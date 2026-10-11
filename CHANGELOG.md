@@ -2,6 +2,13 @@
 
 Versions are git tags. Pin one (`#v0.4.1` in npm, `@v0.4.1` on jsDelivr); `main` may change.
 
+## 0.5.1 - 2026-10-11
+
+### Fixed
+
+- `Harmony.getSuggestedScales` gave major and minor for every triad, in all three rulesets (reported from MODUS). Triads and sixth chords take the scales of their seventh chord: C as Cmaj7 (classical C major; berklee and modal ionian, lydian), Cm as Cm7. Cm6 takes dorian and melodic minor (classical melodic minor), CmM7 melodic and harmonic minor, sus4 mixolydian (none in classical), Cm7b5 in classical locrian. Other chords are read by their third; without one (sus2) no scale is suggested
+- `FigureAccidental` is exported: `FiguredBass.parse` returns it
+
 ## 0.5.0 - 2026-10-11
 
 Names in Spanish, requested by MODUS. No breaking changes.
