@@ -21,8 +21,16 @@ function prog(roman: string, key: string): Chord[] {
 }
 const notes = (...names: string[]) => names.map(n => parseNote(n));
 
+describe('analyzeProgression: added notes and suspensions', () => {
+  it('a chord with a third is not sus: added ninths, elevenths and sixths reduce to the triad', () => {
+    const syms = ['Cadd9', 'C6/9', 'Cadd11', 'Cmadd9', 'Fm6', 'G9', 'G7sus4', 'Gsus4', 'Dsus2'];
+    const romans = Harmony.analyzeProgression(syms.map(chord), 'C major').analysis.map(a => a.roman);
+    expect(romans).toEqual(['I', 'I', 'I', 'im', 'ivm', 'V7', 'V7sus4', 'Vsus4', 'IIsus2']);
+  });
+});
+
 describe('analyzeProgression numerals read back with parseRomanProgression', () => {
-  const qualities = ['', 'm', 'dim', 'aug', '7', 'maj7', 'm7', 'm7b5', 'dim7', 'sus4'];
+  const qualities = ['', 'm', 'dim', 'aug', '7', 'maj7', 'm7', 'm7b5', 'dim7', 'sus2', 'sus4', '7sus4'];
   for (const key of ['C major', 'A minor', 'Eb major', 'F# minor']) {
     it(key, () => {
       const failures: string[] = [];

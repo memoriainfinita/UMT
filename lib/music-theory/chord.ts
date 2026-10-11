@@ -334,8 +334,10 @@ export class Chord {
 
 /**
  * Chord quality from its intervals (12-TET): `'maj7'`, `'m7'`, `'7'`, `'dim7'`, `'m7b5'`,
- * `'mM7'`, `'aug7'`, `'augM7'`, `'aug'`, `'dim'`, `'sus2'`, `'sus4'`, `'m'`, `'M'`, or `''`
- * when none fits or the tuning is not 12 steps per octave.
+ * `'mM7'`, `'aug7'`, `'augM7'`, `'aug'`, `'dim'`, `'7sus4'`, `'sus2'`, `'sus4'`, `'m'`, `'M'`, or
+ * `''` when none fits or the tuning is not 12 steps per octave. Ninths, elevenths and sixths
+ * reduce to the triad or seventh below them (Cadd9 and C6/9 are `'M'`); a chord is sus only
+ * without a third.
  */
 export function chordQualityFromIntervals(chord: Chord, oct: number = chord.tuningSystem.octaveSteps): string {
   if (oct !== 12) return '';
@@ -351,8 +353,10 @@ export function chordQualityFromIntervals(chord: Chord, oct: number = chord.tuni
   if (has(4) && has(8) && has(11)) return 'augM7';
   if (has(4) && has(8)) return 'aug';
   if (has(3) && has(6)) return 'dim';
-  if (has(2) && has(7)) return 'sus2';
-  if (has(5) && has(7)) return 'sus4';
+  const noThird = !has(3) && !has(4);
+  if (noThird && has(5) && has(7) && has(10)) return '7sus4';
+  if (noThird && has(2) && has(7)) return 'sus2';
+  if (noThird && has(5) && has(7)) return 'sus4';
   if (has(3) && has(7)) return 'm';
   if (has(4) && has(7)) return 'M';
   return '';
