@@ -1389,6 +1389,9 @@ export class Harmony {
 
   /**
    * Suggests scales for improvisation over a given chord.
+   * Triads and sixth chords take the scales of their seventh chord: C as Cmaj7, Cm as Cm7
+   * (Cm6, with the natural sixth, takes dorian or melodic minor). A chord no rule names is read by
+   * its third (major or minor scale); without a third (sus2) none is suggested.
    */
   static getSuggestedScales(chord: Chord, nextChord?: Chord, ruleset: 'berklee' | 'classical' | 'modal' = 'berklee'): { scale: string; hint?: string }[] {
     const ts = chord.tuningSystem;
@@ -1407,29 +1410,53 @@ export class Harmony {
     const isHalfDim = has(6)  && has(3) && has(10);
     const isDim     = has(6)  && has(3) && !has(10);
     const isAug     = has(8)  && has(4) && !has(10);
+    // triads, sixths and added ninths: no seventh
+    const isMajor   = has(4) && has(7) && !has(10) && !has(11);
+    const isMinor   = has(3) && has(7) && !has(6) && !has(10) && !has(11);
+    const isMinMaj7 = has(3) && has(7) && has(11);
+    const isSus4    = has(5) && has(7) && !has(3) && !has(4);
+    const byThird = (): { scale: string; hint?: string }[] =>
+      has(4) ? [s(`${root} major`)] : has(3) ? [s(`${root} minor`)] : [];
 
     const s = (scale: string, hint?: string): { scale: string; hint?: string } => ({ scale, hint });
 
     if (ruleset === 'classical') {
-      if (isMaj7) return [s(`${root} major`)];
-      if (isMin7) return [s(`${root} minor`)];
+      if (isMaj7 || isMajor) return [s(`${root} major`)];
+      if (isMinor && has(9)) return [s(`${root} melodic minor`)];
+      if (isMin7 || isMinor) return [s(`${root} minor`)];
+      if (isMinMaj7) return [s(`${root} harmonic minor`), s(`${root} melodic minor`)];
       if (isDom7) return [s(`${root} mixolydian`)];
+      if (isHalfDim) return [s(`${root} locrian`)];
       if (isDim) return [s(`${root} whole-half diminished`)];
-      return [s(`${root} major`), s(`${root} minor`)];
+      if (isAug || isSus4) return [];
+      return byThird();
     }
 
     if (ruleset === 'modal') {
-      if (isMaj7) return [s(`${root} ionian`), s(`${root} lydian`)];
-      if (isMin7) return [s(`${root} dorian`), s(`${root} phrygian`), s(`${root} aeolian`)];
-      if (isDom7) return [s(`${root} mixolydian`)];
+      if (isMaj7 || isMajor) return [s(`${root} ionian`), s(`${root} lydian`)];
+      if (isMinor && has(9)) return [s(`${root} dorian`)];
+      if (isMin7 || isMinor) return [s(`${root} dorian`), s(`${root} phrygian`), s(`${root} aeolian`)];
+      if (isDom7 || isSus4) return [s(`${root} mixolydian`)];
       if (isHalfDim) return [s(`${root} locrian`), s(`${root} locrian #2`)];
     }
 
-    if (isMaj7) {
+    if (isMaj7 || isMajor) {
       return [s(`${root} ionian`), s(`${root} lydian`, 'if IV chord')];
     }
 
-    if (isMin7) {
+    if (isMinor && has(9)) {
+      return [s(`${root} dorian`), s(`${root} melodic minor`, 'tonic minor')];
+    }
+
+    if (isMinMaj7) {
+      return [s(`${root} melodic minor`), s(`${root} harmonic minor`)];
+    }
+
+    if (isSus4) {
+      return [s(`${root} mixolydian`, 'V7sus4')];
+    }
+
+    if (isMin7 || isMinor) {
       return [s(`${root} dorian`, 'standard ii'), s(`${root} aeolian`), s(`${root} phrygian`)];
     }
 
@@ -1472,7 +1499,7 @@ export class Harmony {
       return [s(`${root} whole tone`)];
     }
 
-    return [s(`${root} major`), s(`${root} minor`)];
+    return byThird();
   }
 
   // ──────────────────────────────────────────────────────────────────────────

@@ -12,10 +12,11 @@ const FIGURE_DEFAULT_SEMITONES: Record<number, number> = {
   2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 10, 8: 12, 9: 14,
 };
 
-type Accidental = '#' | 'b' | 'n';
-type FigurePart = { num: number; acc: Accidental | undefined };
+/** Accidental of a figured-bass figure: sharp, flat or natural. */
+export type FigureAccidental = '#' | 'b' | 'n';
+type FigurePart = { num: number; acc: FigureAccidental | undefined };
 
-function applyAccidental(semitones: number, acc: Accidental | undefined): number {
+function applyAccidental(semitones: number, acc: FigureAccidental | undefined): number {
   if (acc === '#') return semitones + 1;
   if (acc === 'b') return semitones - 1;
   return semitones;
@@ -40,7 +41,7 @@ export class FiguredBass {
     for (const part of symbol.split('/').map(p => p.trim()).filter(Boolean)) {
       const m = part.match(/^([#bn]?)(\d*)$/);
       if (!m || (m[1] === '' && m[2] === '')) continue;
-      results.push({ num: m[2] === '' ? 3 : parseInt(m[2], 10), acc: (m[1] as Accidental) || undefined });
+      results.push({ num: m[2] === '' ? 3 : parseInt(m[2], 10), acc: (m[1] as FigureAccidental) || undefined });
     }
     return results;
   }
@@ -98,11 +99,11 @@ export class FiguredBass {
    * @returns Object with `intervals` (semitone offsets above bass) and
    *   `accidentals` (Map from interval index to accidental).
    */
-  static parse(symbol: string): { intervals: number[]; accidentals: Map<number, Accidental> } {
+  static parse(symbol: string): { intervals: number[]; accidentals: Map<number, FigureAccidental> } {
     const written = this.parseFigureParts(symbol);
     const plainTriad = written.every(p => (p.num === 3 || p.num === 5) && p.acc === undefined);
     const parts = plainTriad ? this.completeFigures(written).sort((a, b) => a.num - b.num) : written;
-    const accidentals = new Map<number, Accidental>();
+    const accidentals = new Map<number, FigureAccidental>();
     const intervals = parts.map(({ num, acc }, i) => {
       if (acc) accidentals.set(i, acc);
       return applyAccidental(FIGURE_DEFAULT_SEMITONES[num] ?? (num - 1), acc);

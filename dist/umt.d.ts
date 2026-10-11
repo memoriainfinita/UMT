@@ -1210,6 +1210,9 @@ export declare class Harmony {
 	static analyzeCadence(chord1: Chord, chord2: Chord, keySymbol: string): string;
 	/**
 	 * Suggests scales for improvisation over a given chord.
+	 * Triads and sixth chords take the scales of their seventh chord: C as Cmaj7, Cm as Cm7
+	 * (Cm6, with the natural sixth, takes dorian or melodic minor). A chord no rule names is read by
+	 * its third (major or minor scale); without a third (sus2) none is suggested.
 	 */
 	static getSuggestedScales(chord: Chord, nextChord?: Chord, ruleset?: "berklee" | "classical" | "modal"): {
 		scale: string;
@@ -2227,7 +2230,8 @@ export interface ClavePattern {
 }
 /** Collection of 10 clave and timeline patterns from Cuban, Brazilian, and West African music. */
 export declare const CLAVE_PATTERNS: Record<string, ClavePattern>;
-export type Accidental = "#" | "b" | "n";
+/** Accidental of a figured-bass figure: sharp, flat or natural. */
+export type FigureAccidental = "#" | "b" | "n";
 export declare class FiguredBass {
 	/**
 	 * Reads a figure string into {num, acc} parts as written (`'6/4'`, `'#6'`, `'b7'`). A bare
@@ -2260,7 +2264,7 @@ export declare class FiguredBass {
 	 */
 	static parse(symbol: string): {
 		intervals: number[];
-		accidentals: Map<number, Accidental>;
+		accidentals: Map<number, FigureAccidental>;
 	};
 	/**
 	 * Realizes a figured bass symbol above a bass note, returning a Chord.

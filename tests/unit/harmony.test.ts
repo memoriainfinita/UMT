@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { Harmony } from '../../lib/music-theory/harmony';
-import { parseChordSymbol, parseNote } from '../../lib/music-theory/parser';
+import { parseChordSymbol, parseNote, parseScaleSymbol } from '../../lib/music-theory/parser';
 import { Chord } from '../../lib/music-theory/chord';
 import { Note } from '../../lib/music-theory/note';
 import { TET12, EDO } from '../../lib/music-theory/tuning';
@@ -187,6 +187,38 @@ describe('Harmony.getSuggestedScales', () => {
     expect(scales.map(s => s.scale)).toContain('E phrygian dominant');
     const dim = scales.find(s => s.scale === 'E half-whole diminished');
     expect(dim?.hint ?? '').not.toMatch(/b13/);
+  });
+
+  it('triads and sixth chords take the scales of their seventh chord (reported from MODUS)', () => {
+    const names = (sym: string, r: 'berklee' | 'classical' | 'modal') =>
+      Harmony.getSuggestedScales(parseChordSymbol(sym), undefined, r).map(s => s.scale);
+    expect(names('C', 'classical')).toEqual(['C major']);
+    expect(names('Cm', 'classical')).toEqual(['C minor']);
+    expect(names('Cm6', 'classical')).toEqual(['C melodic minor']);
+    expect(names('Cm7b5', 'classical')).toEqual(['C locrian']);
+    expect(names('C', 'berklee')).toEqual(['C ionian', 'C lydian']);
+    expect(names('Cm', 'berklee')).toEqual(['C dorian', 'C aeolian', 'C phrygian']);
+    expect(names('Cm6', 'berklee')).toEqual(['C dorian', 'C melodic minor']);
+    expect(names('Csus4', 'berklee')).toEqual(['C mixolydian']);
+    expect(names('Csus2', 'berklee')).toEqual([]);
+  });
+
+  it('every suggested scale holds every note of the chord (the altered scale, all but the fifth)', () => {
+    const failures: string[] = [];
+    const syms = ['C', 'Cm', 'C6', 'Cm6', 'Cadd9', 'Cmaj7', 'Cm7', 'C7', 'Cm7b5', 'Cdim', 'Cdim7', 'Caug', 'CmM7', 'Csus4', 'Csus2'];
+    for (const r of ['berklee', 'classical', 'modal'] as const) {
+      for (const sym of syms) {
+        const chord = parseChordSymbol(sym);
+        for (const { scale } of Harmony.getSuggestedScales(chord, undefined, r)) {
+          const pcs = parseScaleSymbol(scale).getPitchClasses();
+          // the altered scale replaces the fifth of a dominant with b5 and #5
+          const fifth = (chord.rootStep + 7) % 12;
+          const needed = chord.getPitchClasses().filter(pc => !(scale.endsWith('altered') && pc === (fifth + 12) % 12));
+          if (!needed.every(pc => pcs.includes(pc))) failures.push(`${r} ${sym}: ${scale}`);
+        }
+      }
+    }
+    expect(failures).toEqual([]);
   });
 });
 
