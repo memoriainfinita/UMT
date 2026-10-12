@@ -13,6 +13,7 @@ export class Duration {
    */
   constructor(public value: number, public dots: number = 0) {}
 
+  /** Length as a fraction of a whole note, dots included (a dotted quarter is 0.375). */
   get totalValue(): number {
     let total = this.value;
     let currentAdd = this.value;
@@ -32,12 +33,17 @@ export class Duration {
     return new Duration(this.value * (inSpaceOf / fit), this.dots);
   }
 
-  // Standard durations
+  /** Whole note (1). */
   static Whole = new Duration(1);
+  /** Half note (1/2). */
   static Half = new Duration(1/2);
+  /** Quarter note (1/4). */
   static Quarter = new Duration(1/4);
+  /** Eighth note (1/8). */
   static Eighth = new Duration(1/8);
+  /** Sixteenth note (1/16). */
   static Sixteenth = new Duration(1/16);
+  /** Thirty-second note (1/32). */
   static ThirtySecond = new Duration(1/32);
 }
 
@@ -52,31 +58,40 @@ export class TimeSignature {
    */
   constructor(public numerators: number[], public denominator: number) {}
 
+  /** Beats per measure: the numerators added (3+2+2/8 has 7). */
   get totalBeats(): number {
     return this.numerators.reduce((a, b) => a + b, 0);
   }
 
+  /** Length of a measure as a fraction of a whole note (3/4 is 0.75). */
   get measureDuration(): number {
     // Total value in terms of whole notes
     return this.totalBeats / this.denominator;
   }
 
+  /** More than one numerator, as in 3+2+2/8. */
   get isAdditive(): boolean {
     return this.numerators.length > 1;
   }
 
+  /** Written form: `'4/4'`, `'3+2+2/8'`. */
   toString(): string {
     const numStr = this.numerators.join('+');
     return `${numStr}/${this.denominator}`;
   }
 
-  // Common signatures
+  /** 4/4. */
   static Common = new TimeSignature([4], 4);
+  /** 3/4. */
   static Waltz = new TimeSignature([3], 4);
+  /** 2/4. */
   static March = new TimeSignature([2], 4);
+  /** 6/8. */
   static CompoundDuple = new TimeSignature([6], 8);
-  static Balkan7 = new TimeSignature([3, 2, 2], 8); // 3+2+2 / 8
-  static Balkan9 = new TimeSignature([2, 2, 2, 3], 8); // 2+2+2+3 / 8
+  /** 3+2+2/8. */
+  static Balkan7 = new TimeSignature([3, 2, 2], 8);
+  /** 2+2+2+3/8. */
+  static Balkan9 = new TimeSignature([2, 2, 2, 3], 8);
 }
 
 /** Polyrhythm generation and Euclidean rhythm distribution. */
@@ -135,9 +150,13 @@ export class Polyrhythm {
 
 /** A single timed event in a MusicStream: onset, duration, notes, and velocity. */
 export interface StreamEvent {
-  time: number;     // Start time in beats
-  duration: number; // Duration in beats
+  /** Onset, in beats of the stream's time signature (its denominator's note value) from the start. */
+  time: number;
+  /** Length in beats. */
+  duration: number;
+  /** Notes sounding together; empty for a rest. */
   notes: Note[];
+  /** Loudness, normally 0 to 1 (default 0.8). */
   velocity: number;
 }
 
@@ -148,9 +167,12 @@ export interface StreamEvent {
  * or MIDI writers.
  */
 export class MusicStream {
+  /** Events in time order. */
   events: StreamEvent[] = [];
   private currentBeat: number = 0;
+  /** Meter of the stream; its denominator sets what a beat is. */
   public timeSignature: TimeSignature;
+  /** Tempo in beats per minute. */
   public bpm: number;
 
   constructor(timeSignature: TimeSignature = TimeSignature.Common, bpm: number = 120) {
@@ -191,18 +213,29 @@ export class MusicStream {
    */
   toJSON() {
     return {
+      /** Meter and tempo. */
       metadata: {
+        /** Written time signature: `'4/4'`, `'3+2+2/8'`. */
         timeSignature: this.timeSignature.toString(),
+        /** Tempo in beats per minute. */
         bpm: this.bpm
       },
+      /** The events, as in `events`. */
       events: this.events.map(e => ({
+        /** Onset in beats. */
         time: e.time,
+        /** Length in beats. */
         duration: e.duration,
+        /** Notes sounding together. */
         notes: e.notes.map(n => ({
+          /** Frequency in Hz. */
           frequency: n.frequency,
+          /** Steps from A4 in the note's tuning. */
           stepsFromBase: n.stepsFromBase,
+          /** Note name with octave, when the tuning has names. */
           name: n.getName()
         })),
+        /** Loudness, normally 0 to 1. */
         velocity: e.velocity
       }))
     };
@@ -353,7 +386,12 @@ export class Polymeter {
   }
 
   /** Returns the meter and position within that meter at a given absolute beat, wrapped at cycleLength. */
-  getCyclePosition(beat: number): { meter: TimeSignature; positionInMeter: number }[] {
+  getCyclePosition(beat: number): {
+    /** One of the meters. */
+    meter: TimeSignature;
+    /** Beat within that meter's measure, from 0. */
+    positionInMeter: number;
+  }[] {
     const wrapped = beat % this.cycleLength;
     return this.meters.map(meter => ({
       meter,
@@ -362,7 +400,12 @@ export class Polymeter {
   }
 
   /** Returns all downbeats for each meter within one full cycle, sorted by beat. */
-  generateGrid(): { beat: number; meterIndex: number }[] {
+  generateGrid(): {
+    /** Beat of the downbeat within the cycle, from 0. */
+    beat: number;
+    /** Index of the meter in the constructor's list. */
+    meterIndex: number;
+  }[] {
     const events: { beat: number; meterIndex: number }[] = [];
     this.meters.forEach((meter, meterIndex) => {
       for (let beat = 0; beat < this.cycleLength; beat += meter.totalBeats) {
@@ -404,7 +447,10 @@ export class MetricModulation {
     toMeter: TimeSignature,
     pivotDuration: number,
     fromTempo = 120
-  ): { newTempo: number } {
+  ): {
+    /** Tempo after the modulation, in beats of `toMeter` per minute. */
+    newTempo: number;
+  } {
     // The pivot lasts pivotDuration · denominator old beats; one new beat lasts as long.
     return { newTempo: fromTempo / (pivotDuration * fromMeter.denominator) };
   }
@@ -427,7 +473,12 @@ export class Isorhythm {
    * Returns an array of `{ note, duration }` pairs where note is from the color
    * and duration from the talea, cycling independently.
    */
-  generate(totalBeats: number): { note: number; duration: number }[] {
+  generate(totalBeats: number): {
+    /** Value from the color (pitch pattern). */
+    note: number;
+    /** Value from the talea (rhythm pattern), in beats. */
+    duration: number;
+  }[] {
     const result: { note: number; duration: number }[] = [];
     let elapsed = 0;
     let tIdx = 0;

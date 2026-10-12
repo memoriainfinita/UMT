@@ -33,7 +33,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run",
-    "docs": "typedoc"
+    "docs": "typedoc",
+    "docs:check": "typedoc --validation.notDocumented --treatValidationWarningsAsErrors --emit none"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",

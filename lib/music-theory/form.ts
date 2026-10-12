@@ -16,15 +16,21 @@ export type FormType =
 
 /** A labeled section within a formal analysis (e.g. A, B, A'). */
 export interface FormSection {
+  /** Section letter: `'A'`, `'B'`, `'C'`. */
   label: string;
+  /** Index of its first chord. */
   start: number;
+  /** Index of its last chord (inclusive). */
   end: number;
 }
 
 /** Result of a harmonic form analysis: detected type, labeled sections, and confidence (0–1). */
 export interface FormAnalysis {
+  /** The form detected, or `'unknown'`. */
   type: FormType;
+  /** The sections, in order. */
   sections: FormSection[];
+  /** 0 to 1. */
   confidence: number;
 }
 
@@ -105,6 +111,7 @@ function inferFormType(pattern: string): { type: FormType; confidence: number } 
 
 // ─── public API ─────────────────────────────────────────────────────────────
 
+/** Formal analysis of a chord progression: form type and sections, and reprises. */
 export class FormAnalyzer {
   /**
    * Analyzes harmonic form by segmenting `chords` into sections of `barsPerSection`
@@ -161,7 +168,12 @@ export class FormAnalyzer {
    * without overlapping itself; a passage inside a longer reprise already found, or
    * overlapping one, is not reported again.
    */
-  static detectReprise(chords: Chord[], minLength = 2): { start: number; length: number }[] {
+  static detectReprise(chords: Chord[], minLength = 2): {
+    /** Index of the first chord of the passage's first occurrence. */
+    start: number;
+    /** Number of chords in the passage. */
+    length: number;
+  }[] {
     const results: { start: number; length: number }[] = [];
     const n = chords.length;
     if (n < minLength * 2) return results;

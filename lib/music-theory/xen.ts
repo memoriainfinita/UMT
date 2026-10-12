@@ -32,7 +32,12 @@ export class Xen {
    *   for 12-TET's major third; 31¢ would admit its minor seventh as 7/4).
    * @returns The partial number of each note, lowest note first.
    */
-  static detectOtonal(chord: Chord, harmonicLimit = 7, toleranceCents = 15): { isOtonal: boolean; harmonics: number[] } {
+  static detectOtonal(chord: Chord, harmonicLimit = 7, toleranceCents = 15): {
+    /** Every note lies on a partial of one fundamental, within the limit and tolerance. */
+    isOtonal: boolean;
+    /** Partial number of each note, lowest note first (`[4, 5, 6]` for a major triad). */
+    harmonics: number[];
+  } {
     const freqs = chord.getNotes().map(n => n.frequency).sort((a, b) => a - b);
     const harmonics = harmonicNumbers(freqs, harmonicLimit, toleranceCents);
     return { isOtonal: harmonics !== null, harmonics: harmonics ?? [] };
@@ -47,7 +52,12 @@ export class Xen {
    * @param toleranceCents - How far each note may be from its subharmonic (default 15¢).
    * @returns The subharmonic number of each note, highest note first.
    */
-  static detectUtonal(chord: Chord, harmonicLimit = 7, toleranceCents = 15): { isUtonal: boolean; subharmonics: number[] } {
+  static detectUtonal(chord: Chord, harmonicLimit = 7, toleranceCents = 15): {
+    /** Every note lies on a subharmonic of one pitch, within the limit and tolerance. */
+    isUtonal: boolean;
+    /** Subharmonic number of each note, highest note first. */
+    subharmonics: number[];
+  } {
     // f = overtone / n, so the numbers n are proportional to 1 / f
     const inverse = chord.getNotes().map(n => 1 / n.frequency).sort((a, b) => a - b);
     const subharmonics = harmonicNumbers(inverse, harmonicLimit, toleranceCents);
@@ -65,7 +75,12 @@ export class Xen {
   static getEssentiallyJustChord(
     chord: Chord,
     _tuning?: JustIntonation
-  ): { name: string; ratios: [number, number][] } {
+  ): {
+    /** `'4:5:6 (JI major triad)'`, `'10:12:15 (JI minor triad)'`, `'4:5:6:7 (harmonic seventh chord)'` or `'Unknown JI chord'`. */
+    name: string;
+    /** The just ratio each interval of the chord is read as, as `[numerator, denominator]`. */
+    ratios: [number, number][];
+  } {
     const intervals = chord.intervalsInSteps;
     const ts = chord.tuningSystem;
 

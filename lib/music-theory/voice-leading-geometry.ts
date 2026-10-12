@@ -71,6 +71,7 @@ export function OPTIC(pcs: number[]): OPTICResult {
   return { O, P, T, I, C, cardinality: C.length };
 }
 
+/** Voice-leading geometry (Tymoczko): OPTIC equivalence and minimal voice leadings between chords. */
 export class VoiceLeadingGeometry {
   /**
    * Computes OPTIC equivalence for a chord.
@@ -91,7 +92,12 @@ export class VoiceLeadingGeometry {
    * @param a - Source chord.
    * @param b - Target chord.
    */
-  static efficientVoiceLeading(a: Chord, b: Chord): { paths: Note[][]; totalDistance: number } {
+  static efficientVoiceLeading(a: Chord, b: Chord): {
+    /** Every minimal assignment: notes of `b` in the order of `a`'s voices. */
+    paths: Note[][];
+    /** Sum of the interval classes moved, in steps. */
+    totalDistance: number;
+  } {
     const aNotes = a.getNotes();
     const bNotes = b.getNotes();
     const oct = a.tuningSystem.octaveSteps;

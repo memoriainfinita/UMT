@@ -10,9 +10,13 @@ import { Note } from './note';
 import { Chord } from './chord';
 import { EDO } from './tuning';
 
+/** A note's place on the Tonnetz grid. */
 export interface TonnetzPosition {
+  /** Perfect fifths from the origin. */
   x: number;
+  /** Major thirds from the origin. */
   y: number;
+  /** The note placed. */
   note: Note;
 }
 
@@ -33,6 +37,7 @@ function semitones(note: Note): number {
 
 const pc12 = (n: number) => ((n % 12) + 12) % 12;
 
+/** The Tonnetz: grid positions of notes (fifths by major thirds) and shortest paths between chords. 12-TET. */
 export class Tonnetz {
   /**
    * Returns the 2D Tonnetz coordinates for a note, in the fundamental domain

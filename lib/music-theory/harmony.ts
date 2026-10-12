@@ -55,15 +55,21 @@ export type VoiceLeadingIssueType =
 
 /** A specific voice-leading problem detected between two voices. */
 export interface VoiceLeadingIssue {
+  /** What the problem is. */
   type: VoiceLeadingIssueType;
+  /** Indices of the voices involved, as ordered in the arrays passed in (0 = first note). */
   voices: number[];
+  /** Readable description, with voices numbered from 1 (`'Parallel 5ths (Voices 1 and 3)'`). */
   message: string;
 }
 
 /** A doubling or spacing problem detected in a chord voicing. */
 export interface DoublingIssue {
+  /** What the problem is. */
   type: 'Doubled Leading Tone' | 'Missing Third' | 'Missing Root' | 'Missing Fifth' | 'Improper Doubling';
+  /** Indices of the voices involved in the voicing passed in; empty when a chord member is missing. */
   voices: number[];
+  /** Readable description. */
   message: string;
 }
 
@@ -72,16 +78,30 @@ export interface DoublingIssue {
  * Includes Roman numeral, function (T/S/D), modal borrowing, and cadence detection.
  */
 export interface ChordAnalysis {
+  /** The chord analyzed, as passed in. */
   chord: Chord;
+  /**
+   * Roman numeral in the local key, readable back with `parseRomanProgression`: `'ii7'`,
+   * `'V7'`, `'bVImaj7'`, `'#iv°7'`, `'ivm'` (a minor chord the key does not hold).
+   */
   roman: string;
-  degree: number;                 // 1-7, or -1 if chromatic and un-mappable
+  /** Scale degree of the root, 1-7, or -1 when the root cannot be placed on a degree. */
+  degree: number;
+  /** Tonic, subdominant or dominant function; secondary dominants and the tritone sub of V are `'D'`. */
   function: 'T' | 'S' | 'D' | 'unknown';
+  /** Every note belongs to the local key (in natural minor, also V, V7, vii° and vii°7 with the raised seventh). */
   isDiatonic: boolean;
+  /** The chord comes from a parallel mode (see `borrowedFrom`). Secondary dominants are not borrowed. */
   isBorrowed: boolean;
+  /** Mode it is borrowed from: `'minor'`, `'dorian'`, `'phrygian'`, `'mixolydian'`, `'lydian'`, `'harmonic minor'`… */
   borrowedFrom?: string;
+  /** A secondary dominant or leading-tone chord (see `secondaryTarget`). */
   isSecondary: boolean;
+  /** The secondary function: `'V7/ii'`, `'V7/IV'`, `'vii°7/V'`. The target is cased by its triad in the key. */
   secondaryTarget?: string;
+  /** Cadence formed with the next chord, read in the next chord's key: `'Authentic Cadence (V -> I)'`… (see `Harmony.analyzeCadence`). */
   cadenceWithNext?: string;
+  /** `'tritone sub of V'` for a dominant seventh on bII. */
   substitutionCandidate?: string;
   /** The key this chord was read in: the home key, or the key of the last modulation. */
   key: string;
@@ -92,10 +112,19 @@ export interface ChordAnalysis {
  * Includes the index where modulation occurs and the type (pivot, direct, etc.).
  */
 export interface ModulationEvent {
+  /** Index of the first chord read in the new key. */
   atIndex: number;
+  /** Key before the change, as passed in or as a previous event's `toKey`. */
   fromKey: string;
+  /** New key, as `'G major'` or `'C minor'`. */
   toKey: string;
+  /**
+   * `'pivot'` when the chord before `atIndex` belongs to both keys, otherwise `'direct'`.
+   * `analyzeProgression` only gives these two; `Harmony.classifyModulation` also tells
+   * `'enharmonic'`, `'chromatic'` and `'common-tone'`.
+   */
   type: 'direct' | 'pivot' | 'enharmonic' | 'chromatic' | 'common-tone';
+  /** The chord before `atIndex`, when it belongs to both keys. */
   pivotChord?: Chord;
 }
 
@@ -104,24 +133,25 @@ export interface ModulationEvent {
  * Classifies it as cadential, pedal, passing, or arpeggiated.
  */
 export interface SixFourAnalysis {
+  /** How the 6/4 chord is used; `'none'` when the chord is not in second inversion. */
   type: 'cadential' | 'pedal' | 'passing' | 'arpeggiated' | 'none';
+  /** For a cadential 6/4, the chord it resolves to (the following V). */
   resolution?: Chord;
 }
 
-/**
- * A chord borrowed from a parallel mode (modal mixture).
- * Includes the source mode, brightness value, and harmonic function.
- */
 /** One reading of a set of notes as a chord, with what ranks it (see `Harmony.detectChordsScored`). */
 export interface ChordCandidate {
   /** Chord symbol, with a slash bass when the lowest note is not the root: `'C7'`, `'C7/E'`. */
   name: string;
+  /** Root note name, without octave. */
   root: string;
+  /** Lowest note name, without octave. */
   bass: string;
   /** Key of the formula in `CHORD_FORMULAS` (`'M'`, `'7'`, `'maj9'`…). */
   quality: string;
   /** 1 for a complete chord over its root; less for each omitted member, another bass, and each tension. */
   score: number;
+  /** The lowest note is the root. */
   rootInBass: boolean;
   /** Formula members that do not sound (`'5'`; `'9'` and `'11'` in eleventh and thirteenth chords). */
   omitted: string[];
@@ -129,10 +159,17 @@ export interface ChordCandidate {
   tensions: string[];
 }
 
+/**
+ * A chord borrowed from a parallel mode (modal mixture), from `Harmony.getBorrowedChords`.
+ */
 export interface BorrowedChord {
+  /** The borrowed chord, spelled in the source mode. */
   chord: Chord;
+  /** Mode it comes from, on the same tonic: `'aeolian'`, `'dorian'`, `'mixolydian'`, `'harmonic minor'`… */
   sourceMode: string;
+  /** Brightness of the source mode: lydian 1, ionian 0 … locrian -5 (`MODE_BRIGHTNESS`; melodic minor -2, harmonic minor -3). */
   brightness: number;
+  /** Function of the chord in the home key. */
   function: 'T' | 'S' | 'D' | 'unknown';
   /**
    * The chord holds a degree that sets the source mode apart from its reference scale
@@ -146,9 +183,22 @@ export interface BorrowedChord {
  * used as the pivot point in a modulation.
  */
 export interface PivotChord {
+  /** The chord, spelled as in key A. */
   chord: Chord;
-  functionInA: { degree: number; function: 'T' | 'S' | 'D' };
-  functionInB: { degree: number; function: 'T' | 'S' | 'D' };
+  /** Its role in key A. */
+  functionInA: {
+    /** Scale degree of the root, 1-7. */
+    degree: number;
+    /** Tonic, subdominant or dominant function. */
+    function: 'T' | 'S' | 'D';
+  };
+  /** Its role in key B. */
+  functionInB: {
+    /** Scale degree of the root, 1-7. */
+    degree: number;
+    /** Tonic, subdominant or dominant function. */
+    function: 'T' | 'S' | 'D';
+  };
 }
 
 /**
@@ -156,7 +206,9 @@ export interface PivotChord {
  * The three major-third substitutions form a diminished seventh pattern.
  */
 export interface ColtraneAxis {
+  /** Root of the key passed in. */
   root: string;
+  /** The root and the roots a major third and an augmented fifth above it: `['C', 'E', 'Ab']`. */
   majorThirds: [string, string, string];
 }
 
@@ -168,10 +220,15 @@ export type SlashType = 'inversion' | 'hybrid' | 'polychord' | 'upper-structure'
  * Distinguishes inversions from hybrid chords, polychords, and upper structures.
  */
 export interface SlashAnalysis {
+  /** How the slash chord reads (an inversion when the bass is a chord tone). */
   type: SlashType;
+  /** Chord formed by the upper notes, for `'upper-structure'` and `'polychord'`. */
   upperStructure?: Chord;
+  /** The bass note. */
   lowerRoot?: Note;
+  /** Major triad on the bass, for `'polychord'`. */
   lowerChord?: Chord;
+  /** Upper notes named as intervals over the bass: `'R'`, `'M3'`, `'P5'`, `'b7'`, `'9'`, `'#11'`, `'13'`… */
   resultingTensions?: string[];
 }
 
@@ -180,8 +237,11 @@ export interface SlashAnalysis {
  * Providing a key or functional role improves spelling accuracy.
  */
 export interface RespellContext {
+  /** Key to spell in (`'Db major'`); takes precedence over `direction`. */
   keySymbol?: string;
+  /** Accepted but not read yet by `respellNote` or `respellChord`. */
   functionalRole?: 'secondary-dominant' | 'chromatic-mediant' | 'passing' | 'neighbor';
+  /** Without a key: `'ascending'` spells with sharps, `'descending'` with flats. */
   direction?: 'ascending' | 'descending';
 }
 
@@ -471,6 +531,13 @@ function detectTritoneSubOfV(chord: Chord, key: KeyInfo): boolean {
 //  Harmony
 // ============================================================================
 
+/**
+ * Tonal harmony, as static methods: progression analysis (`analyzeProgression`), chord
+ * detection (`detectChords`, `detectChordsScored`), cadences, voice leading and doubling
+ * checks, secondary and borrowed chords, modulation and pivot chords, chord-scale
+ * suggestions, negative harmony, the Coltrane axis, slash chords and enharmonic respelling.
+ * Key arguments are written `'C major'`, `'A minor'`, `'D dorian'`.
+ */
 export class Harmony {
   /**
    * Checks voice leading between two chords. Emits warnings for parallel motion,
@@ -780,9 +847,13 @@ export class Harmony {
     keySymbol: string,
     options: { spelling?: 'key' | 'written'; durations?: readonly number[]; beatsPerBar?: number; style?: 'tonal' | 'blues' } = {},
   ): {
+    /** One entry per chord, in order. */
     analysis: ChordAnalysis[];
+    /** Key changes, in order; empty when the progression stays in the key. */
     modulations: ModulationEvent[];
+    /** Chord changes per bar (with `durations`) or per chord (without them). */
     harmonicRhythm: number;
+    /** Which of the two `harmonicRhythm` measures. */
     harmonicRhythmUnit: 'per-bar' | 'per-chord';
   } {
     const unit = options.durations ? 'per-bar' : 'per-chord';
@@ -1417,7 +1488,12 @@ export class Harmony {
    * (Cm6, with the natural sixth, takes dorian or melodic minor). A chord no rule names is read by
    * its third (major or minor scale); without a third (sus2) none is suggested.
    */
-  static getSuggestedScales(chord: Chord, nextChord?: Chord, ruleset: 'berklee' | 'classical' | 'modal' = 'berklee'): { scale: string; hint?: string }[] {
+  static getSuggestedScales(chord: Chord, nextChord?: Chord, ruleset: 'berklee' | 'classical' | 'modal' = 'berklee'): {
+    /** Scale name with its root: `'G mixolydian'`. */
+    scale: string;
+    /** When the scale applies: `'standard V'`, `'if IV chord'`… */
+    hint?: string;
+  }[] {
     const ts = chord.tuningSystem;
     const oct = ts.octaveSteps;
     const rootPf = chord.preferFlats ?? false;
@@ -1533,7 +1609,16 @@ export class Harmony {
   /**
    * Detects common harmonic sequences in a chord progression.
    */
-  static detectSequence(chords: Chord[]): { type: string; confidence: number } {
+  static detectSequence(chords: Chord[]): {
+    /**
+     * `'circle-of-fifths-descending'`, `'circle-of-fifths-ascending'`, their `'diatonic-…'`
+     * forms, `'parallel-descending'`, `'parallel-ascending'`, `'pachelbel'`, `'romanesca'` or
+     * `'unknown'`.
+     */
+    type: string;
+    /** 0 to 1: 1 for an exact match, 0 for `'unknown'`. */
+    confidence: number;
+  } {
     if (chords.length < 3) return { type: 'unknown', confidence: 0 };
     const oct = chords[0].tuningSystem.octaveSteps;
     const roots = chords.map(c => ((c.rootStep % oct) + oct) % oct);
@@ -1698,7 +1783,12 @@ export class Harmony {
    * `completeness` = chord notes / scale notes (how much of the scale the chord fills).
    * Results are sorted by completeness descending.
    */
-  static getAllContainingScales(chord: Chord): { scale: Scale; completeness: number }[] {
+  static getAllContainingScales(chord: Chord): {
+    /** A scale that holds every note of the chord. */
+    scale: Scale;
+    /** Share of the scale's notes that the chord holds, 0 to 1. */
+    completeness: number;
+  }[] {
     const ts = chord.tuningSystem;
     const oct = ts.octaveSteps;
     if (oct !== 12) return [];

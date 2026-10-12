@@ -10,7 +10,9 @@ import { NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP, preferFlatsForKey } from
 export interface ScaleMatch {
   /** Scale symbol, readable by `parseScaleSymbol`: `'C major'`. */
   name: string;
+  /** Root note name: `'C'`, `'F#'`. */
   root: string;
+  /** Scale type, a key of `SCALE_PATTERNS`: `'major'`, `'dorian'`. */
   type: string;
   /** Other names of the same pattern in SCALE_PATTERNS (`'ionian'`, `'greek-hypolydian'`). */
   aliases: string[];

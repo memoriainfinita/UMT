@@ -6,8 +6,11 @@
 
 /** A named rhythmic clave or timeline pattern as a boolean onset array. */
 export interface ClavePattern {
+  /** Display name: `'Son Clave 3-2'`. */
   name: string;
+  /** One entry per step (sixteenths in a 4/4 bar for most patterns); true is an onset. */
   steps: readonly boolean[];
+  /** Short description of the pattern. */
   description: string;
 }
 

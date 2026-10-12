@@ -7,8 +7,11 @@ import { get12TETBaseName, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_
 
 /** A possible chord substitution with its type and harmonic explanation. */
 export interface SubstitutionOption {
+  /** The substitute chord. */
   chord: Chord;
+  /** Kind of substitution; `substitutionTypeName` gives it in words, in English or Spanish. */
   type: 'tritone' | 'diatonic' | 'deceptive' | 'chromatic-mediant' | 'sus4' | 'modal';
+  /** Why it works, in English: `'Tritone sub: Db7 shares the tritone with G7'`. */
   explanation: string;
 }
 

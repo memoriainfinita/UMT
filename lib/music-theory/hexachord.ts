@@ -26,9 +26,13 @@ const HEXACHORD_DEFS: Record<HexachordType, { start: string; notes: string[] }> 
 
 const SYLLABLES: HexachordSyllable[] = ['ut', 're', 'mi', 'fa', 'sol', 'la'];
 
+/** Guidonian hexachords: the syllable of a note in each hexachord, and mutation between them. */
 export class Hexachord {
+  /** Hexachordum naturale, C to A: `['C', 'D', 'E', 'F', 'G', 'A']`. */
   static readonly NATURALE = HEXACHORD_DEFS.naturale.notes;
+  /** Hexachordum durum, G to E, with B natural. */
   static readonly DURUM = HEXACHORD_DEFS.durum.notes;
+  /** Hexachordum molle, F to D, with B flat. */
   static readonly MOLLE = HEXACHORD_DEFS.molle.notes;
 
   /**
@@ -55,7 +59,12 @@ export class Hexachord {
     fromHex: HexachordType,
     toHex: HexachordType,
     sharedNote: Note
-  ): { fromSyllable: HexachordSyllable; toSyllable: HexachordSyllable } | null {
+  ): {
+    /** Syllable of the shared note in the hexachord left. */
+    fromSyllable: HexachordSyllable;
+    /** Syllable of the same note in the hexachord entered. */
+    toSyllable: HexachordSyllable;
+  } | null {
     const from = this.getSyllable(sharedNote, fromHex);
     const to = this.getSyllable(sharedNote, toHex);
     if (!from || !to) return null;

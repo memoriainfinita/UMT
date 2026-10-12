@@ -10,10 +10,13 @@ import { parseScaleSymbol } from './parser';
 
 /** The detected Urlinie (fundamental melodic line) and its type (3-, 5-, or 8-line). */
 export interface UrlinieResult {
+  /** The notes of the line, from the head tone down to the tonic. */
   line: Note[];
+  /** Which degree the line descends from: ^3, ^5 or ^8. */
   type: '3-line' | '5-line' | '8-line';
 }
 
+/** Basic Schenkerian reduction (approximate): Urlinie, Ursatz and structural levels of a progression. */
 export class Schenker {
   /**
    * Attempts to identify an Urlinie (fundamental melodic line) in a melody.
@@ -75,7 +78,12 @@ export class Schenker {
     progression: Chord[],
     melody: Note[],
     keySymbol: string
-  ): { bass: Note[]; melody: Note[] } | null {
+  ): {
+    /** Roots of the bass arpeggiation I-V-I found in the progression (two or three notes). */
+    bass: Note[];
+    /** The Urlinie (see `findUrlinie`). */
+    melody: Note[];
+  } | null {
     const urlinie = this.findUrlinie(melody, keySymbol);
     if (!urlinie) return null;
 

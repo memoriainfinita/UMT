@@ -209,10 +209,13 @@ export const SCALE_PATTERNS: Record<string, readonly number[]> = {
  * Verified against `Scale.getDiatonicChords` for each mode rooted at C.
  */
 export interface ModalDegreeQualities {
+  /** Triad quality on each degree, 1 to 7 (`''` major, `'m'`, `'dim'`, `'aug'`). */
   readonly triads: readonly string[];
+  /** Seventh-chord quality on each degree, 1 to 7 (`'maj7'`, `'m7'`, `'7'`, `'m7b5'`…). */
   readonly sevenths: readonly string[];
 }
 
+/** Chord qualities on each degree of each mode, by mode name (`'dorian'`, `'harmonic minor'`…). See `ModalDegreeQualities`. */
 export const MODAL_DEGREE_QUALITIES: Readonly<Record<string, ModalDegreeQualities>> = Object.freeze({
   // ── Diatonic (major system) ──
   'ionian':     Object.freeze({ triads: ['', 'm', 'm', '', '', 'm', 'dim'],     sevenths: ['maj7','m7','m7','maj7','7','m7','m7b5'] }),
@@ -249,15 +252,19 @@ export const MODAL_DEGREE_QUALITIES: Readonly<Record<string, ModalDegreeQualitie
  * `Scale.getRelativeMode()` navigation within classical modal systems.
  */
 export interface ModeParent {
-  readonly family: string;       // parent scale type (e.g. 'major', 'harmonic minor')
-  readonly degree: number;       // 1-indexed degree within the family
-  readonly familyModes: readonly string[];  // modes in order, for relative-mode lookup
+  /** Parent scale type: `'major'`, `'harmonic minor'`, `'melodic minor'`… */
+  readonly family: string;
+  /** Degree of the parent scale the mode starts on, from 1. */
+  readonly degree: number;
+  /** Modes of the family in order, from degree 1. */
+  readonly familyModes: readonly string[];
 }
 
 const MAJOR_FAMILY = ['ionian', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'aeolian', 'locrian'];
 const HARMONIC_MINOR_FAMILY = ['harmonic minor', 'locrian #6', 'ionian #5', 'dorian #4', 'phrygian dominant', 'lydian #2', 'super locrian bb7'];
 const MELODIC_MINOR_FAMILY = ['melodic minor', 'dorian b2', 'lydian augmented', 'lydian dominant', 'mixolydian b6', 'locrian #2', 'altered'];
 
+/** Parent family and degree of each mode, by mode name (`'dorian'` → major, degree 2). See `ModeParent`. */
 export const MODE_PARENT_FAMILY: Readonly<Record<string, ModeParent>> = Object.freeze({
   // Major family
   'ionian':     Object.freeze({ family: 'major', degree: 1, familyModes: MAJOR_FAMILY }),

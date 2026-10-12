@@ -6,7 +6,9 @@ import { TimeSignature } from './rhythm';
 
 /** A repeating rhythmic cycle. */
 export interface RhythmicCycle {
+  /** Display name: `'Teental (Tintal)'`, `'Bulerías'`. */
   name: string;
+  /** Musical tradition it belongs to. */
   tradition: 'hindustani' | 'carnatic' | 'flamenco' | 'aksak';
   /** Pulses in one cycle (matras, aksharas, beats of the compás, or eighths). */
   beats: number;
@@ -20,6 +22,7 @@ export interface RhythmicCycle {
   firstCount?: number;
   /** Accented counts, in the cycle's own counting (flamenco). Without it the group starts are accented. */
   accents?: number[];
+  /** Reference the cycle was checked against. */
   source: string;
 }
 

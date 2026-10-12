@@ -11,6 +11,7 @@
 
 /** A tetrachord or pentachord cell (jins) used as a building block in maqam construction. */
 export interface Jins {
+  /** Display name: `'Rast'`, `'Bayati'`, `'Hijaz'`. */
   name: string;
   /** Interval pattern in quarter-tones. */
   intervals: readonly number[];
@@ -18,6 +19,7 @@ export interface Jins {
 
 /** A maqam scale: its constituent ajnas, full note sequence in quarter-tones, and emotional character. */
 export interface Maqam {
+  /** Display name: `'Rast'`. */
   name: string;
   /** Ajnas in scale order, from the tonic up. */
   ajnas: readonly Jins[];

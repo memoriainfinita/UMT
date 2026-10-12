@@ -1,8 +1,12 @@
 import { Cents, Ratio } from './types';
 
+/** A pitch interval, held as its size in cents. */
 export class Interval {
   /** Create an interval from a value in cents. Prefer `fromCents()` or `fromRatio()` for clarity. */
-  constructor(public cents: Cents) {}
+  constructor(
+    /** Size in cents (1200 = octave); negative for a descending interval. */
+    public cents: Cents,
+  ) {}
 
   /**
    * Create an interval from a frequency ratio.

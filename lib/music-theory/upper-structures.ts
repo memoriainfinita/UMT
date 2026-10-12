@@ -8,9 +8,13 @@ import { preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from
 
 /** An upper-structure triad voiced over a dominant chord, with its resulting tensions and label. */
 export interface UpperStructure {
+  /** The major triad played above the dominant. */
   triad: Chord;
+  /** What the triad adds over the dominant: `['9', '#11', '13']`. */
   tensions: string[];
+  /** The dominant seventh chord underneath. */
   overChord: Chord;
+  /** Roman numeral of the triad's root over the dominant's root: `'II'`, `'bVI'`. */
   label: string;
 }
 

@@ -7,8 +7,11 @@ import { EDO } from './tuning';
 
 /** A rule violation found during species counterpoint analysis. */
 export interface CounterpointIssue {
+  /** `'Parallel 5th'`, `'Dissonance on Strong Beat'`, `'Melodic Tritone'`, `'Modal Finalis'`, `'Modal Ambitus'`… */
   type: string;
+  /** Position where it happens, from 1 (a note of the cantus, or a slot in the species grid). */
   beat?: number;
+  /** Readable description. */
   description: string;
 }
 
@@ -199,7 +202,16 @@ export class Canon {
    * Detects imitative entries between voices.
    * Returns matches: which voice, at what beat offset, what transposition, whether inverted.
    */
-  static detectImitation(voices: Note[][]): { voice: number; offset: number; transposition: number; inversion: boolean }[] {
+  static detectImitation(voices: Note[][]): {
+    /** Index of the imitating voice (the first voice is the model). */
+    voice: number;
+    /** Note index in that voice where the imitation starts. */
+    offset: number;
+    /** Steps from the model's first note to the imitation's first note. */
+    transposition: number;
+    /** The imitation moves by inverted intervals. */
+    inversion: boolean;
+  }[] {
     if (voices.length < 2) return [];
     const results: { voice: number; offset: number; transposition: number; inversion: boolean }[] = [];
 

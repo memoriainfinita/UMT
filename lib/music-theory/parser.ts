@@ -367,7 +367,12 @@ export function parseRomanProgression(progression: string, keySymbol: string, tu
 export function parsePolychord(
   symbol: string,
   tuning: TuningSystem = TET12
-): { upper: Chord; lower: Chord } {
+): {
+  /** The chord on top. */
+  upper: Chord;
+  /** The chord below (for `'D/C'`, the major triad on C). */
+  lower: Chord;
+} {
   const s = symbol.trim();
 
   // Explicit polychord separator: `|`

@@ -316,7 +316,12 @@ export function freqToMidi(freq: Hertz, baseA4: Hertz = 440): MidiNote {
  * Converts a frequency to the closest valid MIDI note and the pitch bend offset in cents.
  * Useful for microtonal playback via standard MIDI.
  */
-export function freqToMidiPitchBend(freq: Hertz, baseA4: Hertz = 440): { note: MidiNote; centsOffset: number } {
+export function freqToMidiPitchBend(freq: Hertz, baseA4: Hertz = 440): {
+  /** Nearest MIDI note number (not clamped to 0-127). */
+  note: MidiNote;
+  /** Distance from that note, in cents, -50 to 50. */
+  centsOffset: number;
+} {
   const exactMidi = 69 + 12 * Math.log2(freq / baseA4);
   const note = Math.round(exactMidi);
   const centsOffset = (exactMidi - note) * 100;

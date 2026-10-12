@@ -14,8 +14,11 @@ import {
 
 /** Optional metadata fields for MusicXML score headers. */
 export interface MusicXMLMetadata {
+  /** Work title. */
   title?: string;
+  /** Composer credit. */
   composer?: string;
+  /** Name of the part (default `'Music'`). */
   partName?: string;
 }
 

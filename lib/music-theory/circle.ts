@@ -6,8 +6,11 @@ import { MODE_BRIGHTNESS } from './dictionaries';
 
 /** A key related to a reference key, with its relationship type and circle-of-fifths distance. */
 export type RelatedKey = {
+  /** The related key, in the circle's notation: major upper case (`'G'`), minor lower case (`'e'`). */
   key: string;
+  /** How it relates to the reference key; `'neighbor'` is two steps away on the circle. */
   relationship: 'relative' | 'parallel' | 'dominant' | 'subdominant' | 'neighbor';
+  /** Steps on the circle of fifths: 0 relative and parallel, 1 dominant and subdominant, 2 neighbors. */
   distance: number;
 };
 
@@ -16,8 +19,11 @@ export type RelatedKey = {
  * For example, D dorian is derived from C major (D is the 2nd degree of C major).
  */
 export interface ModalKey {
+  /** Root of the mode, as passed in: `'D'`. */
   root: string;
+  /** Mode name in lower case: `'dorian'`. */
   mode: string;
+  /** Major key the mode belongs to (`'C'` for D dorian); empty when the mode is not one of the seven diatonic modes. */
   parentMajorKey: string;
 }
 
@@ -54,7 +60,9 @@ const CANONICAL_DIATONIC_MODES = ['lydian', 'ionian', 'mixolydian', 'dorian', 'a
  * Methods that return keys follow this same convention - callers should use case to distinguish mode.
  */
 export class CircleOfFifths {
+  /** Major keys clockwise from C, in upper case. */
   static readonly majorKeys = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Db', 'Ab', 'Eb', 'Bb', 'F'];
+  /** Minor keys clockwise from A, in lower case (`'a'` is A minor), aligned with their relative majors. */
   static readonly minorKeys = ['a', 'e', 'b', 'f#', 'c#', 'g#', 'd#', 'bb', 'f', 'c', 'g', 'd'];
 
   /** Normalizes enharmonic key names to the canonical form used in the circle arrays. */
@@ -77,7 +85,12 @@ export class CircleOfFifths {
    * Returns the key signature of a key as written: Gb → 6 flats, F# → 6 sharps, C# → 7 sharps,
    * eb → 6 flats. Theoretical keys go past 7 (G# → 8 sharps). Unrecognized keys → no accidentals.
    */
-  static getSignature(key: string): { sharps: number; flats: number } {
+  static getSignature(key: string): {
+    /** Number of sharps in the key signature. */
+    sharps: number;
+    /** Number of flats in the key signature. */
+    flats: number;
+  } {
     const match = key.match(/^([A-Ga-g])(#{1,2}|b{1,2})?$/);
     if (!match) return { sharps: 0, flats: 0 };
     const [, letter, acc = ''] = match;

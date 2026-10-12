@@ -11,6 +11,7 @@
  */
 
 export interface Raga {
+  /** Display name: `'Yaman'`. */
   name: string;
   /** Ascending pattern - semitone offsets from tonic (Sa = 0). */
   aroha: readonly number[];
@@ -34,6 +35,7 @@ export interface Raga {
 /** Svara names indexed by the numbers used in `vadi` and `samvadi` (index 0 unused). */
 export const SVARA_NAMES = ['', 'Sa', 'Re', 'Ga', 'Ma', 'Pa', 'Dha', 'Ni'] as const;
 
+/** Ten Hindustani ragas by id (`'yaman'`, `'bhairav'`…), checked against the Wikipedia raga infoboxes. */
 export const RAGAS: Record<string, Raga> = Object.freeze({
   'yaman': {
     name: 'Yaman',

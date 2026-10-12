@@ -2,14 +2,21 @@ import { Chord } from './chord';
 import { parseRomanProgression } from './parser';
 import { TuningSystem, TET12 } from './tuning';
 
+/** A named chord progression of `PROGRESSIONS`. */
 export interface ProgressionEntry {
+  /** Its id in `PROGRESSIONS`: `'ii-V-I'`, `'blues-12'`. */
   name: string;
+  /** Roman numerals, read with `parseRomanProgression` in the key given to `getProgression`. */
   romanNumerals: string[];
+  /** What it is and where it is used. */
   description: string;
+  /** `'jazz'`, `'pop'`, `'blues'`, `'classical'`, `'flamenco'`, `'folk'`. */
   style: string;
+  /** Key it is usually played in, when there is one (`'Bb major'` for the jazz blues). */
   defaultKey?: string;
 }
 
+/** Named progressions by id: ii-V-I, twelve-bar blues, rhythm changes, Coltrane changes, Andalusian cadence… Build one with `getProgression(id, key)`. */
 export const PROGRESSIONS: Record<string, ProgressionEntry> = {
   'ii-V-I': {
     name: 'ii-V-I',

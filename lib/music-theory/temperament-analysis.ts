@@ -7,16 +7,23 @@ import { TuningSystem, JustIntonation } from './tuning';
 
 /** A single row in a temperament comparison: one tuning vs. one JI interval. */
 export interface ComparisonEntry {
+  /** Name of the tuning compared. */
   tuningName: string;
+  /** The just interval, as `[numerator, denominator]`. */
   intervalRatio: [number, number];
+  /** Size of the tuning's closest interval, in cents. */
   tuningCents: number;
+  /** Size of the just interval, in cents. */
   justCents: number;
+  /** Absolute difference between the two, in cents. */
   errorCents: number;
 }
 
 /** Full comparison matrix across tuning systems and JI reference intervals. */
 export interface ComparisonTable {
+  /** The just intervals compared, as ratios. */
   intervals: [number, number][];
+  /** One row per tuning, one entry per interval, in the order of `intervals`. */
   entries: ComparisonEntry[][];
 }
 
@@ -76,7 +83,14 @@ export class TemperamentAnalysis {
   static detectWolfIntervals(
     tuning: TuningSystem,
     threshold = 20
-  ): { interval: number; from: number; errorCents: number }[] {
+  ): {
+    /** Size of the interval in steps of the tuning. */
+    interval: number;
+    /** Step the out-of-tune interval starts on. */
+    from: number;
+    /** Distance from the just consonance it stands for, in cents. */
+    errorCents: number;
+  }[] {
     const wolves: { interval: number; from: number; errorCents: number }[] = [];
     const period = tuning.octaveSteps;
     const consonances = [[6, 5], [5, 4], [4, 3], [3, 2], [8, 5], [5, 3]].map(([n, d]) => 1200 * Math.log2(n / d));
@@ -100,7 +114,16 @@ export class TemperamentAnalysis {
    * `ratioText` is exact. The Mercator comma (3^53/2^84) is beyond Number precision:
    * its `ratio` is the nearest doubles and its cents are computed from the exponents.
    */
-  static getCommas(): { name: string; ratio: [number, number]; ratioText: string; cents: number }[] {
+  static getCommas(): {
+    /** `'Syntonic comma'`, `'Pythagorean comma'`, `'Schisma'`… */
+    name: string;
+    /** As `[numerator, denominator]` (may lose precision for very large ratios; see `ratioText`). */
+    ratio: [number, number];
+    /** Exact ratio as text: `'81/80'`. */
+    ratioText: string;
+    /** Size in cents, to three decimals. */
+    cents: number;
+  }[] {
     const round3 = (c: number) => Math.round(c * 1000) / 1000;
     const comma = (name: string, n: number, d: number) =>
       ({ name, ratio: [n, d] as [number, number], ratioText: `${n}/${d}`, cents: round3(1200 * Math.log2(n / d)) });
@@ -141,7 +164,12 @@ export class TemperamentAnalysis {
  * @param jiRatio - [numerator, denominator] ratio.
  * @param edoSize - Number of steps per octave in the target EDO.
  */
-export function mapJItoEDO(jiRatio: [number, number], edoSize: number): { step: number; errorCents: number } {
+export function mapJItoEDO(jiRatio: [number, number], edoSize: number): {
+  /** Closest step of the EDO. */
+  step: number;
+  /** Absolute distance from the just interval, in cents. */
+  errorCents: number;
+} {
   const justCents = 1200 * Math.log2(jiRatio[0] / jiRatio[1]);
   const stepSize = 1200 / edoSize;
   const step = Math.round(justCents / stepSize);
@@ -154,7 +182,12 @@ export function mapJItoEDO(jiRatio: [number, number], edoSize: number): { step: 
  * @param jiRatios - Array of [numerator, denominator] ratios.
  * @param maxSize - Maximum EDO size to search (default 72).
  */
-export function bestEDOFor(jiRatios: [number, number][], maxSize = 72): { size: number; totalError: number } {
+export function bestEDOFor(jiRatios: [number, number][], maxSize = 72): {
+  /** Number of equal divisions of the octave. */
+  size: number;
+  /** Sum of the absolute errors of all the ratios, in cents. */
+  totalError: number;
+} {
   let bestSize = 12;
   let bestError = Infinity;
 

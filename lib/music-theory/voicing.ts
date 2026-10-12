@@ -9,6 +9,7 @@ import { parseChordSymbol } from './parser';
 
 /** One sounding note of a voicing, bottom to top. */
 export interface VoicedNote {
+  /** Note name with octave: `'E4'`. */
   note: string;
   /** Chord member (`'R'`, `'3'`, `'b7'`, `'9'`…), or null for a note outside the chord. */
   degree: string | null;
@@ -16,10 +17,13 @@ export interface VoicedNote {
 
 /** Result of `analyzeVoicing`. */
 export interface VoicingAnalysis {
+  /** Name of the chord the notes are read as (passed in, or the best detection). */
   chord: string;
   /** Notes from the bass up. */
   voices: VoicedNote[];
+  /** Lowest note, with octave. */
   bass: string;
+  /** Chord member in the bass (`'R'`, `'3'`, `'5'`, `'b7'`…), or null for a note outside the chord. */
   bassDegree: string | null;
   /** 0 root position, 1 first (third in the bass), 2 second (fifth), 3 third (seventh); null for any other bass. */
   inversion: number | null;

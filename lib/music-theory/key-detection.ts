@@ -4,8 +4,11 @@ import { preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from
 
 /** A pair of key profiles: weights of the 12 pitch classes above the tonic, major and minor. */
 export interface KeyProfile {
+  /** 12 weights for a major key, from the tonic up by semitones. */
   major: readonly number[];
+  /** 12 weights for a minor key, from the tonic up by semitones. */
   minor: readonly number[];
+  /** Where the weights come from. */
   source: string;
 }
 
@@ -13,7 +16,7 @@ export interface KeyProfile {
  * Key profiles for correlation key finding, as listed by Craig Sapp for Humdrum's `keycor`
  * (extras.humdrum.org/man/keycor). Index 0 is the tonic.
  */
-export const KEY_PROFILES = {
+export const KEY_PROFILES: Readonly<Record<'krumhansl' | 'aarden' | 'bellman' | 'temperley' | 'simple', KeyProfile>> = {
   krumhansl: {
     major: [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88],
     minor: [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17],
@@ -39,7 +42,7 @@ export const KEY_PROFILES = {
     minor: [2, 0, 1, 1, 0, 1, 0, 2, 1, 0, 0.5, 0.5],
     source: 'Simple weights (Sapp, Key-Profile Comparisons in Key-Finding by Correlation, ICMPC 2008)',
   },
-} as const satisfies Record<string, KeyProfile>;
+};
 
 /** Name of a preset in `KEY_PROFILES`. */
 export type KeyProfileName = keyof typeof KEY_PROFILES;
@@ -55,9 +58,9 @@ export interface KeyDetectionOptions {
  * Implements correlation key finding (Krumhansl-Schmuckler) with a choice of key profiles.
  */
 export class KeyDetection {
-  // Statistical profiles of pitch class distributions in major and minor keys
-  // Krumhansl-Kessler, the default (KEY_PROFILES.krumhansl)
+  /** Krumhansl-Kessler major weights, the default profile (`KEY_PROFILES.krumhansl.major`). */
   static readonly majorProfile = [...KEY_PROFILES.krumhansl.major];
+  /** Krumhansl-Kessler minor weights, the default profile (`KEY_PROFILES.krumhansl.minor`). */
   static readonly minorProfile = [...KEY_PROFILES.krumhansl.minor];
 
   /**
@@ -70,7 +73,12 @@ export class KeyDetection {
    * @returns Array of possible keys sorted by confidence (Pearson correlation coefficient).
    * @throws RangeError if `durations` does not match `notes` in length, or holds a negative or non-finite value.
    */
-  static detect(notes: Note[], durations?: readonly number[], options: KeyDetectionOptions = {}): { key: string, confidence: number }[] {
+  static detect(notes: Note[], durations?: readonly number[], options: KeyDetectionOptions = {}): {
+    /** Key name with a capitalized mode: `'C Major'`, `'Eb Minor'`. */
+    key: string;
+    /** Pearson correlation with the profile, -1 to 1. */
+    confidence: number;
+  }[] {
     if (durations !== undefined && durations.length !== notes.length) {
       throw new RangeError(`KeyDetection.detect: ${notes.length} notes but ${durations.length} durations`);
     }
@@ -89,7 +97,12 @@ export class KeyDetection {
    * @returns Array of possible keys sorted by confidence; empty when all weights are 0.
    * @throws RangeError if there are not 12 weights, or one is negative or non-finite.
    */
-  static detectFromHistogram(weights: readonly number[], options: KeyDetectionOptions = {}): { key: string, confidence: number }[] {
+  static detectFromHistogram(weights: readonly number[], options: KeyDetectionOptions = {}): {
+    /** Key name with a capitalized mode: `'C Major'`, `'Eb Minor'`. */
+    key: string;
+    /** Pearson correlation with the profile, -1 to 1. */
+    confidence: number;
+  }[] {
     if (weights.length !== 12) {
       throw new RangeError(`KeyDetection.detectFromHistogram: expected 12 weights, got ${weights.length}`);
     }

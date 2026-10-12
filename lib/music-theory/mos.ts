@@ -70,6 +70,7 @@ export class MOS {
 import { Chord } from './chord';
 import { JustIntonation } from './tuning';
 
+/** Comma pump detection: pitch drift of a just-intonation progression. */
 export class CommaPump {
   /**
    * Detects if a chord progression drifts in pitch due to JI comma accumulation.
@@ -84,7 +85,12 @@ export class CommaPump {
   static detect(
     chords: Chord[],
     tuning: JustIntonation
-  ): { drift: number; commaType?: 'syntonic' | 'pythagorean' | 'septimal' } {
+  ): {
+    /** Absolute drift after the progression, in cents; 0 for a progression without drift. */
+    drift: number;
+    /** The comma the drift matches (within 3 cents, 5 for septimal), if any. */
+    commaType?: 'syntonic' | 'pythagorean' | 'septimal';
+  } {
     if (chords.length < 2) return { drift: 0 };
 
     // Sum up the pitch drift: consecutive root intervals

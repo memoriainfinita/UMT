@@ -12,8 +12,11 @@ import { spellPitch, parseKey, layoutMeasures, LaidEvent, TICKS_PER_WHOLE } from
 
 /** Optional metadata fields for LilyPond header block. */
 export interface LPMetadata {
+  /** `title` of the LilyPond header. */
   title?: string;
+  /** `composer` of the LilyPond header. */
   composer?: string;
+  /** `opus` of the LilyPond header. */
   opus?: string;
 }
 

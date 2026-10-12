@@ -9,11 +9,17 @@ import { preferFlatsForKey, get12TETBaseName, spellByLetter, writtenRoot } from 
  * degrees that differ from the parallel major, jazz avoid notes, and parent-family info.
  */
 export interface ModalCharacteristics {
+  /** Degrees (1-7) that differ from the major scale on the same root (12-TET heptatonic scales). */
   characteristicDegrees: number[];
+  /** The same degrees with their alteration against major: dorian `['b3', 'b7']`, lydian `['#4']`. */
   characteristicIntervals: string[];
+  /** From `MODE_BRIGHTNESS`: lydian 1, ionian 0 … locrian -5; 0 for a scale it does not list. */
   brightness: number;
+  /** Degrees a semitone above a tone of the tonic triad (traditional jazz avoid notes): 4 in ionian. */
   avoidNotes: number[];
+  /** Parent scale family (`'major'`, `'melodic minor'`…), when the mode belongs to one. */
   parentScaleName?: string;
+  /** Degree of the parent scale the mode starts on, from 1 (dorian is 2). */
   parentModeDegree?: number;
 }
 

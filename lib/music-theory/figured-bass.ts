@@ -31,6 +31,7 @@ const IMPLIED_FIGURES: Record<string, number[]> = {
   '3,7': [5], '5,7': [3], '5,6': [3], '3,4': [6], '2': [4, 6], '2,4': [6], '2,4,6': [], '9': [3, 5],
 };
 
+/** Figured bass: parsing figures, realizing them over a bass note, and four-voice (SATB) realization. */
 export class FiguredBass {
   /**
    * Reads a figure string into {num, acc} parts as written (`'6/4'`, `'#6'`, `'b7'`). A bare
@@ -99,7 +100,12 @@ export class FiguredBass {
    * @returns Object with `intervals` (semitone offsets above bass) and
    *   `accidentals` (Map from interval index to accidental).
    */
-  static parse(symbol: string): { intervals: number[]; accidentals: Map<number, FigureAccidental> } {
+  static parse(symbol: string): {
+    /** Semitones above the bass, one per figure. */
+    intervals: number[];
+    /** Accidental of each figure that has one, keyed by its index in `intervals`. */
+    accidentals: Map<number, FigureAccidental>;
+  } {
     const written = this.parseFigureParts(symbol);
     const plainTriad = written.every(p => (p.num === 3 || p.num === 5) && p.acc === undefined);
     const parts = plainTriad ? this.completeFigures(written).sort((a, b) => a.num - b.num) : written;

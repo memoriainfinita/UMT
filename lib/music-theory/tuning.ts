@@ -12,6 +12,7 @@ import { get12TETName } from './utils';
  */
 export abstract class TuningSystem {
   constructor(
+    /** Display name: `'12-TET'`, `'Ptolemaic Just Intonation'`, `'Werckmeister III'`. */
     public name: string,
     /** Reference frequency for step 0 (A4). Default: 440 Hz. */
     public baseFrequency: Hertz = 440

@@ -17,7 +17,12 @@ export class NeoRiemannian {
    * perfect fifth, in any inversion or doubling. Anything else is `null` (G7, Cmaj7, Cadd9,
    * Cdim, Csus4), so P, L and R return `null` for it too.
    */
-  static getTriadType(chord: Chord): { rootStep: number, isMajor: boolean } | null {
+  static getTriadType(chord: Chord): {
+    /** Root of the triad, in steps from A4. */
+    rootStep: number;
+    /** Major (true) or minor (false). */
+    isMajor: boolean;
+  } | null {
     const oct = chord.tuningSystem.octaveSteps;
     const ts = chord.tuningSystem;
     const pcs = new Set(chord.intervalsInSteps.map(i => ((i % oct) + oct) % oct));

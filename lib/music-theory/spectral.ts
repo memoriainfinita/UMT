@@ -18,7 +18,12 @@ export class Spectral {
    * Computes sum and difference combination tones up to `order`.
    * Only non-negative tones are returned.
    */
-  static combinationTones(f1: Hertz, f2: Hertz, order = 2): { sum: Hertz[]; difference: Hertz[] } {
+  static combinationTones(f1: Hertz, f2: Hertz, order = 2): {
+    /** Sum tones m·f1 + n·f2, for m and n from 1 to `order`. */
+    sum: Hertz[];
+    /** Difference tones |m·f1 − n·f2|, without zeros. */
+    difference: Hertz[];
+  } {
     const sum: Hertz[] = [];
     const difference: Hertz[] = [];
     for (let m = 1; m <= order; m++) {
