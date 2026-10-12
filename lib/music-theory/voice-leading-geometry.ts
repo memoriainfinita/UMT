@@ -16,6 +16,7 @@ import { SetTheory } from './set-theory';
 /**
  * A chord under the OPTIC equivalences, each one added to the previous (O, OP, OPT, OPTI,
  * OPTIC), in 12-TET pitch classes.
+ * @category Microtonal / Xenharmonic
  */
 export interface OPTICResult {
   /** O: octave equivalence - pitch classes in voice order, doublings kept */
@@ -54,6 +55,7 @@ function zeroedNormal(sorted: number[], oct: number): number[] {
  * (12-TET semitones), in voice order: (0, 4, 7) → T [0, 4, 7], I and C [0, 3, 7].
  *
  * @param pcs - Pitches or pitch classes, one per voice.
+ * @category Microtonal / Xenharmonic
  */
 export function OPTIC(pcs: number[]): OPTICResult {
   const oct = 12;
@@ -71,7 +73,10 @@ export function OPTIC(pcs: number[]): OPTICResult {
   return { O, P, T, I, C, cardinality: C.length };
 }
 
-/** Voice-leading geometry (Tymoczko): OPTIC equivalence and minimal voice leadings between chords. */
+/**
+ * Voice-leading geometry (Tymoczko): OPTIC equivalence and minimal voice leadings between chords.
+ * @category Microtonal / Xenharmonic
+ */
 export class VoiceLeadingGeometry {
   /**
    * Computes OPTIC equivalence for a chord.

@@ -2,7 +2,10 @@ import { Chord } from './chord';
 import { parseRomanProgression } from './parser';
 import { TuningSystem, TET12 } from './tuning';
 
-/** A named chord progression of `PROGRESSIONS`. */
+/**
+ * A named chord progression of `PROGRESSIONS`.
+ * @category Tonal harmony
+ */
 export interface ProgressionEntry {
   /** Its id in `PROGRESSIONS`: `'ii-V-I'`, `'blues-12'`. */
   name: string;
@@ -16,7 +19,10 @@ export interface ProgressionEntry {
   defaultKey?: string;
 }
 
-/** Named progressions by id: ii-V-I, twelve-bar blues, rhythm changes, Coltrane changes, Andalusian cadence… Build one with `getProgression(id, key)`. */
+/**
+ * Named progressions by id: ii-V-I, twelve-bar blues, rhythm changes, Coltrane changes, Andalusian cadence… Build one with `getProgression(id, key)`.
+ * @category Tonal harmony
+ */
 export const PROGRESSIONS: Record<string, ProgressionEntry> = {
   'ii-V-I': {
     name: 'ii-V-I',
@@ -124,6 +130,7 @@ export const PROGRESSIONS: Record<string, ProgressionEntry> = {
 /**
  * Returns a realized Chord[] for the named progression in the given key.
  * A bar with two chords ("ii7 V7") gives both, in order.
+ * @category Tonal harmony
  */
 export function getProgression(id: string, keySymbol: string, tuning: TuningSystem = TET12): Chord[] {
   const entry = PROGRESSIONS[id];

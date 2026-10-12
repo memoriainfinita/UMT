@@ -4,9 +4,15 @@
  */
 import { Chord } from './chord';
 
-/** How `formatChordSymbol` writes qualities. */
+/**
+ * How `formatChordSymbol` writes qualities.
+ * @category Tonal harmony
+ */
 export type ChordSymbolStyle = 'standard' | 'symbols' | 'short';
-/** Languages of `chordLongName` and `localizeNoteName`. */
+/**
+ * Languages of `chordLongName` and `localizeNoteName`.
+ * @category Tonal harmony
+ */
 export type ChordNameLanguage = 'en' | 'es';
 
 const SOLFEGE: Record<string, string> = { C: 'Do', D: 'Re', E: 'Mi', F: 'Fa', G: 'Sol', A: 'La', B: 'Si' };
@@ -24,6 +30,7 @@ function splitSymbol(symbol: string): { root: string; suffix: string; bass?: str
 /**
  * A note name in another language. Short form keeps the accidental sign (`'F#'` → `'Fa#'`);
  * long form spells it (`'F#'` → `'F sharp'` / `'Fa sostenido'`). An octave number is kept.
+ * @category Tonal harmony
  */
 export function localizeNoteName(name: string, language: ChordNameLanguage, long = false): string {
   const m = name.match(/^([A-G])(#{1,2}|b{1,2})?(-?\d+)?$/);
@@ -53,6 +60,7 @@ const STYLE_RULES: Record<Exclude<ChordSymbolStyle, 'standard'>, [RegExp, string
  * - `'symbols'`: jazz symbols (CΔ7, C-7, Cø7, C°7, C+, C-Δ7)
  * - `'short'`: M for major seventh (CM7, CM9)
  * @example formatChordSymbol('F#m7b5', { style: 'symbols', roots: 'solfege' }) // 'Fa#ø7'
+ * @category Tonal harmony
  */
 export function formatChordSymbol(
   chord: Chord | string,
@@ -93,6 +101,7 @@ const QUALITY_ALIASES: Record<string, string> = {
  * `'Fa sostenido menor'`. A slash bass reads "over E" / "con bajo en Mi". Qualities beyond
  * triads, sixths, suspensions and seventh chords keep their symbol after the root
  * (`'C 7#9'`, `'Do 7#9'`).
+ * @category Tonal harmony
  */
 export function chordLongName(chord: Chord | string, language: ChordNameLanguage = 'en'): string {
   const { root, suffix, bass } = splitSymbol(typeof chord === 'string' ? chord : chord.name);
@@ -142,6 +151,7 @@ const SCALE_NAMES_ES: Record<string, string> = {
  * Roots are in solfège in Spanish and in letters in English unless `roots` says otherwise.
  * @example scaleName('F# lydian dominant', 'es') // 'Fa# lidio dominante'
  * @example scaleName('A harmonic minor', 'en', { roots: 'solfege' }) // 'La harmonic minor'
+ * @category Tonal harmony
  */
 export function scaleName(
   name: string,
@@ -175,6 +185,7 @@ const CADENCE_NAMES: Record<string, Record<ChordNameLanguage, [string, string]>>
  * A cadence from `Harmony.analyzeCadence` (or `cadenceWithNext` of `analyzeProgression`) in
  * another language. The long form keeps the numerals (`'Cadencia rota (V -> vi)'`); `short`
  * gives the name alone (`'Rota'`, `'Authentic'`). An unknown string is returned unchanged.
+ * @category Tonal harmony
  */
 export function cadenceName(cadence: string, language: ChordNameLanguage = 'en', options: { short?: boolean } = {}): string {
   const m = cadence.match(/^(.*?)(?: (\(.*\)))?$/);
@@ -197,6 +208,7 @@ const SUBSTITUTION_NAMES: Record<string, Record<ChordNameLanguage, string>> = {
  * The `type` of a `getSubstitutions` option in words: `'tritone'` → `'tritonal'`
  * (sustitución tritonal), `'chromatic-mediant'` → `'chromatic mediant'` / `'mediante cromática'`.
  * An unknown type is returned unchanged.
+ * @category Tonal harmony
  */
 export function substitutionTypeName(type: string, language: ChordNameLanguage = 'en'): string {
   return SUBSTITUTION_NAMES[type]?.[language] ?? type;

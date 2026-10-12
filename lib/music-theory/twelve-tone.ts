@@ -5,6 +5,7 @@
  *
  * Forms are labeled by the pitch class they start on (P(n), I(n) and RI(n) begin on n),
  * so the row as given is P(row[0]): P(0) only when the row starts on 0.
+ * @category Post-tonal
  */
 export class ToneRow {
   private readonly row: readonly number[];

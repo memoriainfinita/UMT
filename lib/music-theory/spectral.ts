@@ -5,7 +5,10 @@
 import { Hertz } from './types';
 import { Chord } from './chord';
 
-/** Psychoacoustic analysis: harmonic series, combination tones, roughness, and sensory consonance. */
+/**
+ * Psychoacoustic analysis: harmonic series, combination tones, roughness, and sensory consonance.
+ * @category Microtonal / Xenharmonic
+ */
 export class Spectral {
   /**
    * Returns the first `count` partials of the harmonic series starting at `fundamental` Hz.

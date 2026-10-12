@@ -44,7 +44,10 @@ const MODE_CHARACTERISTIC_PC: Record<string, number[]> = {
 //  Types
 // ============================================================================
 
-/** Category of a voice-leading problem detected between two chords. */
+/**
+ * Category of a voice-leading problem detected between two chords.
+ * @category Tonal harmony
+ */
 export type VoiceLeadingIssueType =
   | 'Parallel 5th' | 'Parallel Octave' | 'Voice Crossing' | 'Voice Overlap'
   | 'Leading Tone Unresolved' | '7th Unresolved' | 'Forbidden Leap'
@@ -53,7 +56,10 @@ export type VoiceLeadingIssueType =
   | 'Missing Third' | 'Missing Root' | 'Missing Fifth'
   | 'Improper 6/4 Usage';
 
-/** A specific voice-leading problem detected between two voices. */
+/**
+ * A specific voice-leading problem detected between two voices.
+ * @category Tonal harmony
+ */
 export interface VoiceLeadingIssue {
   /** What the problem is. */
   type: VoiceLeadingIssueType;
@@ -63,7 +69,10 @@ export interface VoiceLeadingIssue {
   message: string;
 }
 
-/** A doubling or spacing problem detected in a chord voicing. */
+/**
+ * A doubling or spacing problem detected in a chord voicing.
+ * @category Tonal harmony
+ */
 export interface DoublingIssue {
   /** What the problem is. */
   type: 'Doubled Leading Tone' | 'Missing Third' | 'Missing Root' | 'Missing Fifth' | 'Improper Doubling';
@@ -76,6 +85,7 @@ export interface DoublingIssue {
 /**
  * Full harmonic analysis of a chord within a key context.
  * Includes Roman numeral, function (T/S/D), modal borrowing, and cadence detection.
+ * @category Tonal harmony
  */
 export interface ChordAnalysis {
   /** The chord analyzed, as passed in. */
@@ -110,6 +120,7 @@ export interface ChordAnalysis {
 /**
  * A detected key change within a chord progression.
  * Includes the index where modulation occurs and the type (pivot, direct, etc.).
+ * @category Tonal harmony
  */
 export interface ModulationEvent {
   /** Index of the first chord read in the new key. */
@@ -131,6 +142,7 @@ export interface ModulationEvent {
 /**
  * Analysis of a second-inversion (6/4) chord.
  * Classifies it as cadential, pedal, passing, or arpeggiated.
+ * @category Tonal harmony
  */
 export interface SixFourAnalysis {
   /** How the 6/4 chord is used; `'none'` when the chord is not in second inversion. */
@@ -139,7 +151,10 @@ export interface SixFourAnalysis {
   resolution?: Chord;
 }
 
-/** One reading of a set of notes as a chord, with what ranks it (see `Harmony.detectChordsScored`). */
+/**
+ * One reading of a set of notes as a chord, with what ranks it (see `Harmony.detectChordsScored`).
+ * @category Tonal harmony
+ */
 export interface ChordCandidate {
   /** Chord symbol, with a slash bass when the lowest note is not the root: `'C7'`, `'C7/E'`. */
   name: string;
@@ -161,6 +176,7 @@ export interface ChordCandidate {
 
 /**
  * A chord borrowed from a parallel mode (modal mixture), from `Harmony.getBorrowedChords`.
+ * @category Tonal harmony
  */
 export interface BorrowedChord {
   /** The borrowed chord, spelled in the source mode. */
@@ -181,6 +197,7 @@ export interface BorrowedChord {
 /**
  * A chord that functions diatonically in two different keys,
  * used as the pivot point in a modulation.
+ * @category Tonal harmony
  */
 export interface PivotChord {
   /** The chord, spelled as in key A. */
@@ -204,6 +221,7 @@ export interface PivotChord {
 /**
  * The Coltrane substitution axis for a given root.
  * The three major-third substitutions form a diminished seventh pattern.
+ * @category Tonal harmony
  */
 export interface ColtraneAxis {
   /** Root of the key passed in. */
@@ -212,12 +230,16 @@ export interface ColtraneAxis {
   majorThirds: [string, string, string];
 }
 
-/** How a slash chord is interpreted: simple inversion, hybrid, polychord, or upper structure. */
+/**
+ * How a slash chord is interpreted: simple inversion, hybrid, polychord, or upper structure.
+ * @category Tonal harmony
+ */
 export type SlashType = 'inversion' | 'hybrid' | 'polychord' | 'upper-structure';
 
 /**
  * Result of analyzing a slash chord (e.g. C/E, Fmaj7/A).
  * Distinguishes inversions from hybrid chords, polychords, and upper structures.
+ * @category Tonal harmony
  */
 export interface SlashAnalysis {
   /** How the slash chord reads (an inversion when the bass is a chord tone). */
@@ -235,6 +257,7 @@ export interface SlashAnalysis {
 /**
  * Hints for enharmonic respelling decisions.
  * Providing a key or functional role improves spelling accuracy.
+ * @category Tonal harmony
  */
 export interface RespellContext {
   /** Key to spell in (`'Db major'`); takes precedence over `direction`. */
@@ -537,6 +560,7 @@ function detectTritoneSubOfV(chord: Chord, key: KeyInfo): boolean {
  * checks, secondary and borrowed chords, modulation and pivot chords, chord-scale
  * suggestions, negative harmony, the Coltrane axis, slash chords and enharmonic respelling.
  * Key arguments are written `'C major'`, `'A minor'`, `'D dorian'`.
+ * @category Tonal harmony
  */
 export class Harmony {
   /**

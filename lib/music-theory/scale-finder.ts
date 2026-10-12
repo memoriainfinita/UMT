@@ -6,7 +6,10 @@ import { SCALE_PATTERNS } from './dictionaries';
 import { parseScaleSymbol } from './parser';
 import { NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP, preferFlatsForKey } from './utils';
 
-/** A scale that contains every note of the set. */
+/**
+ * A scale that contains every note of the set.
+ * @category Tonal harmony
+ */
 export interface ScaleMatch {
   /** Scale symbol, readable by `parseScaleSymbol`: `'C major'`. */
   name: string;
@@ -26,7 +29,10 @@ export interface ScaleMatch {
   tier: number;
 }
 
-/** Options for `findScalesForNotes`. */
+/**
+ * Options for `findScalesForNotes`.
+ * @category Tonal harmony
+ */
 export interface FindScalesOptions {
   /** Tonic to rank first (`'D'`, `'F#'`); default: the lowest note. */
   tonic?: string;
@@ -86,6 +92,7 @@ const pcOfName = (name: string): number => {
  * Other tunings are read by the nearest 12-TET pitch class.
  * @example
  * findScalesForNotes(['C4', 'E4', 'G4', 'Bb4'].map(n => parseNote(n)))[0].name // 'C mixolydian'
+ * @category Tonal harmony
  */
 export function findScalesForNotes(notes: Note[], options: FindScalesOptions = {}): ScaleMatch[] {
   if (notes.length === 0) return [];

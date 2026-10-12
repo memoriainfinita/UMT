@@ -8,13 +8,17 @@ import { parseScaleSymbol } from './parser';
 /**
  * Recognized musical form types. `'unknown'` is returned when no pattern matches confidently.
  * Forms that need more than the chords (sonata, theme and variations) are not detected.
+ * @category Tonal harmony
  */
 export type FormType =
   | 'AABA' | 'AAB' | 'ABAB' | 'ABAC' | 'binary' | 'ternary'
   | 'rondo' | 'blues-12'
   | 'strophic' | 'through-composed' | 'unknown';
 
-/** A labeled section within a formal analysis (e.g. A, B, A'). */
+/**
+ * A labeled section within a formal analysis (e.g. A, B, A').
+ * @category Tonal harmony
+ */
 export interface FormSection {
   /** Section letter: `'A'`, `'B'`, `'C'`. */
   label: string;
@@ -24,7 +28,10 @@ export interface FormSection {
   end: number;
 }
 
-/** Result of a harmonic form analysis: detected type, labeled sections, and confidence (0–1). */
+/**
+ * Result of a harmonic form analysis: detected type, labeled sections, and confidence (0–1).
+ * @category Tonal harmony
+ */
 export interface FormAnalysis {
   /** The form detected, or `'unknown'`. */
   type: FormType;
@@ -111,7 +118,10 @@ function inferFormType(pattern: string): { type: FormType; confidence: number } 
 
 // ─── public API ─────────────────────────────────────────────────────────────
 
-/** Formal analysis of a chord progression: form type and sections, and reprises. */
+/**
+ * Formal analysis of a chord progression: form type and sections, and reprises.
+ * @category Tonal harmony
+ */
 export class FormAnalyzer {
   /**
    * Analyzes harmonic form by segmenting `chords` into sections of `barsPerSection`

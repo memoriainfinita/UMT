@@ -4,9 +4,15 @@
  */
 import { Hertz, MidiNote } from './types';
 
-/** Note names in 12-TET using sharps, ordered from A (index 0 = A, index 3 = C, etc.). */
+/**
+ * Note names in 12-TET using sharps, ordered from A (index 0 = A, index 3 = C, etc.).
+ * @category Core
+ */
 export const NOTE_NAMES_12TET_SHARP = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
-/** Note names in 12-TET using flats, ordered from A (index 0 = A, index 3 = C, etc.). */
+/**
+ * Note names in 12-TET using flats, ordered from A (index 0 = A, index 3 = C, etc.).
+ * @category Core
+ */
 export const NOTE_NAMES_12TET_FLAT = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab'];
 
 const NOTE_REGEX = /^([A-G])([#b]*)/;
@@ -14,6 +20,7 @@ const NOTE_REGEX = /^([A-G])([#b]*)/;
 /**
  * Converts a standard note name (e.g., "C#", "Bb") + octave to steps from A4 in 12-TET.
  * A4 = 0. C4 = -9.
+ * @category Core
  */
 export function parseNoteToStep12TET(noteName: string, octave: number = 4): number {
   const baseNotes: Record<string, number> = { 'C': -9, 'D': -7, 'E': -5, 'F': -4, 'G': -2, 'A': 0, 'B': 2 };
@@ -34,6 +41,7 @@ export function parseNoteToStep12TET(noteName: string, octave: number = 4): numb
  * @param stepsFromA4 - Integer semitone offset from A4 (A4 = 0, C4 = -9).
  * @param preferFlats - If true, uses flat spelling (e.g. Bb instead of A#).
  * @returns Note name with octave, e.g. `"C4"`, `"Bb3"`.
+ * @category Core
  */
 export function get12TETName(stepsFromA4: number, preferFlats: boolean = false): string {
   const normalizedStep = ((stepsFromA4 % 12) + 12) % 12;
@@ -51,6 +59,7 @@ const LETTER_STEPS: Record<string, number> = { 'C': -9, 'D': -7, 'E': -5, 'F': -
  * The octave number follows the letter, so B#3 and C4 are the same pitch.
  * @returns Full name with octave (e.g. `"E#4"`, `"Cb5"`), or null when the letter
  *   would need more than two accidentals.
+ * @category Core
  */
 export function spellByLetter(stepsFromA4: number, rootLetter: string, degree: number): string | null {
   const rootIdx = LETTERS.indexOf(rootLetter);
@@ -70,6 +79,7 @@ export function spellByLetter(stepsFromA4: number, rootLetter: string, degree: n
  * rest of the chord (`pcs`: the chord's intervals mod 12): 6 is b5 without a perfect fifth
  * and #11 with one; 8 is #5 or b13; 3 is #9 when the chord has a major third; 9 is the
  * bb7 of a diminished seventh.
+ * @category Core
  */
 export function chordToneOffset(semitones: number, pcs: ReadonlySet<number>): number {
   switch (((semitones % 12) + 12) % 12) {
@@ -89,6 +99,7 @@ export function chordToneOffset(semitones: number, pcs: ReadonlySet<number>): nu
 /**
  * The written root of a symbol (`"Cb"` from `"Cbmaj7"`, `"E#"` from `"E# major"`) when it
  * names the pitch of `stepsFromA4` in 12-TET; otherwise null.
+ * @category Core
  */
 export function writtenRoot(symbol: string, stepsFromA4: number): string | null {
   const root = symbol.match(/^([A-G][#b]*)/)?.[1];
@@ -97,7 +108,10 @@ export function writtenRoot(symbol: string, stepsFromA4: number): string | null 
   return pc(parseNoteToStep12TET(root)) === pc(stepsFromA4) ? root : null;
 }
 
-/** Returns just the note letter+accidental without octave number (e.g. "C#", "Bb"). */
+/**
+ * Returns just the note letter+accidental without octave number (e.g. "C#", "Bb").
+ * @category Core
+ */
 export function get12TETBaseName(stepsFromA4: number, preferFlats: boolean = false): string {
   const normalizedStep = ((stepsFromA4 % 12) + 12) % 12;
   const names = preferFlats ? NOTE_NAMES_12TET_FLAT : NOTE_NAMES_12TET_SHARP;
@@ -110,6 +124,7 @@ export function get12TETBaseName(stepsFromA4: number, preferFlats: boolean = fal
  * (C4 → B#3, Dbb4).
  * @param noteName - Note name with optional accidental and octave, e.g. `"C#"`, `"F#4"`.
  * @returns Enharmonic equivalents, e.g. `["Db", "B##"]` for `"C#"`; empty for an invalid name.
+ * @category Core
  */
 export function getEnharmonics(noteName: string): string[] {
   const match = noteName.trim().match(/^([A-G])([#b]*)(-?\d+)?$/);
@@ -167,6 +182,7 @@ const MINOR_MODE_PARENT_OFFSET: Record<string, number> = {
  *
  * @param rootName - Root note name (e.g. 'D', 'Bb', 'F#'). Octave digits are stripped.
  * @param scaleType - Scale or mode type (e.g. 'major', 'dorian', 'harmonic minor'). Default: 'major'.
+ * @category Core
  */
 export function preferFlatsForKey(rootName: string, scaleType: string = 'major'): boolean {
   const base = rootName.replace(/\d+$/, '');
@@ -197,6 +213,7 @@ export function preferFlatsForKey(rootName: string, scaleType: string = 'major')
  * @deprecated Use `preferFlatsForKey(rootName, scaleType)` instead.
  * This alias only considers the root note without scale-type context,
  * which gives incorrect results for modes and minor-family scales.
+ * @category Core
  */
 export function usesFlats(rootName: string): boolean {
   return preferFlatsForKey(rootName);
@@ -232,6 +249,7 @@ function intervalQuality(number: number, semitones: number): string | null {
  * @param letterSteps - Letter distance, e.g. 3 for a fourth, 9 for a tenth.
  * @returns Interval abbreviation, e.g. `"M3"`, `"A4"`, `"m10"`; `"Step N"` when the
  *   letter distance and the semitones do not make an interval.
+ * @category Core
  */
 export function getIntervalName(stepsFromRoot: number, is12TET: boolean = true, letterSteps?: number): string {
   if (!is12TET) return `Step ${stepsFromRoot}`;
@@ -252,6 +270,7 @@ const LETTER_INDEX: Record<string, number> = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 
  * @param a - Note name, e.g. `"C4"`, `"F#"`, `"Bb3"`.
  * @param b - Note name.
  * @throws if either name is not a note.
+ * @category Core
  */
 export function getIntervalBetween(a: string, b: string): string {
   const parse = (name: string) => {
@@ -286,6 +305,7 @@ function ordinal(n: number): string {
  * Useful for microtonal tunings where exact semitone counts don't apply.
  * @param cents - Interval size in cents (negative: measured downwards).
  * @returns Interval name, e.g. `"Major 3rd (M3)"`, or `"350.00 cents"` if no match.
+ * @category Core
  */
 export function getSemanticIntervalName(cents: number): string {
   const semis = Math.round(Math.abs(cents) / 100);
@@ -306,6 +326,7 @@ export function getSemanticIntervalName(cents: number): string {
 /**
  * Converts a frequency in Hz to the nearest MIDI note number, clamped to 0-127.
  * MIDI note 69 is A4 (default 440Hz).
+ * @category Core
  */
 export function freqToMidi(freq: Hertz, baseA4: Hertz = 440): MidiNote {
   const midi = Math.round(69 + 12 * Math.log2(freq / baseA4));
@@ -315,6 +336,7 @@ export function freqToMidi(freq: Hertz, baseA4: Hertz = 440): MidiNote {
 /**
  * Converts a frequency to the closest valid MIDI note and the pitch bend offset in cents.
  * Useful for microtonal playback via standard MIDI.
+ * @category Core
  */
 export function freqToMidiPitchBend(freq: Hertz, baseA4: Hertz = 440): {
   /** Nearest MIDI note number (not clamped to 0-127). */
@@ -330,6 +352,7 @@ export function freqToMidiPitchBend(freq: Hertz, baseA4: Hertz = 440): {
 
 /**
  * Converts a MIDI note number (0-127) to frequency in Hz.
+ * @category Core
  */
 export function midiToFreq(midi: MidiNote, baseA4: Hertz = 440): Hertz {
   return baseA4 * Math.pow(2, (midi - 69) / 12);

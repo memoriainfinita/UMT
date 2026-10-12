@@ -3,7 +3,10 @@
  */
 import { Note } from './note';
 
-/** A recurring interval pattern detected within a melody. */
+/**
+ * A recurring interval pattern detected within a melody.
+ * @category Post-tonal
+ */
 export interface Motif {
   /** Index of the first note of the first occurrence. */
   start: number;
@@ -17,6 +20,7 @@ export interface Motif {
 
 /**
  * Melodic analysis tools.
+ * @category Post-tonal
  */
 export class MelodyAnalysis {
   /**

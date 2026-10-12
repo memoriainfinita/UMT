@@ -12,7 +12,10 @@ const FIGURE_DEFAULT_SEMITONES: Record<number, number> = {
   2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 10, 8: 12, 9: 14,
 };
 
-/** Accidental of a figured-bass figure: sharp, flat or natural. */
+/**
+ * Accidental of a figured-bass figure: sharp, flat or natural.
+ * @category Tonal harmony
+ */
 export type FigureAccidental = '#' | 'b' | 'n';
 type FigurePart = { num: number; acc: FigureAccidental | undefined };
 
@@ -31,7 +34,10 @@ const IMPLIED_FIGURES: Record<string, number[]> = {
   '3,7': [5], '5,7': [3], '5,6': [3], '3,4': [6], '2': [4, 6], '2,4': [6], '2,4,6': [], '9': [3, 5],
 };
 
-/** Figured bass: parsing figures, realizing them over a bass note, and four-voice (SATB) realization. */
+/**
+ * Figured bass: parsing figures, realizing them over a bass note, and four-voice (SATB) realization.
+ * @category Tonal harmony
+ */
 export class FiguredBass {
   /**
    * Reads a figure string into {num, acc} parts as written (`'6/4'`, `'#6'`, `'b7'`). A bare

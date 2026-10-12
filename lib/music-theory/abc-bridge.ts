@@ -43,7 +43,10 @@ function abcEvent(ev: LaidEvent, acc: MeasureAccidentals): string {
   return `${v.triplet ? '(3:2:1' : ''}${body}${abcLength(v.triplet ? v.base : v.ticks)}${ev.tie ? '-' : ''}`;
 }
 
-/** Options for writing a stream in ABC. */
+/**
+ * Options for writing a stream in ABC.
+ * @category Notation
+ */
 export interface ABCStreamOptions {
   /** Key of the tune (default `'C major'`): accidentals are written against its signature. Use the same key in `wrapInHeaders`. */
   key?: string;
@@ -53,6 +56,7 @@ export interface ABCStreamOptions {
  * Bridge between Universal Music Theory and ABC Notation.
  * Converts UMT objects to ABC strings for visual rendering. Lengths assume `L:1/4`, as
  * `wrapInHeaders` writes. Notes of other tunings are written at the nearest 12-TET pitch.
+ * @category Notation
  */
 export class ABCBridge {
   /**

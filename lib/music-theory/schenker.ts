@@ -8,7 +8,10 @@ import { Note } from './note';
 import { Chord } from './chord';
 import { parseScaleSymbol } from './parser';
 
-/** The detected Urlinie (fundamental melodic line) and its type (3-, 5-, or 8-line). */
+/**
+ * The detected Urlinie (fundamental melodic line) and its type (3-, 5-, or 8-line).
+ * @category Post-tonal
+ */
 export interface UrlinieResult {
   /** The notes of the line, from the head tone down to the tonic. */
   line: Note[];
@@ -16,7 +19,10 @@ export interface UrlinieResult {
   type: '3-line' | '5-line' | '8-line';
 }
 
-/** Basic Schenkerian reduction (approximate): Urlinie, Ursatz and structural levels of a progression. */
+/**
+ * Basic Schenkerian reduction (approximate): Urlinie, Ursatz and structural levels of a progression.
+ * @category Post-tonal
+ */
 export class Schenker {
   /**
    * Attempts to identify an Urlinie (fundamental melodic line) in a melody.

@@ -257,3 +257,40 @@ footer { border-top: 1px solid var(--umt-line); color: var(--umt-faint); font-si
     text-overflow: ellipsis;
   }
 }
+
+/* brand, as in the demo's sidebar */
+.tsd-page-toolbar .title { display: flex; align-items: baseline; gap: .5rem; text-decoration: none; }
+.tsd-page-toolbar .title b { font: 650 1.5rem var(--umt-serif); letter-spacing: -.01em; color: var(--color-text); }
+.tsd-page-toolbar .title span { font: .75rem var(--umt-mono); color: var(--umt-faint); }
+
+/* site menu: subject groups with small caps headings, plain links */
+.site-menu .tsd-navigation .tsd-kind-icon { display: none; }
+.site-menu #tsd-nav-container > li > details > summary > span {
+  font: 600 .68rem var(--umt-sans);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--umt-faint);
+  padding: .55rem .25rem .3rem;
+}
+.site-menu #tsd-nav-container > li > details > summary:hover > span { color: var(--color-text); }
+.site-menu #tsd-nav-container > li > details > summary > svg { width: 14px; height: 14px; color: var(--umt-faint); }
+.site-menu .tsd-nested-navigation { margin-left: 1.6rem; }
+.site-menu .tsd-nested-navigation a { padding: .18rem .5rem; margin-left: -.5rem; }
+.site-menu > nav:not(#tsd-sidebar-links) > a { font-weight: 600; color: var(--color-text); }
+/* document names come from the file names (GUIDE.md): show them as words */
+a[href$="documents/GUIDE.html"] > span,
+a[href$="documents/CONTRIBUTING.html"] > span { display: inline-block; text-transform: lowercase; }
+a[href$="documents/GUIDE.html"] > span::first-letter,
+a[href$="documents/CONTRIBUTING.html"] > span::first-letter { text-transform: uppercase; }
+@media (min-width: 1200px) {
+  .site-menu { border-right: 1px solid var(--umt-line); padding-right: 1rem; }
+}
+.site-menu #tsd-nav-container > li > details > summary { display: flex; align-items: center; }
+.site-menu #tsd-nav-container > li > details > summary > span,
+.site-menu #tsd-nav-container > li > details > summary > span * { color: var(--umt-faint); }
+.site-menu #tsd-nav-container > li > details > summary:hover > span * { color: var(--color-text); }
+.site-menu #tsd-nav-container > li > details > summary > svg { flex: none; margin: 0; }
+.site-menu > nav:not(#tsd-sidebar-links) > a { font-family: var(--umt-sans); font-size: .9rem; }
+@media (min-width: 1200px) {
+  .site-menu { min-height: calc(100vh - var(--dim-header-height) - 2rem); }
+}

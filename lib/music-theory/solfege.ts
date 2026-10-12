@@ -28,6 +28,7 @@ function doPitchClass(keySymbol: string): number | null {
 
 /**
  * Solfège (solmization) tools.
+ * @category World music
  */
 export class Solfege {
   /**

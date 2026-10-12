@@ -5,7 +5,10 @@
 import { CLAVE_PATTERNS } from './clave-patterns';
 import { Note } from './note';
 
-/** A note duration expressed as a fraction of a whole note, with optional augmentation dots. */
+/**
+ * A note duration expressed as a fraction of a whole note, with optional augmentation dots.
+ * @category Rhythm
+ */
 export class Duration {
   /**
    * @param value Fraction of a whole note (e.g., 0.25 for a quarter note)
@@ -50,6 +53,7 @@ export class Duration {
 /**
  * A time signature, supporting additive meters (e.g. 3+2+2/8) and irrational denominators.
  * Includes presets for common signatures via static properties.
+ * @category Rhythm
  */
 export class TimeSignature {
   /**
@@ -94,7 +98,10 @@ export class TimeSignature {
   static Balkan9 = new TimeSignature([2, 2, 2, 3], 8);
 }
 
-/** Polyrhythm generation and Euclidean rhythm distribution. */
+/**
+ * Polyrhythm generation and Euclidean rhythm distribution.
+ * @category Rhythm
+ */
 export class Polyrhythm {
   /**
    * Generates a polyrhythm between multiple voices.
@@ -148,7 +155,10 @@ export class Polyrhythm {
 
 // ── MusicStream ────────────────────────────────────────────────────────────────
 
-/** A single timed event in a MusicStream: onset, duration, notes, and velocity. */
+/**
+ * A single timed event in a MusicStream: onset, duration, notes, and velocity.
+ * @category Rhythm
+ */
 export interface StreamEvent {
   /** Onset, in beats of the stream's time signature (its denominator's note value) from the start. */
   time: number;
@@ -165,6 +175,7 @@ export interface StreamEvent {
  * A standard data structure for representing temporal musical events.
  * Acts as a contract that can be consumed by audio engines (Tone.js, Web Audio)
  * or MIDI writers.
+ * @category Rhythm
  */
 export class MusicStream {
   /** Events in time order. */
@@ -248,6 +259,7 @@ export class MusicStream {
 
 /**
  * Augmentation, diminution, and retrograde of duration arrays.
+ * @category Rhythm
  */
 export class RhythmTransform {
   /** Augmentation: multiply each duration by factor (default ×2). */
@@ -280,6 +292,7 @@ export class RhythmTransform {
 
 /**
  * Detection of rhythmic features: hemiola, syncopation, clave patterns, etc.
+ * @category Rhythm
  */
 export class RhythmAnalysis {
   /**
@@ -357,6 +370,7 @@ function matchesPattern(pattern: number[], ref: readonly boolean[]): boolean {
 
 /**
  * Polymeter: multiple time signatures cycling simultaneously.
+ * @category Rhythm
  */
 export class Polymeter {
   private readonly meters: TimeSignature[];
@@ -418,6 +432,7 @@ export class Polymeter {
 
 /**
  * Metric Modulation - computing tempo relationships between related meters.
+ * @category Rhythm
  */
 export class MetricModulation {
   /**
@@ -458,6 +473,7 @@ export class MetricModulation {
 
 /**
  * Isorhythm: the medieval technique of repeating talea (rhythm) and color (pitch) independently.
+ * @category Rhythm
  */
 export class Isorhythm {
   private readonly talea: number[];  // rhythmic pattern

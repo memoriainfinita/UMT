@@ -10,6 +10,7 @@ import { get12TETBaseName, preferFlatsForKey, NOTE_NAMES_12TET_FLAT } from './ut
  * P: Parallel (C Major <-> C Minor)
  * L: Leading-tone exchange (C Major <-> E Minor)
  * R: Relative (C Major <-> A Minor)
+ * @category Tonal harmony
  */
 export class NeoRiemannian {
   /**

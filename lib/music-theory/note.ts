@@ -8,6 +8,7 @@ import { get12TETName } from './utils';
  *
  * Position is stored as `stepsFromBase`, an integer offset from A4 (step 0) within the tuning.
  * The same step number means different frequencies in different tuning systems.
+ * @category Core
  */
 export class Note {
   /**

@@ -9,7 +9,10 @@
  * Scales and ajnas follow maqamworld.com (Johnny Farraj), ascending form, one octave.
  */
 
-/** A tetrachord or pentachord cell (jins) used as a building block in maqam construction. */
+/**
+ * A tetrachord or pentachord cell (jins) used as a building block in maqam construction.
+ * @category World music
+ */
 export interface Jins {
   /** Display name: `'Rast'`, `'Bayati'`, `'Hijaz'`. */
   name: string;
@@ -17,7 +20,10 @@ export interface Jins {
   intervals: readonly number[];
 }
 
-/** A maqam scale: its constituent ajnas, full note sequence in quarter-tones, and emotional character. */
+/**
+ * A maqam scale: its constituent ajnas, full note sequence in quarter-tones, and emotional character.
+ * @category World music
+ */
 export interface Maqam {
   /** Display name: `'Rast'`. */
   name: string;
@@ -47,7 +53,10 @@ const AJNAS: Record<string, Jins> = {
 const maqam = (name: string, ajnas: Jins[], notes: number[], character: string): Maqam =>
   ({ name, ajnas, notes, character, gharsa: character });
 
-/** Catalog of 8 Arabic maqamat as 24-EDO (quarter-tone) approximations. */
+/**
+ * Catalog of 8 Arabic maqamat as 24-EDO (quarter-tone) approximations.
+ * @category World music
+ */
 export const MAQAMAT: Record<string, Maqam> = Object.freeze({
   // C D E½b F G A B½b C
   'rast': maqam('Rast', [AJNAS.rast, AJNAS.rast], [0, 4, 7, 10, 14, 18, 21, 24], 'Joy, vitality, openness'),

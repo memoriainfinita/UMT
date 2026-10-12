@@ -10,7 +10,10 @@ import { Scale } from './scale';
 import { MusicStream, Duration } from './rhythm';
 import { spellPitch, parseKey, layoutMeasures, LaidEvent, TICKS_PER_WHOLE } from './notation-layout';
 
-/** Optional metadata fields for LilyPond header block. */
+/**
+ * Optional metadata fields for LilyPond header block.
+ * @category Notation
+ */
 export interface LPMetadata {
   /** `title` of the LilyPond header. */
   title?: string;
@@ -20,7 +23,10 @@ export interface LPMetadata {
   opus?: string;
 }
 
-/** Options for writing a stream in LilyPond. */
+/**
+ * Options for writing a stream in LilyPond.
+ * @category Notation
+ */
 export interface LPOptions {
   /** Key of the music (e.g. `'D major'`, `'E dorian'`): sets `\key`. Default: none (C major). */
   key?: string;
@@ -66,6 +72,7 @@ function lpHeader(meta: LPMetadata): string {
  * Converts a MusicStream to a LilyPond string. Measures end in bar checks (`|`); notes that
  * cross a barline, or have no single written value, are split into tied values. An additive
  * meter is written `\time 3,2,2 7/8`.
+ * @category Notation
  */
 export function streamToLilyPond(stream: MusicStream, metadata: LPMetadata = {}, options: LPOptions = {}): string {
   const ts = stream.timeSignature;
@@ -87,14 +94,20 @@ export function streamToLilyPond(stream: MusicStream, metadata: LPMetadata = {},
   return `${lpHeader(metadata)}{\n  ${lines.join('\n  ')}\n}\n`;
 }
 
-/** Converts a Chord to a LilyPond snippet (one whole-note chord in 4/4). */
+/**
+ * Converts a Chord to a LilyPond snippet (one whole-note chord in 4/4).
+ * @category Notation
+ */
 export function chordToLilyPond(chord: Chord, metadata: LPMetadata = {}): string {
   const stream = new MusicStream();
   stream.addEvent(chord.getNotes(), Duration.Whole);
   return streamToLilyPond(stream, { title: chord.name, ...metadata });
 }
 
-/** Converts a Scale to an ascending LilyPond sequence of quarter notes in 4/4. */
+/**
+ * Converts a Scale to an ascending LilyPond sequence of quarter notes in 4/4.
+ * @category Notation
+ */
 export function scaleToLilyPond(scale: Scale, metadata: LPMetadata = {}): string {
   const stream = new MusicStream();
   for (const n of scale.getNotes(1)) stream.addEvent([n], Duration.Quarter);

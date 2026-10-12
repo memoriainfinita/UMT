@@ -9,6 +9,7 @@ import { Interval } from './interval';
  * this value is used to compute frequencies for steps outside the first period.
  *
  * Use `parseScala()` to construct from raw `.scl` text.
+ * @category Microtonal / Xenharmonic
  */
 export class ScalaTuning extends TuningSystem {
   /** Cent offsets from the root, with 0¢ prepended. Length = `octaveSteps + 1`. */
@@ -66,6 +67,7 @@ export class ScalaTuning extends TuningSystem {
  * Following the Scala format: lines starting with `!` are comments; the first other line
  * is the description, which may be empty; then the number of notes; then one pitch per line.
  * @throws if the note count is missing, or there are fewer pitches than it says.
+ * @category Microtonal / Xenharmonic
  */
 export function parseScala(sclText: string, baseFrequency = 440): ScalaTuning {
   const all = sclText.split(/\r?\n/).map(l => l.trim()).filter(l => !l.startsWith('!'));

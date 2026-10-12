@@ -24,6 +24,7 @@
  * @param input   - Raw symbol, e.g. `'Dom7'`, `'Do mayor'`, `'Sol mineur'`.
  * @param aliases - Map of alias → canonical string.
  * @returns Translated string ready for `parseChordSymbol` / `parseScaleSymbol`.
+ * @category Core
  */
 export function translateSymbol(input: string, aliases: Record<string, string>): string {
   const keys = Object.keys(aliases).sort((a, b) => b.length - a.length);
@@ -47,7 +48,10 @@ export function translateSymbol(input: string, aliases: Record<string, string>):
   return result;
 }
 
-/** Solfège note names → English note letters. Accidentals (`#`, `b`) pass through. */
+/**
+ * Solfège note names → English note letters. Accidentals (`#`, `b`) pass through.
+ * @category Core
+ */
 export const SOLFEGE_ROOTS: Record<string, string> = {
   'Do':  'C',
   'Re':  'D',
@@ -58,7 +62,10 @@ export const SOLFEGE_ROOTS: Record<string, string> = {
   'Si':  'B',
 };
 
-/** Spanish quality names → canonical parser tokens. */
+/**
+ * Spanish quality names → canonical parser tokens.
+ * @category Core
+ */
 export const QUALITY_ALIASES_ES: Record<string, string> = {
   'semidisminuido': 'm7b5',
   'disminuido':     'dim',
@@ -68,7 +75,10 @@ export const QUALITY_ALIASES_ES: Record<string, string> = {
   'menor':          'minor',
 };
 
-/** French quality names → canonical parser tokens. */
+/**
+ * French quality names → canonical parser tokens.
+ * @category Core
+ */
 export const QUALITY_ALIASES_FR: Record<string, string> = {
   'augmenté':  'aug',
   'diminué':   'dim',
@@ -76,7 +86,10 @@ export const QUALITY_ALIASES_FR: Record<string, string> = {
   'mineur':    'minor',
 };
 
-/** Italian quality names → canonical parser tokens. */
+/**
+ * Italian quality names → canonical parser tokens.
+ * @category Core
+ */
 export const QUALITY_ALIASES_IT: Record<string, string> = {
   'diminuito': 'dim',
   'aumentato': 'aug',

@@ -4,7 +4,10 @@
  */
 import { TimeSignature } from './rhythm';
 
-/** A repeating rhythmic cycle. */
+/**
+ * A repeating rhythmic cycle.
+ * @category Rhythm
+ */
 export interface RhythmicCycle {
   /** Display name: `'Teental (Tintal)'`, `'Bulerías'`. */
   name: string;
@@ -31,7 +34,10 @@ const CARNATIC_SOURCE = 'Wikipedia, "Tala (music)": suladi sapta tala table, cha
 const FLAMENCO_SOURCE = 'Wikipedia, "Flamenco": Compás or time signature';
 const AKSAK_SOURCE = 'Wikipedia, "Aksak": table of units, subdivisions and names';
 
-/** Talas, flamenco compás and aksak meters. */
+/**
+ * Talas, flamenco compás and aksak meters.
+ * @category Rhythm
+ */
 export const RHYTHMIC_CYCLES: Record<string, RhythmicCycle> = {
   teental: { name: 'Teental (Tintal)', tradition: 'hindustani', beats: 16, groups: [4, 4, 4, 4], vibhag: ['X', '2', '0', '3'], source: TALA_SOURCE },
   jhoomra: { name: 'Jhoomra', tradition: 'hindustani', beats: 14, groups: [3, 4, 3, 4], vibhag: ['X', '2', '0', '3'], source: TALA_SOURCE },
@@ -63,10 +69,16 @@ export const RHYTHMIC_CYCLES: Record<string, RhythmicCycle> = {
   krivoSadovsko: { name: 'Krivo Sadovsko horo', tradition: 'aksak', beats: 13, groups: [2, 2, 2, 3, 2, 2], source: AKSAK_SOURCE },
 };
 
-/** What a metronome plays on one pulse of a cycle. */
+/**
+ * What a metronome plays on one pulse of a cycle.
+ * @category Rhythm
+ */
 export type CycleStroke = 'sam' | 'tali' | 'khali' | 'accent' | 'beat';
 
-/** The spoken count of each pulse: 1…n, or from `firstCount` (bulerías: 12, 1, 2 … 11). */
+/**
+ * The spoken count of each pulse: 1…n, or from `firstCount` (bulerías: 12, 1, 2 … 11).
+ * @category Rhythm
+ */
 export function cycleCounts(cycle: RhythmicCycle): number[] {
   const first = cycle.firstCount ?? 1;
   return Array.from({ length: cycle.beats }, (_, i) => ((first - 1 + i) % cycle.beats) + 1);
@@ -77,6 +89,7 @@ export function cycleCounts(cycle: RhythmicCycle): number[] {
  * `'tali'` (clap) or `'khali'` (wave) on the first pulse of each other vibhag (Rupak's sam,
  * also khali, is `'sam'`). Flamenco: `'accent'` on the accented counts. Others:
  * `'accent'` on the first pulse of each group. Every other pulse is `'beat'`.
+ * @category Rhythm
  */
 export function cycleStrokes(cycle: RhythmicCycle): CycleStroke[] {
   const strokes: CycleStroke[] = new Array(cycle.beats).fill('beat');
@@ -98,6 +111,7 @@ export function cycleStrokes(cycle: RhythmicCycle): CycleStroke[] {
 /**
  * An additive time signature for the cycle: its groups over `denominator` (default 8,
  * the usual unit of aksak meters: Račenica is 2+2+3/8).
+ * @category Rhythm
  */
 export function cycleTimeSignature(cycle: RhythmicCycle, denominator = 8): TimeSignature {
   return new TimeSignature([...cycle.groups], denominator);

@@ -6,7 +6,10 @@ import { Chord } from './chord';
 import { parseChordSymbol } from './parser';
 import { preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 
-/** An upper-structure triad voiced over a dominant chord, with its resulting tensions and label. */
+/**
+ * An upper-structure triad voiced over a dominant chord, with its resulting tensions and label.
+ * @category Tonal harmony
+ */
 export interface UpperStructure {
   /** The major triad played above the dominant. */
   triad: Chord;
@@ -37,6 +40,7 @@ const UST_TABLE: { offset: number; tensions: string[]; label: string }[] = [
  * Returns the six canonical upper-structure triads for a dominant 7th chord.
  * Returns [] for non-12-TET tunings or non-dominant chords (a dominant has a major third
  * and a minor seventh: G7, G9, G13, G7alt).
+ * @category Tonal harmony
  */
 export function getUpperStructures(dominantChord: Chord): UpperStructure[] {
   const ts = dominantChord.tuningSystem;

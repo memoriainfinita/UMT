@@ -2,7 +2,10 @@ import { Note } from './note';
 import { EDO } from './tuning';
 import { preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 
-/** A pair of key profiles: weights of the 12 pitch classes above the tonic, major and minor. */
+/**
+ * A pair of key profiles: weights of the 12 pitch classes above the tonic, major and minor.
+ * @category Tonal harmony
+ */
 export interface KeyProfile {
   /** 12 weights for a major key, from the tonic up by semitones. */
   major: readonly number[];
@@ -15,6 +18,7 @@ export interface KeyProfile {
 /**
  * Key profiles for correlation key finding, as listed by Craig Sapp for Humdrum's `keycor`
  * (extras.humdrum.org/man/keycor). Index 0 is the tonic.
+ * @category Tonal harmony
  */
 export const KEY_PROFILES: Readonly<Record<'krumhansl' | 'aarden' | 'bellman' | 'temperley' | 'simple', KeyProfile>> = {
   krumhansl: {
@@ -44,10 +48,16 @@ export const KEY_PROFILES: Readonly<Record<'krumhansl' | 'aarden' | 'bellman' | 
   },
 };
 
-/** Name of a preset in `KEY_PROFILES`. */
+/**
+ * Name of a preset in `KEY_PROFILES`.
+ * @category Tonal harmony
+ */
 export type KeyProfileName = keyof typeof KEY_PROFILES;
 
-/** Options for key detection. */
+/**
+ * Options for key detection.
+ * @category Tonal harmony
+ */
 export interface KeyDetectionOptions {
   /** Key profile to correlate with (default `'krumhansl'`), or a custom pair. */
   profile?: KeyProfileName | KeyProfile;
@@ -56,6 +66,7 @@ export interface KeyDetectionOptions {
 /**
  * Key Detection Module
  * Implements correlation key finding (Krumhansl-Schmuckler) with a choice of key profiles.
+ * @category Tonal harmony
  */
 export class KeyDetection {
   /** Krumhansl-Kessler major weights, the default profile (`KEY_PROFILES.krumhansl.major`). */

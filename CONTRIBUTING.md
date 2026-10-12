@@ -21,6 +21,7 @@ CI runs all of these on every push and pull request, and fails if `dist/` does n
 - **Library code in `lib/music-theory/`**, TypeScript, no runtime dependencies. Library strings are in English; names in other languages go through `chord-names.ts`.
 - **Pitches are steps from A4 = 0** in a `TuningSystem`. Do not assume 12-TET: map formulas with `tuning.getStepFromStandard()`. A function that only makes sense in 12-TET says so in its documentation and returns its "nothing found" value for other tunings.
 - **Every export is documented** (JSDoc): what it does, its parameters, what it returns, and what each field of a returned object holds. `pnpm run docs:check` enforces it.
+- **Every export carries `@category`**, the module's group in the Modules section of `README.md` (Core, Tonal harmony, Post-tonal, World music, Rhythm, Microtonal / Xenharmonic, Notation). It places the export in the API docs menu; without it the export falls under Guides.
 - **One test file per module** in `tests/unit/`, headed by the theory sources the module follows. Reference data (scales, ragas, maqamat, Forte classes, rhythmic cycles) is checked against a cited source, and the source is named in the module.
 - **A bug fix starts with a failing test** that reproduces it.
 - **Output changes are breaking changes.** If an existing function returns something different for the same input, it goes under "Breaking changes" in `CHANGELOG.md`.

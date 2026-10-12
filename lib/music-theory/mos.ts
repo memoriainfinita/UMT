@@ -1,6 +1,7 @@
 /**
  * MOS (Moment of Symmetry) scales - generated scales with exactly two step sizes.
  * Used in xenharmonic / microtonal theory to find well-formed scales in arbitrary EDOs.
+ * @category Microtonal / Xenharmonic
  */
 
 export class MOS {
@@ -70,7 +71,10 @@ export class MOS {
 import { Chord } from './chord';
 import { JustIntonation } from './tuning';
 
-/** Comma pump detection: pitch drift of a just-intonation progression. */
+/**
+ * Comma pump detection: pitch drift of a just-intonation progression.
+ * @category Microtonal / Xenharmonic
+ */
 export class CommaPump {
   /**
    * Detects if a chord progression drifts in pitch due to JI comma accumulation.

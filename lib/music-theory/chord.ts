@@ -16,6 +16,7 @@ function intervalPreferFlats(intervalInSteps: number, chordPf: boolean): boolean
  * `intervalsInSteps` contains the offset in tuning steps from the root for each chord tone,
  * including the root itself (offset 0) as the first element.
  * Example: `[0, 4, 7]` = major triad in 12-TET (root, major third, perfect fifth).
+ * @category Tonal harmony
  */
 export class Chord {
   /**
@@ -338,6 +339,7 @@ export class Chord {
  * `''` when none fits or the tuning is not 12 steps per octave. Ninths, elevenths and sixths
  * reduce to the triad or seventh below them (Cadd9 and C6/9 are `'M'`); a chord is sus only
  * without a third.
+ * @category Tonal harmony
  */
 export function chordQualityFromIntervals(chord: Chord, oct: number = chord.tuningSystem.octaveSteps): string {
   if (oct !== 12) return '';
@@ -376,6 +378,7 @@ const DEGREE_BY_INTERVAL: Record<number, string> = {
  * chord, and 3 semitones is `'#9'` beside a major third.
  * @param interval - Semitones above the root (0-23; larger values are reduced by octaves).
  * @param formula - All intervals of the chord.
+ * @category Tonal harmony
  */
 export function chordDegreeLabel(interval: number, formula: readonly number[]): string {
   let v = ((interval % 24) + 24) % 24;

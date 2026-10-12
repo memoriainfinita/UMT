@@ -12,9 +12,15 @@ import { Note } from './note';
 import { TET12 } from './tuning';
 import { parseNoteToStep12TET } from './utils';
 
-/** A Guidonian hexachord syllable (solfège name within the hexachord). */
+/**
+ * A Guidonian hexachord syllable (solfège name within the hexachord).
+ * @category World music
+ */
 export type HexachordSyllable = 'ut' | 're' | 'mi' | 'fa' | 'sol' | 'la';
-/** One of the three Guidonian hexachord species. */
+/**
+ * One of the three Guidonian hexachord species.
+ * @category World music
+ */
 export type HexachordType = 'naturale' | 'durum' | 'molle';
 
 // Each hexachord: starting note name + scale steps in semitones (W W H W W = 2 2 1 2 2)
@@ -26,7 +32,10 @@ const HEXACHORD_DEFS: Record<HexachordType, { start: string; notes: string[] }> 
 
 const SYLLABLES: HexachordSyllable[] = ['ut', 're', 'mi', 'fa', 'sol', 'la'];
 
-/** Guidonian hexachords: the syllable of a note in each hexachord, and mutation between them. */
+/**
+ * Guidonian hexachords: the syllable of a note in each hexachord, and mutation between them.
+ * @category World music
+ */
 export class Hexachord {
   /** Hexachordum naturale, C to A: `['C', 'D', 'E', 'F', 'G', 'A']`. */
   static readonly NATURALE = HEXACHORD_DEFS.naturale.notes;

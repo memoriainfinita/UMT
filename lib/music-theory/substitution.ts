@@ -5,7 +5,10 @@ import { Chord, chordQualityFromIntervals } from './chord';
 import { parseChordSymbol, parseScaleSymbol } from './parser';
 import { get12TETBaseName, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 
-/** A possible chord substitution with its type and harmonic explanation. */
+/**
+ * A possible chord substitution with its type and harmonic explanation.
+ * @category Tonal harmony
+ */
 export interface SubstitutionOption {
   /** The substitute chord. */
   chord: Chord;
@@ -32,6 +35,7 @@ function noteName(pc: number, flat: boolean): string {
  * diatonic substitutions in major and natural minor (a third away, same function:
  * I → iii, vi; ii ↔ IV; V ↔ vii°; i → III, VI), and in major keys the minor
  * subdominant family (IV, ii → iv, bVII7, iiø7, and back to IV).
+ * @category Tonal harmony
  */
 export function getSubstitutions(chord: Chord, keySymbol: string): SubstitutionOption[] {
   const oct = chord.tuningSystem.octaveSteps;

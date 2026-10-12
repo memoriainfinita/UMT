@@ -8,8 +8,15 @@
   "includeVersion": true,
   "tsconfig": "./tsconfig.typedoc.json",
   "customCss": "./docs-theme/custom.css",
+  "customJs": "./docs-theme/custom.js",
+  "lightHighlightTheme": "rose-pine-dawn",
+  "darkHighlightTheme": "vitesse-dark",
+  "defaultCategory": "Guides",
+  "categoryOrder": ["Guides", "Core", "Tonal harmony", "Post-tonal", "World music", "Rhythm", "Microtonal / Xenharmonic", "Notation", "*"],
+  "navigation": { "includeCategories": true, "includeGroups": false },
   "navigationLinks": {
-    "GitHub": "https://github.com/memoriainfinita/UMT",
-    "Demo": "https://memoriainfinita.github.io/UMT"
+    "Guide": "https://memoriainfinita.github.io/UMT/api-docs/documents/GUIDE.html",
+    "Demo": "https://memoriainfinita.github.io/UMT",
+    "GitHub": "https://github.com/memoriainfinita/UMT"
   }
 }

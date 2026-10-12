@@ -12,7 +12,10 @@ import {
   layoutMeasures, LaidEvent, TICKS_PER_WHOLE,
 } from './notation-layout';
 
-/** Optional metadata fields for MusicXML score headers. */
+/**
+ * Optional metadata fields for MusicXML score headers.
+ * @category Notation
+ */
 export interface MusicXMLMetadata {
   /** Work title. */
   title?: string;
@@ -22,7 +25,10 @@ export interface MusicXMLMetadata {
   partName?: string;
 }
 
-/** Options for writing a stream in MusicXML. */
+/**
+ * Options for writing a stream in MusicXML.
+ * @category Notation
+ */
 export interface MusicXMLOptions {
   /** Key of the music (e.g. `'D major'`, `'E dorian'`): sets `<key>` and the written accidentals. Default `'C major'`. */
   key?: string;
@@ -83,6 +89,7 @@ function xmlHeader(meta: MusicXMLMetadata): string {
  * Converts a MusicStream to a MusicXML string. Gaps between events become rests; notes
  * that cross a barline, or have no single written value, are split into tied values.
  * `<divisions>` is the fewest per quarter note that count every value whole.
+ * @category Notation
  */
 export function streamToMusicXML(stream: MusicStream, metadata: MusicXMLMetadata = {}, options: MusicXMLOptions = {}): string {
   const ts = stream.timeSignature;
@@ -111,14 +118,20 @@ export function streamToMusicXML(stream: MusicStream, metadata: MusicXMLMetadata
   return `${xmlHeader(metadata)}\n  <part id="P1">\n${body}  </part>\n</score-partwise>`;
 }
 
-/** Converts a single Chord to a one-measure MusicXML snippet (a whole-note chord in 4/4). */
+/**
+ * Converts a single Chord to a one-measure MusicXML snippet (a whole-note chord in 4/4).
+ * @category Notation
+ */
 export function chordToMusicXML(chord: Chord, metadata: MusicXMLMetadata = {}): string {
   const stream = new MusicStream();
   stream.addEvent(chord.getNotes(), Duration.Whole);
   return streamToMusicXML(stream, { title: chord.name, ...metadata });
 }
 
-/** Converts a Scale to ascending MusicXML quarter notes in 4/4. */
+/**
+ * Converts a Scale to ascending MusicXML quarter notes in 4/4.
+ * @category Notation
+ */
 export function scaleToMusicXML(scale: Scale, octaves = 1, metadata: MusicXMLMetadata = {}): string {
   const stream = new MusicStream();
   for (const n of scale.getNotes(octaves)) stream.addEvent([n], Duration.Quarter);

@@ -131,6 +131,7 @@ function normalizeSuffix(type: string): string {
  * @param tuning - Target tuning system (default: 12-TET). Intervals are mapped via `getStepFromStandard`.
  * @param octave - Octave for the root note (default: 4).
  * @throws if the symbol cannot be parsed or the chord type is neither in the dictionary nor compositionally valid.
+ * @category Core
  */
 export function parseChordSymbol(symbol: string, tuning: TuningSystem = TET12, octave: number = 4): Chord {
   // Normalize root to uppercase (e.g. "cmaj7" → "Cmaj7")
@@ -174,6 +175,7 @@ export function parseChordSymbol(symbol: string, tuning: TuningSystem = TET12, o
  * @param tuning - Target tuning system (default: 12-TET). Pattern steps are mapped via `getPatternFromStandard` (positions, not single steps).
  * @param octave - Octave for the root note (default: 4).
  * @throws if the symbol cannot be parsed or the scale type is unknown.
+ * @category Core
  */
 export function parseScaleSymbol(symbol: string, tuning: TuningSystem = TET12, octave: number = 4): Scale {
   const match = symbol.match(/^([A-G][#b]*)\s+(.*)$/i);
@@ -201,6 +203,7 @@ export function parseScaleSymbol(symbol: string, tuning: TuningSystem = TET12, o
  * @param noteStr - Note string with optional octave number.
  * @param defaultOctave - Octave to use if none is specified (default: 4).
  * @throws if the string cannot be parsed.
+ * @category Core
  */
 export function parseNote(noteStr: string, defaultOctave: number = 4): Note {
   const match = noteStr.trim().match(/^([A-G])([#b]*)(-?\d+)?$/i);
@@ -329,6 +332,7 @@ function romanToSymbol(token: string, key: RomanKey): { symbol: string; octave: 
  *   `parseChordSymbol`, with intervals mapped by `getStepFromStandard`.
  * @param octave - Octave of the key's tonic (default: 4).
  * @throws on an invalid numeral, an unknown suffix or a key that is not heptatonic.
+ * @category Core
  */
 export function parseRomanProgression(progression: string, keySymbol: string, tuning: TuningSystem = TET12, octave: number = 4): Chord[] {
   const key = romanKey(keySymbol, octave);
@@ -363,6 +367,7 @@ export function parseRomanProgression(progression: string, keySymbol: string, tu
  *   tone of the upper chord (`"C/E"` is an inversion: use `parseChordSymbol`)
  *
  * @throws if the symbol cannot be parsed.
+ * @category Core
  */
 export function parsePolychord(
   symbol: string,

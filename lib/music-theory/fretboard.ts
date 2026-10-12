@@ -10,24 +10,45 @@ import { Scale } from './scale';
 // Tuning presets (steps from A4 = 0, low→high)
 // ============================================================================
 
-/** Standard guitar tuning: E2 A2 D3 G3 B3 E4 */
+/**
+ * Standard guitar tuning: E2 A2 D3 G3 B3 E4
+ * @category Core
+ */
 export const GUITAR_STANDARD = [-29, -24, -19, -14, -10, -5] as const;
-/** Guitar drop D tuning: D2 A2 D3 G3 B3 E4 */
+/**
+ * Guitar drop D tuning: D2 A2 D3 G3 B3 E4
+ * @category Core
+ */
 export const GUITAR_DROPPED_D = [-31, -24, -19, -14, -10, -5] as const;
-/** Guitar open G tuning: D2 G2 D3 G3 B3 D4 */
+/**
+ * Guitar open G tuning: D2 G2 D3 G3 B3 D4
+ * @category Core
+ */
 export const GUITAR_OPEN_G = [-31, -26, -19, -14, -10, -7] as const;
-/** Standard ukulele tuning (reentrant): G4 C4 E4 A4 */
+/**
+ * Standard ukulele tuning (reentrant): G4 C4 E4 A4
+ * @category Core
+ */
 export const UKULELE_STANDARD = [-2, -9, -5, 0] as const;
-/** Standard 4-string bass tuning: E1 A1 D2 G2 */
+/**
+ * Standard 4-string bass tuning: E1 A1 D2 G2
+ * @category Core
+ */
 export const BASS_STANDARD = [-41, -36, -31, -26] as const;
-/** 5-string banjo open G tuning (drone first): G4 D3 G3 B3 D4 */
+/**
+ * 5-string banjo open G tuning (drone first): G4 D3 G3 B3 D4
+ * @category Core
+ */
 export const BANJO_OPEN_G = [-2, -19, -14, -10, -7] as const;
 
 // ============================================================================
 // Types
 // ============================================================================
 
-/** Options for voicing and scale position generation. */
+/**
+ * Options for voicing and scale position generation.
+ * @category Core
+ */
 export type FretboardVoicingOptions = {
   /** Highest fret to search. Default: 12. */
   maxFret?: number;
@@ -53,6 +74,7 @@ export type FretboardVoicingOptions = {
  * @example
  * const voicings = getFretboardVoicings(chord, GUITAR_STANDARD);
  * renderFretboard({ name: chord.name, ...voicings[0] });
+ * @category Core
  */
 export type FretboardVoicingResult = {
   /** One fret per string, low→high. -1 = mute (×), stringOffset[i] = open (○), N = fret N. */
@@ -74,6 +96,7 @@ export type FretboardVoicingResult = {
  * @example
  * const map = getFretboardScale(scale, GUITAR_STANDARD);
  * renderFretboard({ name: scale.name, ...map });
+ * @category Core
  */
 export type FretboardScaleResult = {
   /** Per string: all fret positions where a scale note appears. Empty array = no scale notes on this string. */
@@ -115,6 +138,7 @@ function toNoteNames(tuning: readonly number[], ts: Chord['tuningSystem']): stri
  *   (`GUITAR_STANDARD`, `UKULELE_STANDARD`, etc.) or supply a custom array.
  * @param options - Search constraints: `maxFret` (default 12), `maxStretch` (default 4).
  * @returns Array of voicings sorted by playability. Empty if no valid voicing exists.
+ * @category Core
  */
 export function getFretboardVoicings(
   chord: Chord,
@@ -215,6 +239,7 @@ export function getFretboardVoicings(
  * @param tuning - Open string steps from A4, low→high.
  * @param options - `maxFret` controls how far up the neck to scan (default 12).
  * @returns A single result with all scale positions across the neck.
+ * @category Core
  */
 export function getFretboardScale(
   scale: Scale,
@@ -255,6 +280,7 @@ export function getFretboardScale(
  * @param tuning - Open string steps from A4, low→high.
  * @param options - `maxFret` (default 12), `windowSize` (default 4).
  * @returns Array of position boxes ordered by starting fret, each with at least one note.
+ * @category Core
  */
 export function getFretboardScalePositions(
   scale: Scale,

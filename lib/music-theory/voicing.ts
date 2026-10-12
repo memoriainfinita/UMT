@@ -7,7 +7,10 @@ import { Chord, chordDegreeLabel } from './chord';
 import { Harmony } from './harmony';
 import { parseChordSymbol } from './parser';
 
-/** One sounding note of a voicing, bottom to top. */
+/**
+ * One sounding note of a voicing, bottom to top.
+ * @category Tonal harmony
+ */
 export interface VoicedNote {
   /** Note name with octave: `'E4'`. */
   note: string;
@@ -15,7 +18,10 @@ export interface VoicedNote {
   degree: string | null;
 }
 
-/** Result of `analyzeVoicing`. */
+/**
+ * Result of `analyzeVoicing`.
+ * @category Tonal harmony
+ */
 export interface VoicingAnalysis {
   /** Name of the chord the notes are read as (passed in, or the best detection). */
   chord: string;
@@ -71,6 +77,7 @@ function dropType(sorted: number[]): VoicingAnalysis['drop'] {
  * @example
  * analyzeVoicing(['G3', 'C4', 'E4', 'B4'].map(n => parseNote(n)), parseChordSymbol('Cmaj7'))
  * // → inversion 2, drop 'drop 2' (from B G E C, G dropped), position 'close'
+ * @category Tonal harmony
  */
 export function analyzeVoicing(notes: Note[], chord?: Chord): VoicingAnalysis | null {
   if (notes.length === 0) return null;

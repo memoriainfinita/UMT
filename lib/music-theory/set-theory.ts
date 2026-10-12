@@ -73,7 +73,10 @@ const FORTE_TABLE: Record<string, string> = {
   '0,1,2,3,4,5,6,7,8,9,10,11': '12-1',
 };
 
-/** Allen Forte set-class analysis for any pitch-class collection. */
+/**
+ * Allen Forte set-class analysis for any pitch-class collection.
+ * @category Post-tonal
+ */
 export class SetTheory {
   /**
    * Extracts unique pitch classes from an array of notes.

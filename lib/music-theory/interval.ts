@@ -1,6 +1,9 @@
 import { Cents, Ratio } from './types';
 
-/** A pitch interval, held as its size in cents. */
+/**
+ * A pitch interval, held as its size in cents.
+ * @category Core
+ */
 export class Interval {
   /** Create an interval from a value in cents. Prefer `fromCents()` or `fromRatio()` for clarity. */
   constructor(

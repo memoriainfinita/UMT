@@ -55,6 +55,7 @@ function inKey(stepsFromA4: number, key: KeyLetters): boolean {
  * the neighbouring letter needs fewer (A natural in Db major, not Bbb). An unknown key
  * falls back to flats.
  * @returns Name with octave; the octave follows the letter (B#3 is the pitch of C4).
+ * @category Tonal harmony
  */
 export function spellPitchInKey(stepsFromA4: number, keySymbol: string): string {
   const key = keyLetters(keySymbol);
@@ -78,6 +79,7 @@ export function spellPitchInKey(stepsFromA4: number, keySymbol: string): string 
  * `rootName` (default: the chord's own name). Cm7b5 is C Eb Gb Bb, C7#11 has F#, Bdim7
  * has Ab. Same order and octaves as `chord.getNotes()` (slash bass first). Other
  * tunings: the names `getNotes()` gives.
+ * @category Tonal harmony
  */
 export function spellChord(chord: Chord, rootName?: string): string[] {
   const notes = chord.getNotes();
@@ -103,6 +105,7 @@ export function spellChord(chord: Chord, rootName?: string): string[] {
  * F# major, not B# with D## F##); on a tie, the key's spelling (`spellPitchInKey`). A slash bass is named by
  * its interval in the chord, or by the key when it is not a chord tone.
  * Returns the chord unchanged when the key is unknown or the tuning is not 12-TET.
+ * @category Tonal harmony
  */
 export function spellChordInKey(chord: Chord, keySymbol: string): Chord {
   const ts = chord.tuningSystem;

@@ -5,7 +5,10 @@
  */
 import { TuningSystem, JustIntonation } from './tuning';
 
-/** A single row in a temperament comparison: one tuning vs. one JI interval. */
+/**
+ * A single row in a temperament comparison: one tuning vs. one JI interval.
+ * @category Microtonal / Xenharmonic
+ */
 export interface ComparisonEntry {
   /** Name of the tuning compared. */
   tuningName: string;
@@ -19,7 +22,10 @@ export interface ComparisonEntry {
   errorCents: number;
 }
 
-/** Full comparison matrix across tuning systems and JI reference intervals. */
+/**
+ * Full comparison matrix across tuning systems and JI reference intervals.
+ * @category Microtonal / Xenharmonic
+ */
 export interface ComparisonTable {
   /** The just intervals compared, as ratios. */
   intervals: [number, number][];
@@ -39,7 +45,10 @@ function closestStep(tuning: TuningSystem, cents: number): number {
   return s;
 }
 
-/** Static methods for comparing tuning systems against JI, detecting wolf intervals, and finding optimal EDOs. */
+/**
+ * Static methods for comparing tuning systems against JI, detecting wolf intervals, and finding optimal EDOs.
+ * @category Microtonal / Xenharmonic
+ */
 export class TemperamentAnalysis {
   /**
    * Compares multiple tuning systems against JI reference intervals.
@@ -163,6 +172,7 @@ export class TemperamentAnalysis {
  * Maps a JI ratio to the closest step in an EDO.
  * @param jiRatio - [numerator, denominator] ratio.
  * @param edoSize - Number of steps per octave in the target EDO.
+ * @category Microtonal / Xenharmonic
  */
 export function mapJItoEDO(jiRatio: [number, number], edoSize: number): {
   /** Closest step of the EDO. */
@@ -181,6 +191,7 @@ export function mapJItoEDO(jiRatio: [number, number], edoSize: number): {
  * Finds the smallest EDO that approximates all given JI ratios within a cent threshold.
  * @param jiRatios - Array of [numerator, denominator] ratios.
  * @param maxSize - Maximum EDO size to search (default 72).
+ * @category Microtonal / Xenharmonic
  */
 export function bestEDOFor(jiRatios: [number, number][], maxSize = 72): {
   /** Number of equal divisions of the octave. */

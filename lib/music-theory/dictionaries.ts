@@ -3,6 +3,7 @@
  * Parser maps these to any target tuning via getStepFromStandard().
  * Canonical keys are used in chord naming and detection; aliases section maps
  * common alternate notations to the same formula.
+ * @category Core
  */
 export const CHORD_FORMULAS: Record<string, readonly number[]> = {
 
@@ -94,6 +95,7 @@ export const CHORD_FORMULAS: Record<string, readonly number[]> = {
  * via getStepFromStandard() in parser functions.
  *
  * Modes are grouped under their parent scale for legibility.
+ * @category Core
  */
 export const SCALE_PATTERNS: Record<string, readonly number[]> = {
 
@@ -207,6 +209,7 @@ export const SCALE_PATTERNS: Record<string, readonly number[]> = {
  * (empty string = major triad; 'M' would be redundant).
  *
  * Verified against `Scale.getDiatonicChords` for each mode rooted at C.
+ * @category Core
  */
 export interface ModalDegreeQualities {
   /** Triad quality on each degree, 1 to 7 (`''` major, `'m'`, `'dim'`, `'aug'`). */
@@ -215,7 +218,10 @@ export interface ModalDegreeQualities {
   readonly sevenths: readonly string[];
 }
 
-/** Chord qualities on each degree of each mode, by mode name (`'dorian'`, `'harmonic minor'`…). See `ModalDegreeQualities`. */
+/**
+ * Chord qualities on each degree of each mode, by mode name (`'dorian'`, `'harmonic minor'`…). See `ModalDegreeQualities`.
+ * @category Core
+ */
 export const MODAL_DEGREE_QUALITIES: Readonly<Record<string, ModalDegreeQualities>> = Object.freeze({
   // ── Diatonic (major system) ──
   'ionian':     Object.freeze({ triads: ['', 'm', 'm', '', '', 'm', 'dim'],     sevenths: ['maj7','m7','m7','maj7','7','m7','m7b5'] }),
@@ -250,6 +256,7 @@ export const MODAL_DEGREE_QUALITIES: Readonly<Record<string, ModalDegreeQualitie
  * MODE_PARENT_FAMILY - for each mode, the family it belongs to and its 1-indexed
  * position within that family. Enables `Scale.getParentScale()` and
  * `Scale.getRelativeMode()` navigation within classical modal systems.
+ * @category Core
  */
 export interface ModeParent {
   /** Parent scale type: `'major'`, `'harmonic minor'`, `'melodic minor'`… */
@@ -264,7 +271,10 @@ const MAJOR_FAMILY = ['ionian', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'a
 const HARMONIC_MINOR_FAMILY = ['harmonic minor', 'locrian #6', 'ionian #5', 'dorian #4', 'phrygian dominant', 'lydian #2', 'super locrian bb7'];
 const MELODIC_MINOR_FAMILY = ['melodic minor', 'dorian b2', 'lydian augmented', 'lydian dominant', 'mixolydian b6', 'locrian #2', 'altered'];
 
-/** Parent family and degree of each mode, by mode name (`'dorian'` → major, degree 2). See `ModeParent`. */
+/**
+ * Parent family and degree of each mode, by mode name (`'dorian'` → major, degree 2). See `ModeParent`.
+ * @category Core
+ */
 export const MODE_PARENT_FAMILY: Readonly<Record<string, ModeParent>> = Object.freeze({
   // Major family
   'ionian':     Object.freeze({ family: 'major', degree: 1, familyModes: MAJOR_FAMILY }),
@@ -303,6 +313,7 @@ export const MODE_PARENT_FAMILY: Readonly<Record<string, ModeParent>> = Object.f
  * MODE_BRIGHTNESS - ordering of diatonic modes by sharpness relative to the parent major.
  * Lydian (+1 raised degree) brightest; Locrian (5 flat degrees vs major) darkest.
  * Values are integers: positive = brighter than Ionian, negative = darker.
+ * @category Core
  */
 export const MODE_BRIGHTNESS: Readonly<Record<string, number>> = Object.freeze({
   'lydian':      1,

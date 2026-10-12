@@ -8,6 +8,7 @@
  *
  * Aroha, avaroha, vadi, samvadi, thaat and time follow the English Wikipedia raga infoboxes
  * (Bhatkhande-system sources, 2026-10), with zigzag phrases reduced to straight lines.
+ * @category World music
  */
 
 export interface Raga {
@@ -32,10 +33,16 @@ export interface Raga {
   description: string;
 }
 
-/** Svara names indexed by the numbers used in `vadi` and `samvadi` (index 0 unused). */
+/**
+ * Svara names indexed by the numbers used in `vadi` and `samvadi` (index 0 unused).
+ * @category World music
+ */
 export const SVARA_NAMES = ['', 'Sa', 'Re', 'Ga', 'Ma', 'Pa', 'Dha', 'Ni'] as const;
 
-/** Ten Hindustani ragas by id (`'yaman'`, `'bhairav'`…), checked against the Wikipedia raga infoboxes. */
+/**
+ * Ten Hindustani ragas by id (`'yaman'`, `'bhairav'`…), checked against the Wikipedia raga infoboxes.
+ * @category World music
+ */
 export const RAGAS: Record<string, Raga> = Object.freeze({
   'yaman': {
     name: 'Yaman',

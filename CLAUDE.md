@@ -87,7 +87,7 @@ dist/
   umt.js                  # Compiled bundle - tracked in git (CDN via jsDelivr)
 
 index.html                # Demo page - 12 interactive sections
-docs-theme/custom.css     # API docs theme: the demo palette and fonts (typedoc.json customCss)
+docs-theme/                # API docs theme (typedoc.json): custom.css with the demo palette and fonts, custom.js for the UMT brand
 
 archive/                  # Old demos and Next.js scaffolding (gitignored)
 docs/
@@ -111,5 +111,5 @@ All pitch positions are **steps from A4 = 0** within a `TuningSystem`. A4 = 440H
 - `ScalaTuning` (from `.scl` files) requires the last entry to be the octave (`2/1` or `1200.0`).
 - `Harmony.detectChords` is 12-TET only: it returns `['Unknown Chord']` for other tunings. `Harmony.getNegativeHarmony` reflects the notes in any tuning but only names the result in 12-TET (`'Negative of C'` otherwise).
 - All library strings are in English. No Spanish strings in library code.
-- Every export carries JSDoc, fields of returned objects included; `docs:check` fails otherwise. `GUIDE.md` (developer guide) and `CONTRIBUTING.md` are part of the API docs; their examples were run against `dist/umt.mjs`.
+- Every export carries JSDoc, fields of returned objects included; `docs:check` fails otherwise. Every export also carries `@category` with its README module group, which builds the API docs menu. `GUIDE.md` (developer guide) and `CONTRIBUTING.md` are part of the API docs; their examples were run against `dist/umt.mjs`.
 - `dist/umt.js` is tracked in git intentionally - it is the distributable artifact, not a build byproduct to ignore.

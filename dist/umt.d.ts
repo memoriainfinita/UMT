@@ -1,12 +1,19 @@
-/** A pitch interval expressed in cents (1/100 of a semitone). 1200 cents = 1 octave. */
+/**
+ * A pitch interval expressed in cents (1/100 of a semitone). 1200 cents = 1 octave.
+ * @category Core
+ */
 export type Cents = number;
-/** A frequency expressed in Hertz (cycles per second). A4 = 440 Hz by default. */
+/**
+ * A frequency expressed in Hertz (cycles per second). A4 = 440 Hz by default.
+ * @category Core
+ */
 export type Hertz = number;
 /**
  * A frequency ratio used to define intervals in just intonation and tuning systems.
  * - `[number, number]` - integer fraction, e.g. `[3, 2]` for a perfect fifth (3/2)
  * - `number` - decimal ratio, e.g. `1.5` for a perfect fifth
  * Both forms are accepted by `Interval.fromRatio()`.
+ * @category Core
  */
 export type Ratio = [
 	number,
@@ -15,9 +22,13 @@ export type Ratio = [
 /**
  * A MIDI note number in the range 0–127.
  * MIDI note 69 = A4 (440 Hz). Middle C (C4) = 60.
+ * @category Core
  */
 export type MidiNote = number;
-/** A pitch interval, held as its size in cents. */
+/**
+ * A pitch interval, held as its size in cents.
+ * @category Core
+ */
 export declare class Interval {
 	/** Size in cents (1200 = octave); negative for a descending interval. */
 	cents: Cents;
@@ -69,6 +80,7 @@ export declare class Interval {
  * Steps can be negative (below A4) or positive (above A4), and span multiple octaves.
  *
  * All concrete subclasses must implement `getFrequency`, `getInterval`, and `octaveSteps`.
+ * @category Core
  */
 export declare abstract class TuningSystem {
 	/** Display name: `'12-TET'`, `'Ptolemaic Just Intonation'`, `'Werckmeister III'`. */
@@ -114,6 +126,7 @@ export declare abstract class TuningSystem {
 /**
  * Equal Division of the Octave - divides the octave into `divisions` equal steps.
  * Examples: 12-TET (standard), 24-TET (quarter-tone), 31-TET, 53-TET.
+ * @category Core
  */
 export declare class EDO extends TuningSystem {
 	divisions: number;
@@ -141,6 +154,7 @@ export declare class EDO extends TuningSystem {
  * ```ts
  * new JustIntonation('5-limit Major', [[9,8],[5,4],[4,3],[3,2],[5,3],[15,8]])
  * ```
+ * @category Core
  */
 export declare class JustIntonation extends TuningSystem {
 	/** Resolved interval objects including the implicit unison at index 0. */
@@ -174,6 +188,7 @@ export declare class JustIntonation extends TuningSystem {
  * ```ts
  * new CentTuning('Werckmeister III', [90, 192, 294, 390, 498, 588, 696, 792, 888, 996, 1092])
  * ```
+ * @category Core
  */
 export declare class CentTuning extends TuningSystem {
 	cents: number[];
@@ -199,6 +214,7 @@ export declare class CentTuning extends TuningSystem {
  * ```ts
  * new NonOctaveTuning('Bohlen-Pierce', 13, 3)
  * ```
+ * @category Core
  */
 export declare class NonOctaveTuning extends TuningSystem {
 	stepsPerPeriod: number;
@@ -213,13 +229,17 @@ export declare class NonOctaveTuning extends TuningSystem {
 	/** Steps per period (not an octave - the period is `periodRatio : 1`). */
 	get octaveSteps(): number;
 }
-/** Standard 12-TET singleton - used as the default tuning throughout the library. */
+/**
+ * Standard 12-TET singleton - used as the default tuning throughout the library.
+ * @category Core
+ */
 export declare const TET12: EDO;
 /**
  * A single pitch in a given tuning system.
  *
  * Position is stored as `stepsFromBase`, an integer offset from A4 (step 0) within the tuning.
  * The same step number means different frequencies in different tuning systems.
+ * @category Core
  */
 export declare class Note {
 	tuningSystem: TuningSystem;
@@ -308,6 +328,7 @@ export declare class Note {
  * `intervalsInSteps` contains the offset in tuning steps from the root for each chord tone,
  * including the root itself (offset 0) as the first element.
  * Example: `[0, 4, 7]` = major triad in 12-TET (root, major third, perfect fifth).
+ * @category Tonal harmony
  */
 export declare class Chord {
 	name: string;
@@ -388,6 +409,7 @@ export declare class Chord {
  * `''` when none fits or the tuning is not 12 steps per octave. Ninths, elevenths and sixths
  * reduce to the triad or seventh below them (Cadd9 and C6/9 are `'M'`); a chord is sus only
  * without a third.
+ * @category Tonal harmony
  */
 export declare function chordQualityFromIntervals(chord: Chord, oct?: number): string;
 /**
@@ -399,11 +421,13 @@ export declare function chordQualityFromIntervals(chord: Chord, oct?: number): s
  * chord, and 3 semitones is `'#9'` beside a major third.
  * @param interval - Semitones above the root (0-23; larger values are reduced by octaves).
  * @param formula - All intervals of the chord.
+ * @category Tonal harmony
  */
 export declare function chordDegreeLabel(interval: number, formula: readonly number[]): string;
 /**
  * Characteristic analysis of a modal scale: brightness relative to Ionian,
  * degrees that differ from the parallel major, jazz avoid notes, and parent-family info.
+ * @category Tonal harmony
  */
 export interface ModalCharacteristics {
 	/** Degrees (1-7) that differ from the major scale on the same root (12-TET heptatonic scales). */
@@ -425,6 +449,7 @@ export interface ModalCharacteristics {
  * `stepPattern` defines the intervals between consecutive degrees in tuning steps
  * (e.g. `[2, 2, 1, 2, 2, 2, 1]` for major in 12-TET). The pattern is relative -
  * the same pattern at a different `rootStep` gives the same scale type in a different key.
+ * @category Tonal harmony
  */
 export declare class Scale {
 	name: string;
@@ -522,13 +547,20 @@ export declare class Scale {
 	 */
 	transpose(steps: number): Scale;
 }
-/** Note names in 12-TET using sharps, ordered from A (index 0 = A, index 3 = C, etc.). */
+/**
+ * Note names in 12-TET using sharps, ordered from A (index 0 = A, index 3 = C, etc.).
+ * @category Core
+ */
 export declare const NOTE_NAMES_12TET_SHARP: string[];
-/** Note names in 12-TET using flats, ordered from A (index 0 = A, index 3 = C, etc.). */
+/**
+ * Note names in 12-TET using flats, ordered from A (index 0 = A, index 3 = C, etc.).
+ * @category Core
+ */
 export declare const NOTE_NAMES_12TET_FLAT: string[];
 /**
  * Converts a standard note name (e.g., "C#", "Bb") + octave to steps from A4 in 12-TET.
  * A4 = 0. C4 = -9.
+ * @category Core
  */
 export declare function parseNoteToStep12TET(noteName: string, octave?: number): number;
 /**
@@ -536,6 +568,7 @@ export declare function parseNoteToStep12TET(noteName: string, octave?: number):
  * @param stepsFromA4 - Integer semitone offset from A4 (A4 = 0, C4 = -9).
  * @param preferFlats - If true, uses flat spelling (e.g. Bb instead of A#).
  * @returns Note name with octave, e.g. `"C4"`, `"Bb3"`.
+ * @category Core
  */
 export declare function get12TETName(stepsFromA4: number, preferFlats?: boolean): string;
 /**
@@ -544,6 +577,7 @@ export declare function get12TETName(stepsFromA4: number, preferFlats?: boolean)
  * The octave number follows the letter, so B#3 and C4 are the same pitch.
  * @returns Full name with octave (e.g. `"E#4"`, `"Cb5"`), or null when the letter
  *   would need more than two accidentals.
+ * @category Core
  */
 export declare function spellByLetter(stepsFromA4: number, rootLetter: string, degree: number): string | null;
 /**
@@ -551,14 +585,19 @@ export declare function spellByLetter(stepsFromA4: number, rootLetter: string, d
  * rest of the chord (`pcs`: the chord's intervals mod 12): 6 is b5 without a perfect fifth
  * and #11 with one; 8 is #5 or b13; 3 is #9 when the chord has a major third; 9 is the
  * bb7 of a diminished seventh.
+ * @category Core
  */
 export declare function chordToneOffset(semitones: number, pcs: ReadonlySet<number>): number;
 /**
  * The written root of a symbol (`"Cb"` from `"Cbmaj7"`, `"E#"` from `"E# major"`) when it
  * names the pitch of `stepsFromA4` in 12-TET; otherwise null.
+ * @category Core
  */
 export declare function writtenRoot(symbol: string, stepsFromA4: number): string | null;
-/** Returns just the note letter+accidental without octave number (e.g. "C#", "Bb"). */
+/**
+ * Returns just the note letter+accidental without octave number (e.g. "C#", "Bb").
+ * @category Core
+ */
 export declare function get12TETBaseName(stepsFromA4: number, preferFlats?: boolean): string;
 /**
  * Returns the other spellings of a note, up to double sharps and double flats (`##`,
@@ -566,6 +605,7 @@ export declare function get12TETBaseName(stepsFromA4: number, preferFlats?: bool
  * (C4 → B#3, Dbb4).
  * @param noteName - Note name with optional accidental and octave, e.g. `"C#"`, `"F#4"`.
  * @returns Enharmonic equivalents, e.g. `["Db", "B##"]` for `"C#"`; empty for an invalid name.
+ * @category Core
  */
 export declare function getEnharmonics(noteName: string): string[];
 /**
@@ -578,12 +618,14 @@ export declare function getEnharmonics(noteName: string): string[];
  *
  * @param rootName - Root note name (e.g. 'D', 'Bb', 'F#'). Octave digits are stripped.
  * @param scaleType - Scale or mode type (e.g. 'major', 'dorian', 'harmonic minor'). Default: 'major'.
+ * @category Core
  */
 export declare function preferFlatsForKey(rootName: string, scaleType?: string): boolean;
 /**
  * @deprecated Use `preferFlatsForKey(rootName, scaleType)` instead.
  * This alias only considers the root note without scale-type context,
  * which gives incorrect results for modes and minor-family scales.
+ * @category Core
  */
 export declare function usesFlats(rootName: string): boolean;
 /**
@@ -597,6 +639,7 @@ export declare function usesFlats(rootName: string): boolean;
  * @param letterSteps - Letter distance, e.g. 3 for a fourth, 9 for a tenth.
  * @returns Interval abbreviation, e.g. `"M3"`, `"A4"`, `"m10"`; `"Step N"` when the
  *   letter distance and the semitones do not make an interval.
+ * @category Core
  */
 export declare function getIntervalName(stepsFromRoot: number, is12TET?: boolean, letterSteps?: number): string;
 /**
@@ -606,6 +649,7 @@ export declare function getIntervalName(stepsFromRoot: number, is12TET?: boolean
  * @param a - Note name, e.g. `"C4"`, `"F#"`, `"Bb3"`.
  * @param b - Note name.
  * @throws if either name is not a note.
+ * @category Core
  */
 export declare function getIntervalBetween(a: string, b: string): string;
 /**
@@ -616,16 +660,19 @@ export declare function getIntervalBetween(a: string, b: string): string;
  * Useful for microtonal tunings where exact semitone counts don't apply.
  * @param cents - Interval size in cents (negative: measured downwards).
  * @returns Interval name, e.g. `"Major 3rd (M3)"`, or `"350.00 cents"` if no match.
+ * @category Core
  */
 export declare function getSemanticIntervalName(cents: number): string;
 /**
  * Converts a frequency in Hz to the nearest MIDI note number, clamped to 0-127.
  * MIDI note 69 is A4 (default 440Hz).
+ * @category Core
  */
 export declare function freqToMidi(freq: Hertz, baseA4?: Hertz): MidiNote;
 /**
  * Converts a frequency to the closest valid MIDI note and the pitch bend offset in cents.
  * Useful for microtonal playback via standard MIDI.
+ * @category Core
  */
 export declare function freqToMidiPitchBend(freq: Hertz, baseA4?: Hertz): {
 	/** Nearest MIDI note number (not clamped to 0-127). */
@@ -635,6 +682,7 @@ export declare function freqToMidiPitchBend(freq: Hertz, baseA4?: Hertz): {
 };
 /**
  * Converts a MIDI note number (0-127) to frequency in Hz.
+ * @category Core
  */
 export declare function midiToFreq(midi: MidiNote, baseA4?: Hertz): Hertz;
 /**
@@ -642,6 +690,7 @@ export declare function midiToFreq(midi: MidiNote, baseA4?: Hertz): Hertz;
  * Parser maps these to any target tuning via getStepFromStandard().
  * Canonical keys are used in chord naming and detection; aliases section maps
  * common alternate notations to the same formula.
+ * @category Core
  */
 export declare const CHORD_FORMULAS: Record<string, readonly number[]>;
 /**
@@ -650,6 +699,7 @@ export declare const CHORD_FORMULAS: Record<string, readonly number[]>;
  * via getStepFromStandard() in parser functions.
  *
  * Modes are grouped under their parent scale for legibility.
+ * @category Core
  */
 export declare const SCALE_PATTERNS: Record<string, readonly number[]>;
 /**
@@ -660,6 +710,7 @@ export declare const SCALE_PATTERNS: Record<string, readonly number[]>;
  * (empty string = major triad; 'M' would be redundant).
  *
  * Verified against `Scale.getDiatonicChords` for each mode rooted at C.
+ * @category Core
  */
 export interface ModalDegreeQualities {
 	/** Triad quality on each degree, 1 to 7 (`''` major, `'m'`, `'dim'`, `'aug'`). */
@@ -667,12 +718,16 @@ export interface ModalDegreeQualities {
 	/** Seventh-chord quality on each degree, 1 to 7 (`'maj7'`, `'m7'`, `'7'`, `'m7b5'`…). */
 	readonly sevenths: readonly string[];
 }
-/** Chord qualities on each degree of each mode, by mode name (`'dorian'`, `'harmonic minor'`…). See `ModalDegreeQualities`. */
+/**
+ * Chord qualities on each degree of each mode, by mode name (`'dorian'`, `'harmonic minor'`…). See `ModalDegreeQualities`.
+ * @category Core
+ */
 export declare const MODAL_DEGREE_QUALITIES: Readonly<Record<string, ModalDegreeQualities>>;
 /**
  * MODE_PARENT_FAMILY - for each mode, the family it belongs to and its 1-indexed
  * position within that family. Enables `Scale.getParentScale()` and
  * `Scale.getRelativeMode()` navigation within classical modal systems.
+ * @category Core
  */
 export interface ModeParent {
 	/** Parent scale type: `'major'`, `'harmonic minor'`, `'melodic minor'`… */
@@ -682,12 +737,16 @@ export interface ModeParent {
 	/** Modes of the family in order, from degree 1. */
 	readonly familyModes: readonly string[];
 }
-/** Parent family and degree of each mode, by mode name (`'dorian'` → major, degree 2). See `ModeParent`. */
+/**
+ * Parent family and degree of each mode, by mode name (`'dorian'` → major, degree 2). See `ModeParent`.
+ * @category Core
+ */
 export declare const MODE_PARENT_FAMILY: Readonly<Record<string, ModeParent>>;
 /**
  * MODE_BRIGHTNESS - ordering of diatonic modes by sharpness relative to the parent major.
  * Lydian (+1 raised degree) brightest; Locrian (5 flat degrees vs major) darkest.
  * Values are integers: positive = brighter than Ionian, negative = darker.
+ * @category Core
  */
 export declare const MODE_BRIGHTNESS: Readonly<Record<string, number>>;
 /**
@@ -714,6 +773,7 @@ export declare const MODE_BRIGHTNESS: Readonly<Record<string, number>>;
  * @param tuning - Target tuning system (default: 12-TET). Intervals are mapped via `getStepFromStandard`.
  * @param octave - Octave for the root note (default: 4).
  * @throws if the symbol cannot be parsed or the chord type is neither in the dictionary nor compositionally valid.
+ * @category Core
  */
 export declare function parseChordSymbol(symbol: string, tuning?: TuningSystem, octave?: number): Chord;
 /**
@@ -726,6 +786,7 @@ export declare function parseChordSymbol(symbol: string, tuning?: TuningSystem, 
  * @param tuning - Target tuning system (default: 12-TET). Pattern steps are mapped via `getPatternFromStandard` (positions, not single steps).
  * @param octave - Octave for the root note (default: 4).
  * @throws if the symbol cannot be parsed or the scale type is unknown.
+ * @category Core
  */
 export declare function parseScaleSymbol(symbol: string, tuning?: TuningSystem, octave?: number): Scale;
 /**
@@ -737,6 +798,7 @@ export declare function parseScaleSymbol(symbol: string, tuning?: TuningSystem, 
  * @param noteStr - Note string with optional octave number.
  * @param defaultOctave - Octave to use if none is specified (default: 4).
  * @throws if the string cannot be parsed.
+ * @category Core
  */
 export declare function parseNote(noteStr: string, defaultOctave?: number): Note;
 /**
@@ -767,6 +829,7 @@ export declare function parseNote(noteStr: string, defaultOctave?: number): Note
  *   `parseChordSymbol`, with intervals mapped by `getStepFromStandard`.
  * @param octave - Octave of the key's tonic (default: 4).
  * @throws on an invalid numeral, an unknown suffix or a key that is not heptatonic.
+ * @category Core
  */
 export declare function parseRomanProgression(progression: string, keySymbol: string, tuning?: TuningSystem, octave?: number): Chord[];
 /**
@@ -778,6 +841,7 @@ export declare function parseRomanProgression(progression: string, keySymbol: st
  *   tone of the upper chord (`"C/E"` is an inversion: use `parseChordSymbol`)
  *
  * @throws if the symbol cannot be parsed.
+ * @category Core
  */
 export declare function parsePolychord(symbol: string, tuning?: TuningSystem): {
 	/** The chord on top. */
@@ -785,65 +849,126 @@ export declare function parsePolychord(symbol: string, tuning?: TuningSystem): {
 	/** The chord below (for `'D/C'`, the major triad on C). */
 	lower: Chord;
 };
-/** 19-TET - good approximation of minor thirds and meantone; used in microtonalism. */
+/**
+ * 19-TET - good approximation of minor thirds and meantone; used in microtonalism.
+ * @category Core
+ */
 export declare const TET19: EDO;
-/** 24-TET - quarter-tone tuning; common in Arabic and Turkish maqam music. */
+/**
+ * 24-TET - quarter-tone tuning; common in Arabic and Turkish maqam music.
+ * @category Core
+ */
 export declare const TET24: EDO;
-/** 31-TET - excellent meantone approximation; best EDO for pure major thirds. */
+/**
+ * 31-TET - excellent meantone approximation; best EDO for pure major thirds.
+ * @category Core
+ */
 export declare const TET31: EDO;
-/** 53-TET - closest standard EDO to 5-limit just intonation; scientific reference. */
+/**
+ * 53-TET - closest standard EDO to 5-limit just intonation; scientific reference.
+ * @category Core
+ */
 export declare const TET53: EDO;
 /**
  * Werckmeister III (Well Temperament, 1691).
  * Used by Bach and contemporaries. Each key has a slightly different character.
  * Werckmeister's values are in cents from C; step 0 is A4 (A → C = 311.73¢).
+ * @category Core
  */
 export declare const WerckmeisterIII: CentTuning;
 /**
  * Bohlen-Pierce (ED3) - 13 equal steps to the tritave (ratio 3:1).
  * Developed independently by Heinz Bohlen (1972) and John Pierce (1984).
+ * @category Core
  */
 export declare const BohlenPierce: NonOctaveTuning;
 /**
  * Ptolemaic (Ptolemy's Intense Diatonic) - 5-limit JI diatonic scale.
  * The classic just intonation tuning for the 7-note major scale.
  * Ratios: 1/1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8.
+ * @category Core
  */
 export declare const PtolemaicJI: JustIntonation;
 /**
  * 5-Limit Just Intonation (Chromatic) - all 12 pitch classes tuned to pure 5-limit ratios.
  * The standard JI chromatic scale as used in classical JI analysis.
+ * @category Core
  */
 export declare const FiveLimitJI: JustIntonation;
-/** Returns a major scale in 12-TET rooted at `rootStep` (steps from A4). */
+/**
+ * Returns a major scale in 12-TET rooted at `rootStep` (steps from A4).
+ * @category Core
+ */
 export declare const MajorScale12TET: (rootStep: number) => Scale;
-/** Returns a natural minor scale in 12-TET rooted at `rootStep`. */
+/**
+ * Returns a natural minor scale in 12-TET rooted at `rootStep`.
+ * @category Core
+ */
 export declare const MinorScale12TET: (rootStep: number) => Scale;
-/** Returns a major triad in 12-TET rooted at `rootStep`. */
+/**
+ * Returns a major triad in 12-TET rooted at `rootStep`.
+ * @category Core
+ */
 export declare const MajorTriad12TET: (rootStep: number) => Chord;
-/** Returns a minor triad in 12-TET rooted at `rootStep`. */
+/**
+ * Returns a minor triad in 12-TET rooted at `rootStep`.
+ * @category Core
+ */
 export declare const MinorTriad12TET: (rootStep: number) => Chord;
-/** Returns a dominant 7th chord in 12-TET rooted at `rootStep`. */
+/**
+ * Returns a dominant 7th chord in 12-TET rooted at `rootStep`.
+ * @category Core
+ */
 export declare const Dominant7th12TET: (rootStep: number) => Chord;
-/** Returns a neutral/Rast scale in 24-TET (approximates common maqam scales). */
+/**
+ * Returns a neutral/Rast scale in 24-TET (approximates common maqam scales).
+ * @category Core
+ */
 export declare const NeutralScale24TET: (rootStep: number) => Scale;
-/** Returns the Bayati maqam scale in 24-TET. Characteristic neutral 2nd above root. */
+/**
+ * Returns the Bayati maqam scale in 24-TET. Characteristic neutral 2nd above root.
+ * @category Core
+ */
 export declare const BayatiScale24TET: (rootStep: number) => Scale;
-/** Returns a neutral triad in 24-TET (neutral third = 350¢). */
+/**
+ * Returns a neutral triad in 24-TET (neutral third = 350¢).
+ * @category Core
+ */
 export declare const NeutralTriad24TET: (rootStep: number) => Chord;
-/** Returns a quarter-comma meantone major scale in 31-TET. */
+/**
+ * Returns a quarter-comma meantone major scale in 31-TET.
+ * @category Core
+ */
 export declare const MeantoneMajor31TET: (rootStep: number) => Scale;
-/** Returns the BP Lambda chord (Dur triad) rooted at `rootStep`. Analogous to a major triad. */
+/**
+ * Returns the BP Lambda chord (Dur triad) rooted at `rootStep`. Analogous to a major triad.
+ * @category Core
+ */
 export declare const BohlenPierceLambdaChord: (rootStep: number) => Chord;
-/** Returns the BP Moll chord (Minor triad) rooted at `rootStep`. */
+/**
+ * Returns the BP Moll chord (Minor triad) rooted at `rootStep`.
+ * @category Core
+ */
 export declare const BohlenPierceMollChord: (rootStep: number) => Chord;
-/** Returns the full BP chromatic scale (13 equal steps per tritave). */
+/**
+ * Returns the full BP chromatic scale (13 equal steps per tritave).
+ * @category Core
+ */
 export declare const BohlenPierceChromaticScale: (rootStep: number) => Scale;
-/** Returns a major triad in any tuning system. Intervals mapped via `getStepFromStandard`. */
+/**
+ * Returns a major triad in any tuning system. Intervals mapped via `getStepFromStandard`.
+ * @category Core
+ */
 export declare const MajorTriad: (tuning: TuningSystem, rootStep: number) => Chord;
-/** Returns a minor triad in any tuning system. Intervals mapped via `getStepFromStandard`. */
+/**
+ * Returns a minor triad in any tuning system. Intervals mapped via `getStepFromStandard`.
+ * @category Core
+ */
 export declare const MinorTriad: (tuning: TuningSystem, rootStep: number) => Chord;
-/** Returns a chromatic scale spanning one full period of any tuning system. */
+/**
+ * Returns a chromatic scale spanning one full period of any tuning system.
+ * @category Core
+ */
 export declare const ChromaticScale: (tuning: TuningSystem, rootStep: number) => Scale;
 /**
  * Builds a scale from a segment of the harmonic series. The tuning is octave-repeating JI whose
@@ -852,15 +977,28 @@ export declare const ChromaticScale: (tuning: TuningSystem, rootStep: number) =>
  * @param rootHz - Frequency of the first partial in Hz (scale step 0).
  * @param fromHarmonic - First partial (e.g. 8).
  * @param toHarmonic - Last partial (e.g. 16).
+ * @category Core
  */
 export declare function HarmonicSeries(rootHz: number, fromHarmonic: number, toHarmonic: number): Scale;
-/** Harmonic series partials 1–16 (full overtone scale). */
+/**
+ * Harmonic series partials 1–16 (full overtone scale).
+ * @category Core
+ */
 export declare const Harmonics1to16: Scale;
-/** Harmonic series partials 8–16 (one-octave segment, upper harmonics). */
+/**
+ * Harmonic series partials 8–16 (one-octave segment, upper harmonics).
+ * @category Core
+ */
 export declare const Harmonics8to16: Scale;
-/** Harmonic series partials 16–32 (very high harmonics). */
+/**
+ * Harmonic series partials 16–32 (very high harmonics).
+ * @category Core
+ */
 export declare const Harmonics16to32: Scale;
-/** A key related to a reference key, with its relationship type and circle-of-fifths distance. */
+/**
+ * A key related to a reference key, with its relationship type and circle-of-fifths distance.
+ * @category Tonal harmony
+ */
 export type RelatedKey = {
 	/** The related key, in the circle's notation: major upper case (`'G'`), minor lower case (`'e'`). */
 	key: string;
@@ -872,6 +1010,7 @@ export type RelatedKey = {
 /**
  * A modal key: a root note, a mode name, and the parent major key that the mode is derived from.
  * For example, D dorian is derived from C major (D is the 2nd degree of C major).
+ * @category Tonal harmony
  */
 export interface ModalKey {
 	/** Root of the mode, as passed in: `'D'`. */
@@ -885,6 +1024,7 @@ export interface ModalKey {
  * Circle of Fifths utility.
  * Convention: major keys use uppercase ('C', 'G'...), minor keys use lowercase ('a', 'e'...).
  * Methods that return keys follow this same convention - callers should use case to distinguish mode.
+ * @category Tonal harmony
  */
 export declare class CircleOfFifths {
 	/** Major keys clockwise from C, in upper case. */
@@ -964,9 +1104,15 @@ export declare class CircleOfFifths {
 	 */
 	static getModalDistance(keyA: ModalKey, keyB: ModalKey): number;
 }
-/** Category of a voice-leading problem detected between two chords. */
+/**
+ * Category of a voice-leading problem detected between two chords.
+ * @category Tonal harmony
+ */
 export type VoiceLeadingIssueType = "Parallel 5th" | "Parallel Octave" | "Voice Crossing" | "Voice Overlap" | "Leading Tone Unresolved" | "7th Unresolved" | "Forbidden Leap" | "Hidden Fifth" | "Hidden Octave" | "Direct Fifth" | "Direct Octave" | "False Relation" | "Doubled Leading Tone" | "Missing Third" | "Missing Root" | "Missing Fifth" | "Improper 6/4 Usage";
-/** A specific voice-leading problem detected between two voices. */
+/**
+ * A specific voice-leading problem detected between two voices.
+ * @category Tonal harmony
+ */
 export interface VoiceLeadingIssue {
 	/** What the problem is. */
 	type: VoiceLeadingIssueType;
@@ -975,7 +1121,10 @@ export interface VoiceLeadingIssue {
 	/** Readable description, with voices numbered from 1 (`'Parallel 5ths (Voices 1 and 3)'`). */
 	message: string;
 }
-/** A doubling or spacing problem detected in a chord voicing. */
+/**
+ * A doubling or spacing problem detected in a chord voicing.
+ * @category Tonal harmony
+ */
 export interface DoublingIssue {
 	/** What the problem is. */
 	type: "Doubled Leading Tone" | "Missing Third" | "Missing Root" | "Missing Fifth" | "Improper Doubling";
@@ -987,6 +1136,7 @@ export interface DoublingIssue {
 /**
  * Full harmonic analysis of a chord within a key context.
  * Includes Roman numeral, function (T/S/D), modal borrowing, and cadence detection.
+ * @category Tonal harmony
  */
 export interface ChordAnalysis {
 	/** The chord analyzed, as passed in. */
@@ -1020,6 +1170,7 @@ export interface ChordAnalysis {
 /**
  * A detected key change within a chord progression.
  * Includes the index where modulation occurs and the type (pivot, direct, etc.).
+ * @category Tonal harmony
  */
 export interface ModulationEvent {
 	/** Index of the first chord read in the new key. */
@@ -1040,6 +1191,7 @@ export interface ModulationEvent {
 /**
  * Analysis of a second-inversion (6/4) chord.
  * Classifies it as cadential, pedal, passing, or arpeggiated.
+ * @category Tonal harmony
  */
 export interface SixFourAnalysis {
 	/** How the 6/4 chord is used; `'none'` when the chord is not in second inversion. */
@@ -1047,7 +1199,10 @@ export interface SixFourAnalysis {
 	/** For a cadential 6/4, the chord it resolves to (the following V). */
 	resolution?: Chord;
 }
-/** One reading of a set of notes as a chord, with what ranks it (see `Harmony.detectChordsScored`). */
+/**
+ * One reading of a set of notes as a chord, with what ranks it (see `Harmony.detectChordsScored`).
+ * @category Tonal harmony
+ */
 export interface ChordCandidate {
 	/** Chord symbol, with a slash bass when the lowest note is not the root: `'C7'`, `'C7/E'`. */
 	name: string;
@@ -1068,6 +1223,7 @@ export interface ChordCandidate {
 }
 /**
  * A chord borrowed from a parallel mode (modal mixture), from `Harmony.getBorrowedChords`.
+ * @category Tonal harmony
  */
 export interface BorrowedChord {
 	/** The borrowed chord, spelled in the source mode. */
@@ -1087,6 +1243,7 @@ export interface BorrowedChord {
 /**
  * A chord that functions diatonically in two different keys,
  * used as the pivot point in a modulation.
+ * @category Tonal harmony
  */
 export interface PivotChord {
 	/** The chord, spelled as in key A. */
@@ -1109,6 +1266,7 @@ export interface PivotChord {
 /**
  * The Coltrane substitution axis for a given root.
  * The three major-third substitutions form a diminished seventh pattern.
+ * @category Tonal harmony
  */
 export interface ColtraneAxis {
 	/** Root of the key passed in. */
@@ -1120,11 +1278,15 @@ export interface ColtraneAxis {
 		string
 	];
 }
-/** How a slash chord is interpreted: simple inversion, hybrid, polychord, or upper structure. */
+/**
+ * How a slash chord is interpreted: simple inversion, hybrid, polychord, or upper structure.
+ * @category Tonal harmony
+ */
 export type SlashType = "inversion" | "hybrid" | "polychord" | "upper-structure";
 /**
  * Result of analyzing a slash chord (e.g. C/E, Fmaj7/A).
  * Distinguishes inversions from hybrid chords, polychords, and upper structures.
+ * @category Tonal harmony
  */
 export interface SlashAnalysis {
 	/** How the slash chord reads (an inversion when the bass is a chord tone). */
@@ -1141,6 +1303,7 @@ export interface SlashAnalysis {
 /**
  * Hints for enharmonic respelling decisions.
  * Providing a key or functional role improves spelling accuracy.
+ * @category Tonal harmony
  */
 export interface RespellContext {
 	/** Key to spell in (`'Db major'`); takes precedence over `direction`. */
@@ -1156,6 +1319,7 @@ export interface RespellContext {
  * checks, secondary and borrowed chords, modulation and pivot chords, chord-scale
  * suggestions, negative harmony, the Coltrane axis, slash chords and enharmonic respelling.
  * Key arguments are written `'C major'`, `'A minor'`, `'D dorian'`.
+ * @category Tonal harmony
  */
 export declare class Harmony {
 	/**
@@ -1391,7 +1555,10 @@ export declare class Harmony {
 	 */
 	static respellChord(chord: Chord, context: RespellContext): Chord;
 }
-/** Allen Forte set-class analysis for any pitch-class collection. */
+/**
+ * Allen Forte set-class analysis for any pitch-class collection.
+ * @category Post-tonal
+ */
 export declare class SetTheory {
 	/**
 	 * Extracts unique pitch classes from an array of notes.
@@ -1477,6 +1644,7 @@ export declare class SetTheory {
  * this value is used to compute frequencies for steps outside the first period.
  *
  * Use `parseScala()` to construct from raw `.scl` text.
+ * @category Microtonal / Xenharmonic
  */
 export declare class ScalaTuning extends TuningSystem {
 	/** Cent offsets from the root, with 0¢ prepended. Length = `octaveSteps + 1`. */
@@ -1505,9 +1673,13 @@ export declare class ScalaTuning extends TuningSystem {
  * Following the Scala format: lines starting with `!` are comments; the first other line
  * is the description, which may be empty; then the number of notes; then one pitch per line.
  * @throws if the note count is missing, or there are fewer pitches than it says.
+ * @category Microtonal / Xenharmonic
  */
 export declare function parseScala(sclText: string, baseFrequency?: number): ScalaTuning;
-/** A note duration expressed as a fraction of a whole note, with optional augmentation dots. */
+/**
+ * A note duration expressed as a fraction of a whole note, with optional augmentation dots.
+ * @category Rhythm
+ */
 export declare class Duration {
 	value: number;
 	dots: number;
@@ -1540,6 +1712,7 @@ export declare class Duration {
 /**
  * A time signature, supporting additive meters (e.g. 3+2+2/8) and irrational denominators.
  * Includes presets for common signatures via static properties.
+ * @category Rhythm
  */
 export declare class TimeSignature {
 	numerators: number[];
@@ -1570,7 +1743,10 @@ export declare class TimeSignature {
 	/** 2+2+2+3/8. */
 	static Balkan9: TimeSignature;
 }
-/** Polyrhythm generation and Euclidean rhythm distribution. */
+/**
+ * Polyrhythm generation and Euclidean rhythm distribution.
+ * @category Rhythm
+ */
 export declare class Polyrhythm {
 	/**
 	 * Generates a polyrhythm between multiple voices.
@@ -1585,7 +1761,10 @@ export declare class Polyrhythm {
 	 */
 	static euclidean(pulses: number, steps: number): boolean[];
 }
-/** A single timed event in a MusicStream: onset, duration, notes, and velocity. */
+/**
+ * A single timed event in a MusicStream: onset, duration, notes, and velocity.
+ * @category Rhythm
+ */
 export interface StreamEvent {
 	/** Onset, in beats of the stream's time signature (its denominator's note value) from the start. */
 	time: number;
@@ -1601,6 +1780,7 @@ export interface StreamEvent {
  * A standard data structure for representing temporal musical events.
  * Acts as a contract that can be consumed by audio engines (Tone.js, Web Audio)
  * or MIDI writers.
+ * @category Rhythm
  */
 export declare class MusicStream {
 	/** Events in time order. */
@@ -1653,6 +1833,7 @@ export declare class MusicStream {
 }
 /**
  * Augmentation, diminution, and retrograde of duration arrays.
+ * @category Rhythm
  */
 export declare class RhythmTransform {
 	/** Augmentation: multiply each duration by factor (default ×2). */
@@ -1670,6 +1851,7 @@ export declare class RhythmTransform {
 }
 /**
  * Detection of rhythmic features: hemiola, syncopation, clave patterns, etc.
+ * @category Rhythm
  */
 export declare class RhythmAnalysis {
 	/**
@@ -1710,6 +1892,7 @@ export declare class RhythmAnalysis {
 }
 /**
  * Polymeter: multiple time signatures cycling simultaneously.
+ * @category Rhythm
  */
 export declare class Polymeter {
 	private readonly meters;
@@ -1742,6 +1925,7 @@ export declare class Polymeter {
 }
 /**
  * Metric Modulation - computing tempo relationships between related meters.
+ * @category Rhythm
  */
 export declare class MetricModulation {
 	/**
@@ -1770,6 +1954,7 @@ export declare class MetricModulation {
 }
 /**
  * Isorhythm: the medieval technique of repeating talea (rhythm) and color (pitch) independently.
+ * @category Rhythm
  */
 export declare class Isorhythm {
 	private readonly talea;
@@ -1787,7 +1972,10 @@ export declare class Isorhythm {
 		duration: number;
 	}[];
 }
-/** Options for writing a stream in ABC. */
+/**
+ * Options for writing a stream in ABC.
+ * @category Notation
+ */
 export interface ABCStreamOptions {
 	/** Key of the tune (default `'C major'`): accidentals are written against its signature. Use the same key in `wrapInHeaders`. */
 	key?: string;
@@ -1796,6 +1984,7 @@ export interface ABCStreamOptions {
  * Bridge between Universal Music Theory and ABC Notation.
  * Converts UMT objects to ABC strings for visual rendering. Lengths assume `L:1/4`, as
  * `wrapInHeaders` writes. Notes of other tunings are written at the nearest 12-TET pitch.
+ * @category Notation
  */
 export declare class ABCBridge {
 	/**
@@ -1852,6 +2041,7 @@ export declare class ABCBridge {
  * P: Parallel (C Major <-> C Minor)
  * L: Leading-tone exchange (C Major <-> E Minor)
  * R: Relative (C Major <-> A Minor)
+ * @category Tonal harmony
  */
 export declare class NeoRiemannian {
 	/**
@@ -1884,7 +2074,10 @@ export declare class NeoRiemannian {
 	 */
 	static R(chord: Chord): Chord | null;
 }
-/** A pair of key profiles: weights of the 12 pitch classes above the tonic, major and minor. */
+/**
+ * A pair of key profiles: weights of the 12 pitch classes above the tonic, major and minor.
+ * @category Tonal harmony
+ */
 export interface KeyProfile {
 	/** 12 weights for a major key, from the tonic up by semitones. */
 	major: readonly number[];
@@ -1896,11 +2089,18 @@ export interface KeyProfile {
 /**
  * Key profiles for correlation key finding, as listed by Craig Sapp for Humdrum's `keycor`
  * (extras.humdrum.org/man/keycor). Index 0 is the tonic.
+ * @category Tonal harmony
  */
 export declare const KEY_PROFILES: Readonly<Record<"krumhansl" | "aarden" | "bellman" | "temperley" | "simple", KeyProfile>>;
-/** Name of a preset in `KEY_PROFILES`. */
+/**
+ * Name of a preset in `KEY_PROFILES`.
+ * @category Tonal harmony
+ */
 export type KeyProfileName = keyof typeof KEY_PROFILES;
-/** Options for key detection. */
+/**
+ * Options for key detection.
+ * @category Tonal harmony
+ */
 export interface KeyDetectionOptions {
 	/** Key profile to correlate with (default `'krumhansl'`), or a custom pair. */
 	profile?: KeyProfileName | KeyProfile;
@@ -1908,6 +2108,7 @@ export interface KeyDetectionOptions {
 /**
  * Key Detection Module
  * Implements correlation key finding (Krumhansl-Schmuckler) with a choice of key profiles.
+ * @category Tonal harmony
  */
 export declare class KeyDetection {
 	/** Krumhansl-Kessler major weights, the default profile (`KEY_PROFILES.krumhansl.major`). */
@@ -1949,7 +2150,10 @@ export declare class KeyDetection {
 	private static shiftProfile;
 	private static pearsonCorrelation;
 }
-/** A possible chord substitution with its type and harmonic explanation. */
+/**
+ * A possible chord substitution with its type and harmonic explanation.
+ * @category Tonal harmony
+ */
 export interface SubstitutionOption {
 	/** The substitute chord. */
 	chord: Chord;
@@ -1965,9 +2169,13 @@ export interface SubstitutionOption {
  * diatonic substitutions in major and natural minor (a third away, same function:
  * I → iii, vi; ii ↔ IV; V ↔ vii°; i → III, VI), and in major keys the minor
  * subdominant family (IV, ii → iv, bVII7, iiø7, and back to IV).
+ * @category Tonal harmony
  */
 export declare function getSubstitutions(chord: Chord, keySymbol: string): SubstitutionOption[];
-/** A named chord progression of `PROGRESSIONS`. */
+/**
+ * A named chord progression of `PROGRESSIONS`.
+ * @category Tonal harmony
+ */
 export interface ProgressionEntry {
 	/** Its id in `PROGRESSIONS`: `'ii-V-I'`, `'blues-12'`. */
 	name: string;
@@ -1980,19 +2188,27 @@ export interface ProgressionEntry {
 	/** Key it is usually played in, when there is one (`'Bb major'` for the jazz blues). */
 	defaultKey?: string;
 }
-/** Named progressions by id: ii-V-I, twelve-bar blues, rhythm changes, Coltrane changes, Andalusian cadence… Build one with `getProgression(id, key)`. */
+/**
+ * Named progressions by id: ii-V-I, twelve-bar blues, rhythm changes, Coltrane changes, Andalusian cadence… Build one with `getProgression(id, key)`.
+ * @category Tonal harmony
+ */
 export declare const PROGRESSIONS: Record<string, ProgressionEntry>;
 /**
  * Returns a realized Chord[] for the named progression in the given key.
  * A bar with two chords ("ii7 V7") gives both, in order.
+ * @category Tonal harmony
  */
 export declare function getProgression(id: string, keySymbol: string, tuning?: TuningSystem): Chord[];
 /**
  * Recognized musical form types. `'unknown'` is returned when no pattern matches confidently.
  * Forms that need more than the chords (sonata, theme and variations) are not detected.
+ * @category Tonal harmony
  */
 export type FormType = "AABA" | "AAB" | "ABAB" | "ABAC" | "binary" | "ternary" | "rondo" | "blues-12" | "strophic" | "through-composed" | "unknown";
-/** A labeled section within a formal analysis (e.g. A, B, A'). */
+/**
+ * A labeled section within a formal analysis (e.g. A, B, A').
+ * @category Tonal harmony
+ */
 export interface FormSection {
 	/** Section letter: `'A'`, `'B'`, `'C'`. */
 	label: string;
@@ -2001,7 +2217,10 @@ export interface FormSection {
 	/** Index of its last chord (inclusive). */
 	end: number;
 }
-/** Result of a harmonic form analysis: detected type, labeled sections, and confidence (0–1). */
+/**
+ * Result of a harmonic form analysis: detected type, labeled sections, and confidence (0–1).
+ * @category Tonal harmony
+ */
 export interface FormAnalysis {
 	/** The form detected, or `'unknown'`. */
 	type: FormType;
@@ -2010,7 +2229,10 @@ export interface FormAnalysis {
 	/** 0 to 1. */
 	confidence: number;
 }
-/** Formal analysis of a chord progression: form type and sections, and reprises. */
+/**
+ * Formal analysis of a chord progression: form type and sections, and reprises.
+ * @category Tonal harmony
+ */
 export declare class FormAnalyzer {
 	/**
 	 * Analyzes harmonic form by segmenting `chords` into sections of `barsPerSection`
@@ -2032,7 +2254,10 @@ export declare class FormAnalyzer {
 		length: number;
 	}[];
 }
-/** An upper-structure triad voiced over a dominant chord, with its resulting tensions and label. */
+/**
+ * An upper-structure triad voiced over a dominant chord, with its resulting tensions and label.
+ * @category Tonal harmony
+ */
 export interface UpperStructure {
 	/** The major triad played above the dominant. */
 	triad: Chord;
@@ -2047,6 +2272,7 @@ export interface UpperStructure {
  * Returns the six canonical upper-structure triads for a dominant 7th chord.
  * Returns [] for non-12-TET tunings or non-dominant chords (a dominant has a major third
  * and a minor seventh: G7, G9, G13, G7alt).
+ * @category Tonal harmony
  */
 export declare function getUpperStructures(dominantChord: Chord): UpperStructure[];
 /**
@@ -2056,6 +2282,7 @@ export declare function getUpperStructures(dominantChord: Chord): UpperStructure
  *
  * Forms are labeled by the pitch class they start on (P(n), I(n) and RI(n) begin on n),
  * so the row as given is P(row[0]): P(0) only when the row starts on 0.
+ * @category Post-tonal
  */
 export declare class ToneRow {
 	private readonly row;
@@ -2111,7 +2338,10 @@ export declare class ToneRow {
 		number[]
 	];
 }
-/** A rule violation found during species counterpoint analysis. */
+/**
+ * A rule violation found during species counterpoint analysis.
+ * @category Post-tonal
+ */
 export interface CounterpointIssue {
 	/** `'Parallel 5th'`, `'Dissonance on Strong Beat'`, `'Melodic Tritone'`, `'Modal Finalis'`, `'Modal Ambitus'`… */
 	type: string;
@@ -2125,6 +2355,7 @@ export interface CounterpointIssue {
  * `cf` = cantus firmus notes; `counter` = counterpoint notes.
  * Notes should be in the same tuning system. Intervals are read in 12-TET semitones (notes
  * of other tunings at their nearest semitone).
+ * @category Post-tonal
  */
 export declare class Counterpoint {
 	/**
@@ -2155,6 +2386,7 @@ export declare class Counterpoint {
 }
 /**
  * Canon and imitation detection / generation tools.
+ * @category Post-tonal
  */
 export declare class Canon {
 	/**
@@ -2182,7 +2414,10 @@ export declare class Canon {
 	 */
 	static generateCanon(theme: Note[], interval: number, delay: number, inversion?: boolean): (Note | null)[][];
 }
-/** A recurring interval pattern detected within a melody. */
+/**
+ * A recurring interval pattern detected within a melody.
+ * @category Post-tonal
+ */
 export interface Motif {
 	/** Index of the first note of the first occurrence. */
 	start: number;
@@ -2195,6 +2430,7 @@ export interface Motif {
 }
 /**
  * Melodic analysis tools.
+ * @category Post-tonal
  */
 export declare class MelodyAnalysis {
 	/**
@@ -2230,14 +2466,20 @@ export declare class MelodyAnalysis {
 	 */
 	static getContourReduction(notes: Note[]): Note[];
 }
-/** The detected Urlinie (fundamental melodic line) and its type (3-, 5-, or 8-line). */
+/**
+ * The detected Urlinie (fundamental melodic line) and its type (3-, 5-, or 8-line).
+ * @category Post-tonal
+ */
 export interface UrlinieResult {
 	/** The notes of the line, from the head tone down to the tonic. */
 	line: Note[];
 	/** Which degree the line descends from: ^3, ^5 or ^8. */
 	type: "3-line" | "5-line" | "8-line";
 }
-/** Basic Schenkerian reduction (approximate): Urlinie, Ursatz and structural levels of a progression. */
+/**
+ * Basic Schenkerian reduction (approximate): Urlinie, Ursatz and structural levels of a progression.
+ * @category Post-tonal
+ */
 export declare class Schenker {
 	/**
 	 * Attempts to identify an Urlinie (fundamental melodic line) in a melody.
@@ -2275,7 +2517,10 @@ export declare class Schenker {
  * Each array has 16 steps (one measure of 4/4 in 16th notes) unless noted.
  * true = onset, false = rest.
  */
-/** A named rhythmic clave or timeline pattern as a boolean onset array. */
+/**
+ * A named rhythmic clave or timeline pattern as a boolean onset array.
+ * @category Rhythm
+ */
 export interface ClavePattern {
 	/** Display name: `'Son Clave 3-2'`. */
 	name: string;
@@ -2284,11 +2529,20 @@ export interface ClavePattern {
 	/** Short description of the pattern. */
 	description: string;
 }
-/** Collection of 10 clave and timeline patterns from Cuban, Brazilian, and West African music. */
+/**
+ * Collection of 10 clave and timeline patterns from Cuban, Brazilian, and West African music.
+ * @category Rhythm
+ */
 export declare const CLAVE_PATTERNS: Record<string, ClavePattern>;
-/** Accidental of a figured-bass figure: sharp, flat or natural. */
+/**
+ * Accidental of a figured-bass figure: sharp, flat or natural.
+ * @category Tonal harmony
+ */
 export type FigureAccidental = "#" | "b" | "n";
-/** Figured bass: parsing figures, realizing them over a bass note, and four-voice (SATB) realization. */
+/**
+ * Figured bass: parsing figures, realizing them over a bass note, and four-voice (SATB) realization.
+ * @category Tonal harmony
+ */
 export declare class FiguredBass {
 	/**
 	 * Reads a figure string into {num, acc} parts as written (`'6/4'`, `'#6'`, `'b7'`). A bare
@@ -2376,6 +2630,7 @@ export declare class FiguredBass {
  * the neighbouring letter needs fewer (A natural in Db major, not Bbb). An unknown key
  * falls back to flats.
  * @returns Name with octave; the octave follows the letter (B#3 is the pitch of C4).
+ * @category Tonal harmony
  */
 export declare function spellPitchInKey(stepsFromA4: number, keySymbol: string): string;
 /**
@@ -2383,6 +2638,7 @@ export declare function spellPitchInKey(stepsFromA4: number, keySymbol: string):
  * `rootName` (default: the chord's own name). Cm7b5 is C Eb Gb Bb, C7#11 has F#, Bdim7
  * has Ab. Same order and octaves as `chord.getNotes()` (slash bass first). Other
  * tunings: the names `getNotes()` gives.
+ * @category Tonal harmony
  */
 export declare function spellChord(chord: Chord, rootName?: string): string[];
 /**
@@ -2394,6 +2650,7 @@ export declare function spellChord(chord: Chord, rootName?: string): string[];
  * F# major, not B# with D## F##); on a tie, the key's spelling (`spellPitchInKey`). A slash bass is named by
  * its interval in the chord, or by the key when it is not a chord tone.
  * Returns the chord unchanged when the key is unknown or the tuning is not 12-TET.
+ * @category Tonal harmony
  */
 export declare function spellChordInKey(chord: Chord, keySymbol: string): Chord;
 /**
@@ -2406,6 +2663,7 @@ export declare function spellChordInKey(chord: Chord, keySymbol: string): Chord;
  *
  * Aroha, avaroha, vadi, samvadi, thaat and time follow the English Wikipedia raga infoboxes
  * (Bhatkhande-system sources, 2026-10), with zigzag phrases reduced to straight lines.
+ * @category World music
  */
 export interface Raga {
 	/** Display name: `'Yaman'`. */
@@ -2428,7 +2686,10 @@ export interface Raga {
 	/** Brief character description. */
 	description: string;
 }
-/** Svara names indexed by the numbers used in `vadi` and `samvadi` (index 0 unused). */
+/**
+ * Svara names indexed by the numbers used in `vadi` and `samvadi` (index 0 unused).
+ * @category World music
+ */
 export declare const SVARA_NAMES: readonly [
 	"",
 	"Sa",
@@ -2439,7 +2700,10 @@ export declare const SVARA_NAMES: readonly [
 	"Dha",
 	"Ni"
 ];
-/** Ten Hindustani ragas by id (`'yaman'`, `'bhairav'`…), checked against the Wikipedia raga infoboxes. */
+/**
+ * Ten Hindustani ragas by id (`'yaman'`, `'bhairav'`…), checked against the Wikipedia raga infoboxes.
+ * @category World music
+ */
 export declare const RAGAS: Record<string, Raga>;
 /**
  * Basic Maqamat catalog - 24-EDO (quarter-tone) approximations.
@@ -2451,14 +2715,20 @@ export declare const RAGAS: Record<string, Raga>;
  *
  * Scales and ajnas follow maqamworld.com (Johnny Farraj), ascending form, one octave.
  */
-/** A tetrachord or pentachord cell (jins) used as a building block in maqam construction. */
+/**
+ * A tetrachord or pentachord cell (jins) used as a building block in maqam construction.
+ * @category World music
+ */
 export interface Jins {
 	/** Display name: `'Rast'`, `'Bayati'`, `'Hijaz'`. */
 	name: string;
 	/** Interval pattern in quarter-tones. */
 	intervals: readonly number[];
 }
-/** A maqam scale: its constituent ajnas, full note sequence in quarter-tones, and emotional character. */
+/**
+ * A maqam scale: its constituent ajnas, full note sequence in quarter-tones, and emotional character.
+ * @category World music
+ */
 export interface Maqam {
 	/** Display name: `'Rast'`. */
 	name: string;
@@ -2471,10 +2741,14 @@ export interface Maqam {
 	/** @deprecated Same as `character`. */
 	gharsa?: string;
 }
-/** Catalog of 8 Arabic maqamat as 24-EDO (quarter-tone) approximations. */
+/**
+ * Catalog of 8 Arabic maqamat as 24-EDO (quarter-tone) approximations.
+ * @category World music
+ */
 export declare const MAQAMAT: Record<string, Maqam>;
 /**
  * Solfège (solmization) tools.
+ * @category World music
  */
 export declare class Solfege {
 	/**
@@ -2503,11 +2777,20 @@ export declare class Solfege {
 	 */
 	static fromSolfege(syllable: string, keySymbol: string, mode?: "fixed" | "movable"): Note;
 }
-/** A Guidonian hexachord syllable (solfège name within the hexachord). */
+/**
+ * A Guidonian hexachord syllable (solfège name within the hexachord).
+ * @category World music
+ */
 export type HexachordSyllable = "ut" | "re" | "mi" | "fa" | "sol" | "la";
-/** One of the three Guidonian hexachord species. */
+/**
+ * One of the three Guidonian hexachord species.
+ * @category World music
+ */
 export type HexachordType = "naturale" | "durum" | "molle";
-/** Guidonian hexachords: the syllable of a note in each hexachord, and mutation between them. */
+/**
+ * Guidonian hexachords: the syllable of a note in each hexachord, and mutation between them.
+ * @category World music
+ */
 export declare class Hexachord {
 	/** Hexachordum naturale, C to A: `['C', 'D', 'E', 'F', 'G', 'A']`. */
 	static readonly NATURALE: string[];
@@ -2535,7 +2818,10 @@ export declare class Hexachord {
 	 */
 	static getNotes(hexachord: HexachordType): Note[];
 }
-/** A note's place on the Tonnetz grid. */
+/**
+ * A note's place on the Tonnetz grid.
+ * @category Microtonal / Xenharmonic
+ */
 export interface TonnetzPosition {
 	/** Perfect fifths from the origin. */
 	x: number;
@@ -2544,7 +2830,10 @@ export interface TonnetzPosition {
 	/** The note placed. */
 	note: Note;
 }
-/** The Tonnetz: grid positions of notes (fifths by major thirds) and shortest paths between chords. 12-TET. */
+/**
+ * The Tonnetz: grid positions of notes (fifths by major thirds) and shortest paths between chords. 12-TET.
+ * @category Microtonal / Xenharmonic
+ */
 export declare class Tonnetz {
 	/**
 	 * Returns the 2D Tonnetz coordinates for a note, in the fundamental domain
@@ -2572,6 +2861,7 @@ export declare class Tonnetz {
 /**
  * MOS (Moment of Symmetry) scales - generated scales with exactly two step sizes.
  * Used in xenharmonic / microtonal theory to find well-formed scales in arbitrary EDOs.
+ * @category Microtonal / Xenharmonic
  */
 export declare class MOS {
 	/**
@@ -2600,7 +2890,10 @@ export declare class MOS {
 	 */
 	static getMOSFamily(generator: number, period: number, maxSize: number): number[][];
 }
-/** Comma pump detection: pitch drift of a just-intonation progression. */
+/**
+ * Comma pump detection: pitch drift of a just-intonation progression.
+ * @category Microtonal / Xenharmonic
+ */
 export declare class CommaPump {
 	/**
 	 * Detects if a chord progression drifts in pitch due to JI comma accumulation.
@@ -2619,7 +2912,10 @@ export declare class CommaPump {
 		commaType?: "syntonic" | "pythagorean" | "septimal";
 	};
 }
-/** Xenharmonic chord analysis: neutral triads, otonal/utonal detection, and essentially-just matching. */
+/**
+ * Xenharmonic chord analysis: neutral triads, otonal/utonal detection, and essentially-just matching.
+ * @category Microtonal / Xenharmonic
+ */
 export declare class Xen {
 	/**
 	 * Detects whether a chord contains a neutral third (≈ 350 cents, midway between m3 and M3).
@@ -2675,7 +2971,10 @@ export declare class Xen {
 		][];
 	};
 }
-/** Psychoacoustic analysis: harmonic series, combination tones, roughness, and sensory consonance. */
+/**
+ * Psychoacoustic analysis: harmonic series, combination tones, roughness, and sensory consonance.
+ * @category Microtonal / Xenharmonic
+ */
 export declare class Spectral {
 	/**
 	 * Returns the first `count` partials of the harmonic series starting at `fundamental` Hz.
@@ -2723,7 +3022,10 @@ export declare class Spectral {
 	 */
 	static sensoryConsonance(chord: Chord, partials?: number, rolloff?: number): number;
 }
-/** A single row in a temperament comparison: one tuning vs. one JI interval. */
+/**
+ * A single row in a temperament comparison: one tuning vs. one JI interval.
+ * @category Microtonal / Xenharmonic
+ */
 export interface ComparisonEntry {
 	/** Name of the tuning compared. */
 	tuningName: string;
@@ -2739,7 +3041,10 @@ export interface ComparisonEntry {
 	/** Absolute difference between the two, in cents. */
 	errorCents: number;
 }
-/** Full comparison matrix across tuning systems and JI reference intervals. */
+/**
+ * Full comparison matrix across tuning systems and JI reference intervals.
+ * @category Microtonal / Xenharmonic
+ */
 export interface ComparisonTable {
 	/** The just intervals compared, as ratios. */
 	intervals: [
@@ -2749,7 +3054,10 @@ export interface ComparisonTable {
 	/** One row per tuning, one entry per interval, in the order of `intervals`. */
 	entries: ComparisonEntry[][];
 }
-/** Static methods for comparing tuning systems against JI, detecting wolf intervals, and finding optimal EDOs. */
+/**
+ * Static methods for comparing tuning systems against JI, detecting wolf intervals, and finding optimal EDOs.
+ * @category Microtonal / Xenharmonic
+ */
 export declare class TemperamentAnalysis {
 	/**
 	 * Compares multiple tuning systems against JI reference intervals.
@@ -2815,6 +3123,7 @@ export declare class TemperamentAnalysis {
  * Maps a JI ratio to the closest step in an EDO.
  * @param jiRatio - [numerator, denominator] ratio.
  * @param edoSize - Number of steps per octave in the target EDO.
+ * @category Microtonal / Xenharmonic
  */
 export declare function mapJItoEDO(jiRatio: [
 	number,
@@ -2829,6 +3138,7 @@ export declare function mapJItoEDO(jiRatio: [
  * Finds the smallest EDO that approximates all given JI ratios within a cent threshold.
  * @param jiRatios - Array of [numerator, denominator] ratios.
  * @param maxSize - Maximum EDO size to search (default 72).
+ * @category Microtonal / Xenharmonic
  */
 export declare function bestEDOFor(jiRatios: [
 	number,
@@ -2842,6 +3152,7 @@ export declare function bestEDOFor(jiRatios: [
 /**
  * A chord under the OPTIC equivalences, each one added to the previous (O, OP, OPT, OPTI,
  * OPTIC), in 12-TET pitch classes.
+ * @category Microtonal / Xenharmonic
  */
 export interface OPTICResult {
 	/** O: octave equivalence - pitch classes in voice order, doublings kept */
@@ -2862,9 +3173,13 @@ export interface OPTICResult {
  * (12-TET semitones), in voice order: (0, 4, 7) → T [0, 4, 7], I and C [0, 3, 7].
  *
  * @param pcs - Pitches or pitch classes, one per voice.
+ * @category Microtonal / Xenharmonic
  */
 export declare function OPTIC(pcs: number[]): OPTICResult;
-/** Voice-leading geometry (Tymoczko): OPTIC equivalence and minimal voice leadings between chords. */
+/**
+ * Voice-leading geometry (Tymoczko): OPTIC equivalence and minimal voice leadings between chords.
+ * @category Microtonal / Xenharmonic
+ */
 export declare class VoiceLeadingGeometry {
 	/**
 	 * Computes OPTIC equivalence for a chord.
@@ -2894,7 +3209,10 @@ export declare class VoiceLeadingGeometry {
 	 */
 	static chordGraphDistance(a: Chord, b: Chord): number;
 }
-/** Optional metadata fields for MusicXML score headers. */
+/**
+ * Optional metadata fields for MusicXML score headers.
+ * @category Notation
+ */
 export interface MusicXMLMetadata {
 	/** Work title. */
 	title?: string;
@@ -2903,7 +3221,10 @@ export interface MusicXMLMetadata {
 	/** Name of the part (default `'Music'`). */
 	partName?: string;
 }
-/** Options for writing a stream in MusicXML. */
+/**
+ * Options for writing a stream in MusicXML.
+ * @category Notation
+ */
 export interface MusicXMLOptions {
 	/** Key of the music (e.g. `'D major'`, `'E dorian'`): sets `<key>` and the written accidentals. Default `'C major'`. */
 	key?: string;
@@ -2912,13 +3233,23 @@ export interface MusicXMLOptions {
  * Converts a MusicStream to a MusicXML string. Gaps between events become rests; notes
  * that cross a barline, or have no single written value, are split into tied values.
  * `<divisions>` is the fewest per quarter note that count every value whole.
+ * @category Notation
  */
 export declare function streamToMusicXML(stream: MusicStream, metadata?: MusicXMLMetadata, options?: MusicXMLOptions): string;
-/** Converts a single Chord to a one-measure MusicXML snippet (a whole-note chord in 4/4). */
+/**
+ * Converts a single Chord to a one-measure MusicXML snippet (a whole-note chord in 4/4).
+ * @category Notation
+ */
 export declare function chordToMusicXML(chord: Chord, metadata?: MusicXMLMetadata): string;
-/** Converts a Scale to ascending MusicXML quarter notes in 4/4. */
+/**
+ * Converts a Scale to ascending MusicXML quarter notes in 4/4.
+ * @category Notation
+ */
 export declare function scaleToMusicXML(scale: Scale, octaves?: number, metadata?: MusicXMLMetadata): string;
-/** Optional metadata fields for LilyPond header block. */
+/**
+ * Optional metadata fields for LilyPond header block.
+ * @category Notation
+ */
 export interface LPMetadata {
 	/** `title` of the LilyPond header. */
 	title?: string;
@@ -2927,7 +3258,10 @@ export interface LPMetadata {
 	/** `opus` of the LilyPond header. */
 	opus?: string;
 }
-/** Options for writing a stream in LilyPond. */
+/**
+ * Options for writing a stream in LilyPond.
+ * @category Notation
+ */
 export interface LPOptions {
 	/** Key of the music (e.g. `'D major'`, `'E dorian'`): sets `\key`. Default: none (C major). */
 	key?: string;
@@ -2936,11 +3270,18 @@ export interface LPOptions {
  * Converts a MusicStream to a LilyPond string. Measures end in bar checks (`|`); notes that
  * cross a barline, or have no single written value, are split into tied values. An additive
  * meter is written `\time 3,2,2 7/8`.
+ * @category Notation
  */
 export declare function streamToLilyPond(stream: MusicStream, metadata?: LPMetadata, options?: LPOptions): string;
-/** Converts a Chord to a LilyPond snippet (one whole-note chord in 4/4). */
+/**
+ * Converts a Chord to a LilyPond snippet (one whole-note chord in 4/4).
+ * @category Notation
+ */
 export declare function chordToLilyPond(chord: Chord, metadata?: LPMetadata): string;
-/** Converts a Scale to an ascending LilyPond sequence of quarter notes in 4/4. */
+/**
+ * Converts a Scale to an ascending LilyPond sequence of quarter notes in 4/4.
+ * @category Notation
+ */
 export declare function scaleToLilyPond(scale: Scale, metadata?: LPMetadata): string;
 /**
  * Symbol translation utilities for non-English input.
@@ -2967,17 +3308,33 @@ export declare function scaleToLilyPond(scale: Scale, metadata?: LPMetadata): st
  * @param input   - Raw symbol, e.g. `'Dom7'`, `'Do mayor'`, `'Sol mineur'`.
  * @param aliases - Map of alias → canonical string.
  * @returns Translated string ready for `parseChordSymbol` / `parseScaleSymbol`.
+ * @category Core
  */
 export declare function translateSymbol(input: string, aliases: Record<string, string>): string;
-/** Solfège note names → English note letters. Accidentals (`#`, `b`) pass through. */
+/**
+ * Solfège note names → English note letters. Accidentals (`#`, `b`) pass through.
+ * @category Core
+ */
 export declare const SOLFEGE_ROOTS: Record<string, string>;
-/** Spanish quality names → canonical parser tokens. */
+/**
+ * Spanish quality names → canonical parser tokens.
+ * @category Core
+ */
 export declare const QUALITY_ALIASES_ES: Record<string, string>;
-/** French quality names → canonical parser tokens. */
+/**
+ * French quality names → canonical parser tokens.
+ * @category Core
+ */
 export declare const QUALITY_ALIASES_FR: Record<string, string>;
-/** Italian quality names → canonical parser tokens. */
+/**
+ * Italian quality names → canonical parser tokens.
+ * @category Core
+ */
 export declare const QUALITY_ALIASES_IT: Record<string, string>;
-/** Standard guitar tuning: E2 A2 D3 G3 B3 E4 */
+/**
+ * Standard guitar tuning: E2 A2 D3 G3 B3 E4
+ * @category Core
+ */
 export declare const GUITAR_STANDARD: readonly [
 	-29,
 	-24,
@@ -2986,7 +3343,10 @@ export declare const GUITAR_STANDARD: readonly [
 	-10,
 	-5
 ];
-/** Guitar drop D tuning: D2 A2 D3 G3 B3 E4 */
+/**
+ * Guitar drop D tuning: D2 A2 D3 G3 B3 E4
+ * @category Core
+ */
 export declare const GUITAR_DROPPED_D: readonly [
 	-31,
 	-24,
@@ -2995,7 +3355,10 @@ export declare const GUITAR_DROPPED_D: readonly [
 	-10,
 	-5
 ];
-/** Guitar open G tuning: D2 G2 D3 G3 B3 D4 */
+/**
+ * Guitar open G tuning: D2 G2 D3 G3 B3 D4
+ * @category Core
+ */
 export declare const GUITAR_OPEN_G: readonly [
 	-31,
 	-26,
@@ -3004,21 +3367,30 @@ export declare const GUITAR_OPEN_G: readonly [
 	-10,
 	-7
 ];
-/** Standard ukulele tuning (reentrant): G4 C4 E4 A4 */
+/**
+ * Standard ukulele tuning (reentrant): G4 C4 E4 A4
+ * @category Core
+ */
 export declare const UKULELE_STANDARD: readonly [
 	-2,
 	-9,
 	-5,
 	0
 ];
-/** Standard 4-string bass tuning: E1 A1 D2 G2 */
+/**
+ * Standard 4-string bass tuning: E1 A1 D2 G2
+ * @category Core
+ */
 export declare const BASS_STANDARD: readonly [
 	-41,
 	-36,
 	-31,
 	-26
 ];
-/** 5-string banjo open G tuning (drone first): G4 D3 G3 B3 D4 */
+/**
+ * 5-string banjo open G tuning (drone first): G4 D3 G3 B3 D4
+ * @category Core
+ */
 export declare const BANJO_OPEN_G: readonly [
 	-2,
 	-19,
@@ -3026,7 +3398,10 @@ export declare const BANJO_OPEN_G: readonly [
 	-10,
 	-7
 ];
-/** Options for voicing and scale position generation. */
+/**
+ * Options for voicing and scale position generation.
+ * @category Core
+ */
 export type FretboardVoicingOptions = {
 	/** Highest fret to search. Default: 12. */
 	maxFret?: number;
@@ -3051,6 +3426,7 @@ export type FretboardVoicingOptions = {
  * @example
  * const voicings = getFretboardVoicings(chord, GUITAR_STANDARD);
  * renderFretboard({ name: chord.name, ...voicings[0] });
+ * @category Core
  */
 export type FretboardVoicingResult = {
 	/** One fret per string, low→high. -1 = mute (×), stringOffset[i] = open (○), N = fret N. */
@@ -3071,6 +3447,7 @@ export type FretboardVoicingResult = {
  * @example
  * const map = getFretboardScale(scale, GUITAR_STANDARD);
  * renderFretboard({ name: scale.name, ...map });
+ * @category Core
  */
 export type FretboardScaleResult = {
 	/** Per string: all fret positions where a scale note appears. Empty array = no scale notes on this string. */
@@ -3095,6 +3472,7 @@ export type FretboardScaleResult = {
  *   (`GUITAR_STANDARD`, `UKULELE_STANDARD`, etc.) or supply a custom array.
  * @param options - Search constraints: `maxFret` (default 12), `maxStretch` (default 4).
  * @returns Array of voicings sorted by playability. Empty if no valid voicing exists.
+ * @category Core
  */
 export declare function getFretboardVoicings(chord: Chord, tuning: readonly number[], options?: FretboardVoicingOptions): FretboardVoicingResult[];
 /**
@@ -3105,6 +3483,7 @@ export declare function getFretboardVoicings(chord: Chord, tuning: readonly numb
  * @param tuning - Open string steps from A4, low→high.
  * @param options - `maxFret` controls how far up the neck to scan (default 12).
  * @returns A single result with all scale positions across the neck.
+ * @category Core
  */
 export declare function getFretboardScale(scale: Scale, tuning: readonly number[], options?: FretboardVoicingOptions): FretboardScaleResult;
 /**
@@ -3116,16 +3495,23 @@ export declare function getFretboardScale(scale: Scale, tuning: readonly number[
  * @param tuning - Open string steps from A4, low→high.
  * @param options - `maxFret` (default 12), `windowSize` (default 4).
  * @returns Array of position boxes ordered by starting fret, each with at least one note.
+ * @category Core
  */
 export declare function getFretboardScalePositions(scale: Scale, tuning: readonly number[], options?: FretboardVoicingOptions): FretboardScaleResult[];
-/** One sounding note of a voicing, bottom to top. */
+/**
+ * One sounding note of a voicing, bottom to top.
+ * @category Tonal harmony
+ */
 export interface VoicedNote {
 	/** Note name with octave: `'E4'`. */
 	note: string;
 	/** Chord member (`'R'`, `'3'`, `'b7'`, `'9'`…), or null for a note outside the chord. */
 	degree: string | null;
 }
-/** Result of `analyzeVoicing`. */
+/**
+ * Result of `analyzeVoicing`.
+ * @category Tonal harmony
+ */
 export interface VoicingAnalysis {
 	/** Name of the chord the notes are read as (passed in, or the best detection). */
 	chord: string;
@@ -3159,9 +3545,13 @@ export interface VoicingAnalysis {
  * @example
  * analyzeVoicing(['G3', 'C4', 'E4', 'B4'].map(n => parseNote(n)), parseChordSymbol('Cmaj7'))
  * // → inversion 2, drop 'drop 2' (from B G E C, G dropped), position 'close'
+ * @category Tonal harmony
  */
 export declare function analyzeVoicing(notes: Note[], chord?: Chord): VoicingAnalysis | null;
-/** A scale that contains every note of the set. */
+/**
+ * A scale that contains every note of the set.
+ * @category Tonal harmony
+ */
 export interface ScaleMatch {
 	/** Scale symbol, readable by `parseScaleSymbol`: `'C major'`. */
 	name: string;
@@ -3180,7 +3570,10 @@ export interface ScaleMatch {
 	/** 0 common (diatonic modes, harmonic and melodic minor, pentatonics, blues), 1 other families, 2 regional and symmetric collections, 3 chromatic. */
 	tier: number;
 }
-/** Options for `findScalesForNotes`. */
+/**
+ * Options for `findScalesForNotes`.
+ * @category Tonal harmony
+ */
 export interface FindScalesOptions {
 	/** Tonic to rank first (`'D'`, `'F#'`); default: the lowest note. */
 	tonic?: string;
@@ -3198,15 +3591,23 @@ export interface FindScalesOptions {
  * Other tunings are read by the nearest 12-TET pitch class.
  * @example
  * findScalesForNotes(['C4', 'E4', 'G4', 'Bb4'].map(n => parseNote(n)))[0].name // 'C mixolydian'
+ * @category Tonal harmony
  */
 export declare function findScalesForNotes(notes: Note[], options?: FindScalesOptions): ScaleMatch[];
-/** How `formatChordSymbol` writes qualities. */
+/**
+ * How `formatChordSymbol` writes qualities.
+ * @category Tonal harmony
+ */
 export type ChordSymbolStyle = "standard" | "symbols" | "short";
-/** Languages of `chordLongName` and `localizeNoteName`. */
+/**
+ * Languages of `chordLongName` and `localizeNoteName`.
+ * @category Tonal harmony
+ */
 export type ChordNameLanguage = "en" | "es";
 /**
  * A note name in another language. Short form keeps the accidental sign (`'F#'` → `'Fa#'`);
  * long form spells it (`'F#'` → `'F sharp'` / `'Fa sostenido'`). An octave number is kept.
+ * @category Tonal harmony
  */
 export declare function localizeNoteName(name: string, language: ChordNameLanguage, long?: boolean): string;
 /**
@@ -3216,6 +3617,7 @@ export declare function localizeNoteName(name: string, language: ChordNameLangua
  * - `'symbols'`: jazz symbols (CΔ7, C-7, Cø7, C°7, C+, C-Δ7)
  * - `'short'`: M for major seventh (CM7, CM9)
  * @example formatChordSymbol('F#m7b5', { style: 'symbols', roots: 'solfege' }) // 'Fa#ø7'
+ * @category Tonal harmony
  */
 export declare function formatChordSymbol(chord: Chord | string, options?: {
 	style?: ChordSymbolStyle;
@@ -3226,6 +3628,7 @@ export declare function formatChordSymbol(chord: Chord | string, options?: {
  * `'Fa sostenido menor'`. A slash bass reads "over E" / "con bajo en Mi". Qualities beyond
  * triads, sixths, suspensions and seventh chords keep their symbol after the root
  * (`'C 7#9'`, `'Do 7#9'`).
+ * @category Tonal harmony
  */
 export declare function chordLongName(chord: Chord | string, language?: ChordNameLanguage): string;
 /**
@@ -3236,6 +3639,7 @@ export declare function chordLongName(chord: Chord | string, language?: ChordNam
  * Roots are in solfège in Spanish and in letters in English unless `roots` says otherwise.
  * @example scaleName('F# lydian dominant', 'es') // 'Fa# lidio dominante'
  * @example scaleName('A harmonic minor', 'en', { roots: 'solfege' }) // 'La harmonic minor'
+ * @category Tonal harmony
  */
 export declare function scaleName(name: string, language?: ChordNameLanguage, options?: {
 	roots?: "letters" | "solfege";
@@ -3244,6 +3648,7 @@ export declare function scaleName(name: string, language?: ChordNameLanguage, op
  * A cadence from `Harmony.analyzeCadence` (or `cadenceWithNext` of `analyzeProgression`) in
  * another language. The long form keeps the numerals (`'Cadencia rota (V -> vi)'`); `short`
  * gives the name alone (`'Rota'`, `'Authentic'`). An unknown string is returned unchanged.
+ * @category Tonal harmony
  */
 export declare function cadenceName(cadence: string, language?: ChordNameLanguage, options?: {
 	short?: boolean;
@@ -3252,9 +3657,13 @@ export declare function cadenceName(cadence: string, language?: ChordNameLanguag
  * The `type` of a `getSubstitutions` option in words: `'tritone'` → `'tritonal'`
  * (sustitución tritonal), `'chromatic-mediant'` → `'chromatic mediant'` / `'mediante cromática'`.
  * An unknown type is returned unchanged.
+ * @category Tonal harmony
  */
 export declare function substitutionTypeName(type: string, language?: ChordNameLanguage): string;
-/** A repeating rhythmic cycle. */
+/**
+ * A repeating rhythmic cycle.
+ * @category Rhythm
+ */
 export interface RhythmicCycle {
 	/** Display name: `'Teental (Tintal)'`, `'Bulerías'`. */
 	name: string;
@@ -3275,22 +3684,33 @@ export interface RhythmicCycle {
 	/** Reference the cycle was checked against. */
 	source: string;
 }
-/** Talas, flamenco compás and aksak meters. */
+/**
+ * Talas, flamenco compás and aksak meters.
+ * @category Rhythm
+ */
 export declare const RHYTHMIC_CYCLES: Record<string, RhythmicCycle>;
-/** What a metronome plays on one pulse of a cycle. */
+/**
+ * What a metronome plays on one pulse of a cycle.
+ * @category Rhythm
+ */
 export type CycleStroke = "sam" | "tali" | "khali" | "accent" | "beat";
-/** The spoken count of each pulse: 1…n, or from `firstCount` (bulerías: 12, 1, 2 … 11). */
+/**
+ * The spoken count of each pulse: 1…n, or from `firstCount` (bulerías: 12, 1, 2 … 11).
+ * @category Rhythm
+ */
 export declare function cycleCounts(cycle: RhythmicCycle): number[];
 /**
  * The stroke of each pulse, for a metronome. Hindustani talas: `'sam'` on the first pulse,
  * `'tali'` (clap) or `'khali'` (wave) on the first pulse of each other vibhag (Rupak's sam,
  * also khali, is `'sam'`). Flamenco: `'accent'` on the accented counts. Others:
  * `'accent'` on the first pulse of each group. Every other pulse is `'beat'`.
+ * @category Rhythm
  */
 export declare function cycleStrokes(cycle: RhythmicCycle): CycleStroke[];
 /**
  * An additive time signature for the cycle: its groups over `denominator` (default 8,
  * the usual unit of aksak meters: Račenica is 2+2+3/8).
+ * @category Rhythm
  */
 export declare function cycleTimeSignature(cycle: RhythmicCycle, denominator?: number): TimeSignature;
 

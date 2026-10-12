@@ -5,7 +5,10 @@ import { Note } from './note';
 import { parseNoteToStep12TET } from './utils';
 import { EDO } from './tuning';
 
-/** A rule violation found during species counterpoint analysis. */
+/**
+ * A rule violation found during species counterpoint analysis.
+ * @category Post-tonal
+ */
 export interface CounterpointIssue {
   /** `'Parallel 5th'`, `'Dissonance on Strong Beat'`, `'Melodic Tritone'`, `'Modal Finalis'`, `'Modal Ambitus'`… */
   type: string;
@@ -88,6 +91,7 @@ const SLOTS: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 1, 2: 2, 3: 4, 4: 2, 5: 4 
  * `cf` = cantus firmus notes; `counter` = counterpoint notes.
  * Notes should be in the same tuning system. Intervals are read in 12-TET semitones (notes
  * of other tunings at their nearest semitone).
+ * @category Post-tonal
  */
 export class Counterpoint {
   /**
@@ -196,6 +200,7 @@ export class Counterpoint {
 
 /**
  * Canon and imitation detection / generation tools.
+ * @category Post-tonal
  */
 export class Canon {
   /**

@@ -6,7 +6,10 @@ import { Note } from './note';
 import { MusicStream } from './rhythm';
 import { get12TETName } from './utils';
 
-/** A pitch as written on a staff: letter, alteration in semitones, scientific octave. */
+/**
+ * A pitch as written on a staff: letter, alteration in semitones, scientific octave.
+ * @category Notation
+ */
 export interface SpelledPitch {
   letter: string;
   alter: number;
@@ -29,6 +32,7 @@ function parseSpelling(name: string): { letter: string; alter: number; octave: n
  * classes) keeps its spelling; other tunings take the nearest 12-TET pitch, named with the
  * note's flat preference. `cents` is the distance to that 12-TET pitch, measured from A4 of
  * the note's own tuning.
+ * @category Notation
  */
 export function spellPitch(note: Note): SpelledPitch {
   const centsFromA4 = note.centsFromBase;
@@ -46,7 +50,10 @@ const MODE_SHIFT: Record<string, number> = {
   lydian: -1, major: 0, ionian: 0, mixolydian: 1, dorian: 2, minor: 3, aeolian: 3, phrygian: 4, locrian: 5,
 };
 
-/** A key as the exporters read it: tonic, mode, and signature in fifths (+ sharps, − flats). */
+/**
+ * A key as the exporters read it: tonic, mode, and signature in fifths (+ sharps, − flats).
+ * @category Notation
+ */
 export interface KeySpec {
   tonic: string;
   mode: string;
@@ -58,6 +65,7 @@ export interface KeySpec {
  * letter for minor (`'f#'`, the CircleOfFifths convention). Harmonic and melodic minor take
  * the minor signature.
  * @throws RangeError for an unknown mode or a malformed tonic.
+ * @category Notation
  */
 export function parseKey(key: string): KeySpec {
   const m = key.trim().match(/^([A-Ga-g])(#{1,2}|b{1,2})?\s*(.*)$/);
@@ -72,7 +80,10 @@ export function parseKey(key: string): KeySpec {
   return { tonic, mode, fifths };
 }
 
-/** Alteration of each letter in a signature of `fifths` (+ sharps, − flats). */
+/**
+ * Alteration of each letter in a signature of `fifths` (+ sharps, − flats).
+ * @category Notation
+ */
 export function signatureAlters(fifths: number): Record<string, number> {
   const alters: Record<string, number> = { C: 0, D: 0, E: 0, F: 0, G: 0, A: 0, B: 0 };
   for (let i = 0; i < fifths; i++) alters['FCGDAEB'[i % 7]]++;
@@ -84,6 +95,7 @@ export function signatureAlters(fifths: number): Record<string, number> {
  * Which notes need a written accidental within a measure. An accidental holds for the rest
  * of the measure; since ABC readers differ on whether it covers other octaves, a note is
  * marked whenever either reading would get it wrong.
+ * @category Notation
  */
 export class MeasureAccidentals {
   private byPitch = new Map<string, number>();
@@ -109,10 +121,16 @@ export class MeasureAccidentals {
   }
 }
 
-/** Ticks in a whole note: 2^7 · 3, so dotted values down to 128ths and triplets are whole numbers. */
+/**
+ * Ticks in a whole note: 2^7 · 3, so dotted values down to 128ths and triplets are whole numbers.
+ * @category Notation
+ */
 export const TICKS_PER_WHOLE = 384;
 
-/** A writable note value. */
+/**
+ * A writable note value.
+ * @category Notation
+ */
 export interface NoteValue {
   ticks: number;
   /** Ticks of the plain written value (384 whole … 3 a 128th); a triplet note is written as this. */
@@ -132,6 +150,7 @@ const DYADIC: NoteValue[] = [384, 192, 96, 48, 24, 12, 6, 3]
  * Splits a length in ticks into note values to be tied: plain and dotted values, and triplet
  * notes for what those cannot write.
  * @throws RangeError when no such values add up to it.
+ * @category Notation
  */
 export function splitTicks(ticks: number): NoteValue[] {
   const values: NoteValue[] = [];
@@ -153,7 +172,10 @@ export function splitTicks(ticks: number): NoteValue[] {
   return values;
 }
 
-/** One written note, chord, or rest (no notes) of a measure. */
+/**
+ * One written note, chord, or rest (no notes) of a measure.
+ * @category Notation
+ */
 export interface LaidEvent {
   notes: Note[];
   value: NoteValue;
@@ -178,6 +200,7 @@ function toTicks(beats: number, denominator: number, what: string): number {
  * that crosses a barline or has no single written value is split into tied values. The
  * last measure may be incomplete.
  * @throws RangeError for overlapping events, or lengths or meters that cannot be written.
+ * @category Notation
  */
 export function layoutMeasures(stream: MusicStream): LaidEvent[][] {
   const ts = stream.timeSignature;

@@ -9,6 +9,7 @@ import { get12TETName } from './utils';
  * Steps can be negative (below A4) or positive (above A4), and span multiple octaves.
  *
  * All concrete subclasses must implement `getFrequency`, `getInterval`, and `octaveSteps`.
+ * @category Core
  */
 export abstract class TuningSystem {
   constructor(
@@ -77,6 +78,7 @@ export abstract class TuningSystem {
 /**
  * Equal Division of the Octave - divides the octave into `divisions` equal steps.
  * Examples: 12-TET (standard), 24-TET (quarter-tone), 31-TET, 53-TET.
+ * @category Core
  */
 export class EDO extends TuningSystem {
   /**
@@ -125,6 +127,7 @@ export class EDO extends TuningSystem {
  * ```ts
  * new JustIntonation('5-limit Major', [[9,8],[5,4],[4,3],[3,2],[5,3],[15,8]])
  * ```
+ * @category Core
  */
 export class JustIntonation extends TuningSystem {
   /** Resolved interval objects including the implicit unison at index 0. */
@@ -184,6 +187,7 @@ export class JustIntonation extends TuningSystem {
  * ```ts
  * new CentTuning('Werckmeister III', [90, 192, 294, 390, 498, 588, 696, 792, 888, 996, 1092])
  * ```
+ * @category Core
  */
 export class CentTuning extends TuningSystem {
   /**
@@ -231,6 +235,7 @@ export class CentTuning extends TuningSystem {
  * ```ts
  * new NonOctaveTuning('Bohlen-Pierce', 13, 3)
  * ```
+ * @category Core
  */
 export class NonOctaveTuning extends TuningSystem {
   /**
@@ -268,5 +273,8 @@ export class NonOctaveTuning extends TuningSystem {
 
 }
 
-/** Standard 12-TET singleton - used as the default tuning throughout the library. */
+/**
+ * Standard 12-TET singleton - used as the default tuning throughout the library.
+ * @category Core
+ */
 export const TET12 = new EDO(12);

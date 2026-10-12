@@ -4,7 +4,10 @@
 import { NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 import { MODE_BRIGHTNESS } from './dictionaries';
 
-/** A key related to a reference key, with its relationship type and circle-of-fifths distance. */
+/**
+ * A key related to a reference key, with its relationship type and circle-of-fifths distance.
+ * @category Tonal harmony
+ */
 export type RelatedKey = {
   /** The related key, in the circle's notation: major upper case (`'G'`), minor lower case (`'e'`). */
   key: string;
@@ -17,6 +20,7 @@ export type RelatedKey = {
 /**
  * A modal key: a root note, a mode name, and the parent major key that the mode is derived from.
  * For example, D dorian is derived from C major (D is the 2nd degree of C major).
+ * @category Tonal harmony
  */
 export interface ModalKey {
   /** Root of the mode, as passed in: `'D'`. */
@@ -58,6 +62,7 @@ const CANONICAL_DIATONIC_MODES = ['lydian', 'ionian', 'mixolydian', 'dorian', 'a
  * Circle of Fifths utility.
  * Convention: major keys use uppercase ('C', 'G'...), minor keys use lowercase ('a', 'e'...).
  * Methods that return keys follow this same convention - callers should use case to distinguish mode.
+ * @category Tonal harmony
  */
 export class CircleOfFifths {
   /** Major keys clockwise from C, in upper case. */

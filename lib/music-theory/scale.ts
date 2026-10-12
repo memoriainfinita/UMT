@@ -7,6 +7,7 @@ import { preferFlatsForKey, get12TETBaseName, spellByLetter, writtenRoot } from 
 /**
  * Characteristic analysis of a modal scale: brightness relative to Ionian,
  * degrees that differ from the parallel major, jazz avoid notes, and parent-family info.
+ * @category Tonal harmony
  */
 export interface ModalCharacteristics {
   /** Degrees (1-7) that differ from the major scale on the same root (12-TET heptatonic scales). */
@@ -55,6 +56,7 @@ const SEVENTH_SUFFIX_BY_PCS: Record<string, string> = {
  * `stepPattern` defines the intervals between consecutive degrees in tuning steps
  * (e.g. `[2, 2, 1, 2, 2, 2, 1]` for major in 12-TET). The pattern is relative -
  * the same pattern at a different `rootStep` gives the same scale type in a different key.
+ * @category Tonal harmony
  */
 export class Scale {
   /**
