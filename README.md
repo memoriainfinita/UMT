@@ -6,7 +6,7 @@
 
 A TypeScript library for music theory computation that works across any tuning system -
 12-TET, microtonal, historical temperaments, world music traditions, and post-tonal systems.
-Zero runtime dependencies. 142 kb compiled bundle (IIFE), plus an ESM build with bundled types.
+Zero runtime dependencies. 147 kb compiled bundle (IIFE), plus an ESM build with bundled types.
 
 **[Live demo](https://memoriainfinita.github.io/UMT)** · **[API docs](https://memoriainfinita.github.io/UMT/api-docs/)**
 
@@ -92,9 +92,11 @@ npm run build   # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
 | `note.ts` | Pitch as frequency, MIDI, and enharmonic name in any tuning |
 | `interval.ts` | Interval math in cents and ratios |
 | `parser.ts` | `parseChordSymbol`, `parseScaleSymbol`, `parseNote`, `parseRomanProgression` - all tuning-aware |
+| `aliases.ts` | `translateSymbol`: chord and scale names in Spanish, French and Italian (`'Sib menor'` → `'Bb minor'`) |
 | `dictionaries.ts` | 100+ chord formulas, 80+ scale patterns |
 | `presets.ts` | Ready-to-use tuning systems, scales, chords |
 | `utils.ts` | MIDI conversion, enharmonic spelling, interval naming |
+| `fretboard.ts` | Chord voicings and scale positions on any fretted instrument; guitar, bass, ukulele and banjo tunings |
 
 ### Tonal harmony
 

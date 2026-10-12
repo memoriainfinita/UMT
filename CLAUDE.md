@@ -4,7 +4,7 @@
 
 A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 1016 tests, zero runtime dependencies.
 
-The library compiles to a standalone IIFE (`dist/umt.js`, 146 kb) for script tags and jsDelivr, and to an ESM bundle (`dist/umt.mjs`) with bundled types (`dist/umt.d.ts`). Releases are git tags with notes in `CHANGELOG.md`.
+The library compiles to a standalone IIFE (`dist/umt.js`, 147 kb) for script tags and jsDelivr, and to an ESM bundle (`dist/umt.mjs`) with bundled types (`dist/umt.d.ts`). Releases are git tags with notes in `CHANGELOG.md`.
 
 The demo is a single vanilla HTML file (`index.html`) with 12 interactive sections in four groups (tonal harmony, scales and tuning, rhythm, beyond), its own CSS with light and dark themes. The original Next.js scaffolding and old demo versions are in `archive/` (gitignored).
 
@@ -28,7 +28,7 @@ npm run typecheck    # tsc --noEmit (covers lib/ and tests/)
 ## Project structure
 
 ```
-lib/music-theory/         # Core library - all TypeScript (46 modules)
+lib/music-theory/         # Core library - all TypeScript (48 modules)
   types.ts                # Cents, Hertz, Ratio
   interval.ts             # Interval math (cents, ratios)
   tuning.ts               # TuningSystem (abstract), EDO, JustIntonation, CentTuning, NonOctaveTuning
@@ -37,6 +37,7 @@ lib/music-theory/         # Core library - all TypeScript (46 modules)
   chord.ts                # Chord - voicings, inversions, voice leading, tritone sub
   dictionaries.ts         # CHORD_FORMULAS (100+) and SCALE_PATTERNS (80+)
   parser.ts               # parseChordSymbol, parseScaleSymbol, parseNote, parseRomanProgression
+  aliases.ts              # translateSymbol: chord and scale names in Spanish, French, Italian
   presets.ts              # Ready-to-use tuning systems, scales, chords
   harmony.ts              # Voice leading, chord detection, cadences, negative harmony, Coltrane axis
   circle.ts               # CircleOfFifths
@@ -50,6 +51,7 @@ lib/music-theory/         # Core library - all TypeScript (46 modules)
   figured-bass.ts         # Figured bass parsing and realization
   spelling.ts             # Pitches spelled in a key, chord tones by interval
   voicing.ts              # Voicing analysis: inversion, position, drop voicings, doubled/omitted
+  fretboard.ts            # Fretboard voicings and scale positions; guitar, bass, ukulele, banjo tunings
   scale-finder.ts         # Scales of SCALE_PATTERNS that hold a set of notes, ranked
   chord-names.ts          # Chord symbol styles, solfège roots, long names (en, es)
   twelve-tone.ts          # ToneRow, P/I/R/RI, 12x12 matrix
@@ -85,7 +87,11 @@ index.html                # Demo page - 12 interactive sections
 
 archive/                  # Old demos and Next.js scaffolding (gitignored)
 docs/
-  plan-teoria-completa.md # Design history - 10-phase expansion plan
+  UMT-*.png               # README screenshots (the only tracked files in docs/)
+  auditoria-2026-10.md    # Audit of October 2026: findings and plan (local, gitignored)
+  notas-desde-modus-2026-10.md # MODUS requests and replies (local, gitignored)
+  plan-teoria-completa.md # Design history - 10-phase expansion plan (local, gitignored)
+  superpowers/            # Older plans (local, gitignored)
 ```
 
 ## Coordinate system

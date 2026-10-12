@@ -25,7 +25,7 @@ last_updated: 2026-10-11
 
 ## Dependencies
 
-- esbuild (fijado 0.28.2) - compila `dist/umt.js` (IIFE, 146 kb) y `dist/umt.mjs` (ESM)
+- esbuild (fijado 0.28.2) - compila `dist/umt.js` (IIFE, 147 kb) y `dist/umt.mjs` (ESM)
 - dts-bundle-generator (fijado 9.5.1) - tipos en un solo `dist/umt.d.ts`
 - typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
 - vitest - tests unitarios (`npm run test:unit`) - 1016 tests, un archivo por módulo
