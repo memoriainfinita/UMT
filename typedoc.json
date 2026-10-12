@@ -7,6 +7,7 @@
   "excludePrivate": true,
   "includeVersion": true,
   "tsconfig": "./tsconfig.typedoc.json",
+  "customCss": "./docs-theme/custom.css",
   "navigationLinks": {
     "GitHub": "https://github.com/memoriainfinita/UMT",
     "Demo": "https://memoriainfinita.github.io/UMT"

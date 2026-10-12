@@ -1,0 +1,259 @@
+/* API docs theme: same palette and type as the demo (index.html).
+   TypeDoc keeps its rules in @layer typedoc, so these unlayered rules win. */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&display=swap");
+
+:root {
+  --umt-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  --umt-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --umt-serif: "Fraunces", Georgia, serif;
+
+  /* light */
+  --light-color-background: #f4f1ea;
+  --light-color-background-secondary: #fffdf8;
+  --light-color-background-active: #f6e3d8;
+  --light-color-accent: #e2dccf;
+  --light-color-active-menu-item: #f6e3d8;
+  --light-color-text: #1f1c18;
+  --light-color-contrast-text: #b0502a;
+  --light-color-text-aside: #6d665b;
+  --light-color-icon-background: #f8f5ee;
+  --light-color-icon-text: #1f1c18;
+  --light-color-comment-tag: #f8f5ee;
+  --light-color-comment-tag-text: #6d665b;
+  --light-color-link: #b0502a;
+  --light-color-focus-outline: #b0502a;
+  --light-color-document: #1f1c18;
+  --light-color-ts-keyword: #9b4a8a;
+  --light-color-ts-project: #b0502a;
+  --light-color-ts-module: #b0502a;
+  --light-color-ts-namespace: #b0502a;
+  --light-color-ts-enum: #8a6a12;
+  --light-color-ts-variable: #2f6f9f;
+  --light-color-ts-function: #b0502a;
+  --light-color-ts-class: #2f6f9f;
+  --light-color-ts-interface: #4a8445;
+  --light-color-ts-property: #8a5a2b;
+  --light-color-ts-method: #b0502a;
+  --light-color-ts-type-parameter: #8a6a12;
+  --light-color-ts-accessor: #b8432f;
+  --light-color-ts-type-alias: #9b4a8a;
+  --light-code-background: #f8f5ee;
+  --umt-light-line: #e2dccf;
+  --umt-light-surface: #fffdf8;
+  --umt-light-faint: #9b9488;
+  --umt-light-shadow: 0 1px 2px rgba(40, 30, 10, .06), 0 2px 8px rgba(40, 30, 10, .05);
+
+  /* dark */
+  --dark-color-background: #131210;
+  --dark-color-background-secondary: #1c1a17;
+  --dark-color-background-active: #3a2519;
+  --dark-color-accent: #312e29;
+  --dark-color-active-menu-item: #3a2519;
+  --dark-color-text: #ece6da;
+  --dark-color-contrast-text: #e38b5c;
+  --dark-color-text-aside: #a39b8d;
+  --dark-color-icon-background: #23211d;
+  --dark-color-icon-text: #ece6da;
+  --dark-color-comment-tag: #23211d;
+  --dark-color-comment-tag-text: #a39b8d;
+  --dark-color-link: #e38b5c;
+  --dark-color-focus-outline: #e38b5c;
+  --dark-color-document: #ece6da;
+  --dark-color-ts-keyword: #c99ad0;
+  --dark-color-ts-project: #e38b5c;
+  --dark-color-ts-module: #e38b5c;
+  --dark-color-ts-namespace: #e38b5c;
+  --dark-color-ts-enum: #d8b45a;
+  --dark-color-ts-variable: #6aa8d6;
+  --dark-color-ts-function: #e38b5c;
+  --dark-color-ts-class: #6aa8d6;
+  --dark-color-ts-interface: #84bd7c;
+  --dark-color-ts-property: #d1a074;
+  --dark-color-ts-method: #e38b5c;
+  --dark-color-ts-type-parameter: #d8b45a;
+  --dark-color-ts-accessor: #e57b64;
+  --dark-color-ts-type-alias: #c99ad0;
+  --dark-code-background: #23211d;
+  --umt-dark-line: #312e29;
+  --umt-dark-surface: #1c1a17;
+  --umt-dark-faint: #6f685d;
+  --umt-dark-shadow: 0 1px 2px rgba(0, 0, 0, .3);
+
+  --umt-line: var(--umt-light-line);
+  --umt-surface: var(--umt-light-surface);
+  --umt-faint: var(--umt-light-faint);
+  --umt-shadow: var(--umt-light-shadow);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --umt-line: var(--umt-dark-line);
+    --umt-surface: var(--umt-dark-surface);
+    --umt-faint: var(--umt-dark-faint);
+    --umt-shadow: var(--umt-dark-shadow);
+  }
+}
+:root[data-theme="dark"] {
+  --umt-line: var(--umt-dark-line);
+  --umt-surface: var(--umt-dark-surface);
+  --umt-faint: var(--umt-dark-faint);
+  --umt-shadow: var(--umt-dark-shadow);
+}
+
+/* type */
+body {
+  font: 15px/1.6 var(--umt-sans);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4,
+.tsd-page-toolbar .title {
+  font-family: var(--umt-serif);
+  font-weight: 650;
+  letter-spacing: -.01em;
+}
+.tsd-page-title h1 { font-size: clamp(1.75rem, 3.5vw, 2.4rem); line-height: 1.15; }
+.tsd-typography h2 { font-size: 1.45rem; margin-top: 2rem; }
+.tsd-typography h3 { font-size: 1.15rem; }
+code, pre, .tsd-signature, .tsd-signature-type, .tsd-signature-keyword {
+  font-family: var(--umt-mono);
+}
+code, pre { font-size: .85em; border-radius: .45rem; }
+:not(pre) > code {
+  background: var(--code-background);
+  border: 1px solid var(--umt-line);
+  padding: .05em .35em;
+}
+pre {
+  border: 1px solid var(--umt-line);
+  border-radius: .6rem;
+  padding: .85rem 1rem;
+  line-height: 1.5;
+}
+a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+/* toolbar */
+.tsd-page-toolbar {
+  background: var(--color-background);
+  border-bottom: 1px solid var(--umt-line);
+}
+.tsd-page-toolbar .title { font-size: 1.2rem; color: var(--color-text); }
+.tsd-toolbar-links a { color: var(--color-text-aside); }
+.tsd-toolbar-links a:hover { color: var(--color-link); }
+
+/* sidebars */
+.tsd-navigation a,
+.tsd-navigation summary > span,
+.tsd-page-navigation a {
+  border-radius: .35rem;
+  color: var(--color-text-aside);
+  font-size: .9rem;
+}
+.tsd-navigation a:hover,
+.tsd-page-navigation a:hover { color: var(--color-text); text-decoration: none; }
+.tsd-navigation a.current,
+.tsd-page-navigation a.current {
+  background: var(--color-active-menu-item);
+  color: var(--color-contrast-text);
+}
+.tsd-accordion-summary > h3,
+.tsd-accordion-summary > h4,
+.tsd-page-navigation h3,
+.tsd-navigation.settings h3 {
+  font: 600 .7rem var(--umt-sans);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--umt-faint);
+}
+
+/* content panels, like the demo's sections */
+.col-content > .tsd-panel,
+.col-content > .tsd-panel-group,
+.col-content > .tsd-typography,
+.col-content > .tsd-comment {
+  background: var(--umt-surface);
+  border: 1px solid var(--umt-line);
+  border-radius: .9rem;
+  box-shadow: var(--umt-shadow);
+  padding: 1.25rem 1.5rem;
+}
+.col-content > .tsd-panel-group { padding: .5rem 1.5rem 1rem; margin-bottom: 1.25rem; }
+.col-content > .tsd-panel-group .tsd-panel { background: transparent; }
+.tsd-panel > h1, .tsd-panel > h2, .tsd-panel > h3 { border-bottom-color: var(--umt-line); }
+.tsd-member + .tsd-member,
+.tsd-panel.tsd-member { border-color: var(--umt-line); }
+.tsd-signature,
+.tsd-signatures .tsd-signature {
+  background: var(--code-background);
+  border: 1px solid var(--umt-line);
+  border-radius: .6rem;
+  font-size: .82rem;
+  padding: .75rem 1rem;
+}
+.tsd-signatures .tsd-signature + .tsd-signature { margin-top: .5rem; }
+code.tsd-tag {
+  border: 1px solid var(--color-link);
+  color: var(--color-link);
+  background: transparent;
+  border-radius: 99px;
+  font: 600 .65rem var(--umt-sans);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .1rem .5rem;
+}
+
+/* tables in the guide */
+.tsd-typography table {
+  border-collapse: collapse;
+  font-size: .9rem;
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.tsd-typography th,
+.tsd-typography td {
+  border: 0;
+  border-bottom: 1px solid var(--umt-line);
+  padding: .45rem .9rem .45rem 0;
+  text-align: left;
+  vertical-align: top;
+}
+.tsd-typography th {
+  font: 600 .72rem var(--umt-sans);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--umt-faint);
+}
+.tsd-typography tr:nth-child(even) { background: transparent; }
+
+/* search, inputs */
+#tsd-search .field input,
+input, select {
+  font: inherit;
+  background: var(--code-background);
+  color: var(--color-text);
+  border: 1px solid var(--umt-line);
+  border-radius: .45rem;
+}
+
+footer { border-top: 1px solid var(--umt-line); color: var(--umt-faint); font-size: .8rem; }
+.col-content > .tsd-panel > :first-child,
+.col-content > .tsd-comment > :first-child,
+.col-content > .tsd-typography > :first-child { margin-top: 0; }
+.col-content > .tsd-panel > :last-child,
+.col-content > .tsd-comment > :last-child,
+.col-content > .tsd-typography > :last-child { margin-bottom: 0; }
+@media (max-width: 769px) {
+  .col-content > .tsd-panel,
+  .col-content > .tsd-panel-group,
+  .col-content > .tsd-typography,
+  .col-content > .tsd-comment { padding: 1rem; border-radius: .7rem; }
+}
+.col-content > .tsd-panel > .tsd-typography > :first-child { margin-top: 0; }
+.col-content > .tsd-panel > .tsd-typography > :last-child { margin-bottom: 0; }
+@media (max-width: 769px) {
+  .tsd-page-toolbar .title {
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

@@ -87,6 +87,7 @@ dist/
   umt.js                  # Compiled bundle - tracked in git (CDN via jsDelivr)
 
 index.html                # Demo page - 12 interactive sections
+docs-theme/custom.css     # API docs theme: the demo palette and fonts (typedoc.json customCss)
 
 archive/                  # Old demos and Next.js scaffolding (gitignored)
 docs/
