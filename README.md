@@ -8,7 +8,7 @@ A TypeScript library for music theory computation that works across any tuning s
 12-TET, microtonal, historical temperaments, world music traditions, and post-tonal systems.
 Zero runtime dependencies. 147 kb compiled bundle (IIFE), plus an ESM build with bundled types.
 
-**[Live demo](https://memoriainfinita.github.io/UMT)** · **[API docs](https://memoriainfinita.github.io/UMT/api-docs/)**
+**[Live demo](https://memoriainfinita.github.io/UMT)** · **[Developer guide](GUIDE.md)** · **[API docs](https://memoriainfinita.github.io/UMT/api-docs/)** · **[Contributing](CONTRIBUTING.md)**
 
 ![UMT demo page: navigation by topic and the progression analysis of Dm7 G7 Cmaj7 A7 Dm7 Fm6 Cmaj7 in C major, with Roman numerals coloured by function](docs/UMT-demo.png)
 

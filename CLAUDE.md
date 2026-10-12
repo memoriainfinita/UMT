@@ -24,6 +24,8 @@ pnpm run test:unit    # vitest, one file per module in tests/unit/
 pnpm dlx http-server . -p 8080   # Serve the demo locally
 pnpm run lint         # ESLint
 pnpm run typecheck    # tsc --noEmit (covers lib/ and tests/)
+pnpm run docs:check   # fails on an export without JSDoc (runs in CI)
+pnpm run docs         # api-docs/ (TypeDoc, with GUIDE.md and CONTRIBUTING.md)
 ```
 
 ## Project structure
@@ -106,6 +108,7 @@ All pitch positions are **steps from A4 = 0** within a `TuningSystem`. A4 = 440H
 - Parser functions accept an optional `tuning: TuningSystem = TET12` parameter. Interval values from `CHORD_FORMULAS`/`SCALE_PATTERNS` are mapped to the target tuning via `tuning.getStepFromStandard()` (nearest step in cents).
 - `parseRomanProgression` supports: `ii7`, `V7`, `V7alt`, `V7/ii` (applied chords), `subV7` (tritone sub). Upper-case `7` is a dominant (`I7` = C7); the major seventh is `Imaj7`. `analyzeProgression` numerals read back with it.
 - `ScalaTuning` (from `.scl` files) requires the last entry to be the octave (`2/1` or `1200.0`).
-- `Harmony.detectChords` and `Harmony.getNegativeHarmony` are 12-TET only - they return early for other tunings.
+- `Harmony.detectChords` is 12-TET only: it returns `['Unknown Chord']` for other tunings. `Harmony.getNegativeHarmony` reflects the notes in any tuning but only names the result in 12-TET (`'Negative of C'` otherwise).
 - All library strings are in English. No Spanish strings in library code.
+- Every export carries JSDoc, fields of returned objects included; `docs:check` fails otherwise. `GUIDE.md` (developer guide) and `CONTRIBUTING.md` are part of the API docs; their examples were run against `dist/umt.mjs`.
 - `dist/umt.js` is tracked in git intentionally - it is the distributable artifact, not a build byproduct to ignore.

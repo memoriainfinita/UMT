@@ -1,3 +1,9 @@
+/**
+ * Universal Music Theory library: every export of UMT.
+ * @packageDocumentation
+ * @document ../../GUIDE.md
+ * @document ../../CONTRIBUTING.md
+ */
 export * from './types';
 export * from './interval';
 export * from './tuning';
