@@ -1,6 +1,6 @@
 # Changelog
 
-Versions are git tags. Pin one (`#v0.4.1` in npm, `@v0.4.1` on jsDelivr); `main` may change.
+Versions are git tags. Pin one (`github:memoriainfinita/UMT#v0.6.0` in `package.json`, `@v0.6.0` on jsDelivr); `main` may change.
 
 ## 0.6.0 - 2026-10-12
 

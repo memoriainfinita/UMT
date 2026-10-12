@@ -9,7 +9,7 @@ last_updated: 2026-10-11
 
 - Platform: Windows 10 Pro, bash via Claude Code
 - Node: 24 (local y CI)
-- Package manager: npm
+- Package manager: pnpm 11 (`packageManager` en `package.json`; `pnpm-workspace.yaml` aprueba el script de instalación de esbuild)
 
 ## Project
 
@@ -21,14 +21,14 @@ last_updated: 2026-10-11
 - Auditoría 2026-10 cerrada: detalle en `docs/auditoria-2026-10.md`; peticiones de MODUS y respuestas en `docs/notas-desde-modus-2026-10.md` (los dos sin versionar)
 - Consumidores: MODUS y notae, cada uno fijado a un tag. Solo la sesión de UMT commitea aquí; MODUS deja sus peticiones en las notas
 - Status: publicado y en producción.
-- Deploy: `npm run build` + commit `dist/` + push; versión nueva: `package.json`, `CHANGELOG.md` y tag `vX.Y.Z`. Para docs: `npm run docs` + commit `api-docs/` + push.
+- Deploy: `pnpm run build` + commit `dist/` + push; versión nueva: `package.json`, `CHANGELOG.md` y tag `vX.Y.Z`. Para docs: `pnpm run docs` + commit `api-docs/` + push.
 
 ## Dependencies
 
 - esbuild (fijado 0.28.2) - compila `dist/umt.js` (IIFE, 147 kb) y `dist/umt.mjs` (ESM)
 - dts-bundle-generator (fijado 9.5.1) - tipos en un solo `dist/umt.d.ts`
-- typedoc - genera API docs HTML en `api-docs/` (`npm run docs`)
-- vitest - tests unitarios (`npm run test:unit`) - 1016 tests, un archivo por módulo
+- typedoc - genera API docs HTML en `api-docs/` (`pnpm run docs`)
+- vitest - tests unitarios (`pnpm run test:unit`) - 1016 tests, un archivo por módulo
 - GitHub Actions (`.github/workflows/ci.yml`) - typecheck, lint, tests, build y `dist` igual a las fuentes
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
@@ -38,7 +38,8 @@ last_updated: 2026-10-11
 
 - [coordinate-system] Steps from A4=0. C4=-9 in 12-TET. Confirmed 2026-04.
 - [library-language] All library strings in English. Confirmed 2026-04.
-- [build] `npm run build` genera `dist/umt.js`, `dist/umt.mjs` y `dist/umt.d.ts`; los tres se commitean y la CI falla si no coinciden con las fuentes. Confirmed 2026-10.
+- [build] `pnpm run build` genera `dist/umt.js`, `dist/umt.mjs` y `dist/umt.d.ts`; los tres se commitean y la CI falla si no coinciden con las fuentes. Confirmed 2026-10.
+- [package-manager] pnpm, no npm, por los ataques a paquetes de npm de 2026: no instala versiones de menos de un día y solo ejecuta scripts de instalación aprobados. Lo que importa la configuración va declarado (`@eslint/js`: con npm funcionaba sin declarar). En la CI, la acción de pnpm va fijada a commit. Confirmed 2026-10.
 - [tests] Un archivo de tests por módulo de `lib/music-theory/` (harmony por tema: analysis, chromatic, voice-leading), con las fuentes teóricas que cita el módulo en la cabecera. Confirmed 2026-10.
 - [audio-lib] Tone.js via CDN para audio en demo vanilla. Confirmed 2026-04.
 - [sheet-music] abcjs via CDN + ABCBridge para partituras en demo vanilla. Confirmed 2026-04.

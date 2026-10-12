@@ -59,9 +59,9 @@ Releases are git tags (`v0.6.0`); pin one, since `main` may change. Breaking cha
 <script src="umt.js"></script>
 ```
 
-**npm (from GitHub) - ESM with types**
+**pnpm (from GitHub) - ESM with types**
 ```bash
-npm install github:memoriainfinita/UMT#v0.6.0
+pnpm add github:memoriainfinita/UMT#v0.6.0
 ```
 ```typescript
 import { parseChordSymbol, TET12, Harmony, SetTheory } from 'universal-music-theory-library';
@@ -76,8 +76,8 @@ import { parseChordSymbol, TET12, Harmony, SetTheory } from 'universal-music-the
 
 **Build from source**
 ```bash
-npm install
-npm run build   # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
+pnpm install
+pnpm run build   # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
 ```
 
 ---
@@ -319,8 +319,8 @@ scaleToMusicXML(scale);            // MusicXML document
 ## Tests
 
 ```bash
-npm run test:unit    # 1016 unit tests via vitest, one file per module
-npm run typecheck    # TypeScript type checking
+pnpm run test:unit    # 1016 unit tests via vitest, one file per module
+pnpm run typecheck    # TypeScript type checking
 ```
 
 ---

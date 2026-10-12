@@ -2,6 +2,7 @@
   "name": "universal-music-theory-library",
   "version": "0.6.0",
   "private": true,
+  "packageManager": "pnpm@11.1.1",
   "description": "Music theory library: 12-TET and microtonal tunings, harmony and analysis, post-tonal theory, rhythm, and notation export.",
   "license": "GPL-3.0",
   "repository": {
@@ -25,7 +26,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "npm run build:umt && npm run build:esm && npm run build:types",
+    "build": "pnpm run build:umt && pnpm run build:esm && pnpm run build:types",
     "build:umt": "esbuild lib/music-theory/umt.ts --bundle --minify --sourcemap --format=iife --global-name=UMT --outfile=dist/umt.js",
     "build:esm": "esbuild lib/music-theory/index.ts --bundle --minify --format=esm --outfile=dist/umt.mjs",
     "build:types": "dts-bundle-generator --no-banner --silent -o dist/umt.d.ts lib/music-theory/index.ts",
@@ -35,6 +36,7 @@
     "docs": "typedoc"
   },
   "devDependencies": {
+    "@eslint/js": "9.39.1",
     "dts-bundle-generator": "9.5.1",
     "esbuild": "0.28.2",
     "eslint": "9.39.1",

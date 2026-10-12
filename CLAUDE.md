@@ -12,17 +12,18 @@ The demo is a single vanilla HTML file (`index.html`) with 12 interactive sectio
 
 - **Library**: TypeScript, compiled with esbuild → `dist/umt.js` (IIFE) and `dist/umt.mjs` (ESM); types by dts-bundle-generator → `dist/umt.d.ts`
 - **Demo**: Vanilla HTML (`index.html`) - no build step. CDN: Tone.js (audio), abcjs (sheet music), Fraunces from Google Fonts. No Tailwind, no Next.js/React.
-- **Deploy**: build locally (`npm run build`), commit `dist/`, push. CI (GitHub Actions) fails if `dist/` does not match the sources. A release bumps `package.json`, adds a `CHANGELOG.md` entry and a `vX.Y.Z` tag. GitHub Pages serves from root `/`. Repo: https://github.com/memoriainfinita/UMT
+- **Package manager**: pnpm 11 (`packageManager` in `package.json`). It holds back versions published less than a day ago and runs install scripts only for packages approved in `pnpm-workspace.yaml` (esbuild). Every tool the config imports must be a declared devDependency (`@eslint/js`)
+- **Deploy**: build locally (`pnpm run build`), commit `dist/`, push. CI (GitHub Actions) fails if `dist/` does not match the sources. A release bumps `package.json`, adds a `CHANGELOG.md` entry and a `vX.Y.Z` tag. GitHub Pages serves from root `/`. Repo: https://github.com/memoriainfinita/UMT
 
 ## Commands
 
 ```bash
-npm run build        # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
-npm run build:umt    # IIFE only, for a quick demo check
-npm run test:unit    # vitest, one file per module in tests/unit/
-npx http-server . -p 8080   # Serve the demo locally
-npm run lint         # ESLint
-npm run typecheck    # tsc --noEmit (covers lib/ and tests/)
+pnpm run build        # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
+pnpm run build:umt    # IIFE only, for a quick demo check
+pnpm run test:unit    # vitest, one file per module in tests/unit/
+pnpm dlx http-server . -p 8080   # Serve the demo locally
+pnpm run lint         # ESLint
+pnpm run typecheck    # tsc --noEmit (covers lib/ and tests/)
 ```
 
 ## Project structure
