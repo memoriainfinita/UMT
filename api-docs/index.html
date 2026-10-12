@@ -5,7 +5,7 @@
 <p>A TypeScript library for music theory computation that works across any tuning system -
 12-TET, microtonal, historical temperaments, world music traditions, and post-tonal systems.
 Zero runtime dependencies. 147 kb compiled bundle (IIFE), plus an ESM build with bundled types.</p>
-<p><strong><a href="https://memoriainfinita.github.io/UMT">Live demo</a></strong> · <strong><a href="https://memoriainfinita.github.io/UMT/api-docs/">API docs</a></strong></p>
+<p><strong><a href="https://memoriainfinita.github.io/UMT">Live demo</a></strong> · <strong><a href="documents/GUIDE.html">Developer guide</a></strong> · <strong><a href="https://memoriainfinita.github.io/UMT/api-docs/">API docs</a></strong> · <strong><a href="documents/CONTRIBUTING.html">Contributing</a></strong></p>
 <p><img src="media/UMT-demo.png" alt="UMT demo page: navigation by topic and the progression analysis of Dm7 G7 Cmaj7 A7 Dm7 Fm6 Cmaj7 in C major, with Roman numerals coloured by function"></p>
 <hr>
 <h2 id="what-it-does" class="tsd-anchor-link">What it does<a href="#what-it-does" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
@@ -26,8 +26,8 @@ temperament without modification.</p>
 <pre><code class="html"><span class="hl-8">&lt;</span><span class="hl-9">script</span><span class="hl-10"> </span><span class="hl-11">src</span><span class="hl-10">=</span><span class="hl-12">&quot;umt.js&quot;</span><span class="hl-8">&gt;&lt;/</span><span class="hl-9">script</span><span class="hl-8">&gt;</span>
 </code><button type="button">Copy</button></pre>
 
-<p><strong>npm (from GitHub) - ESM with types</strong></p>
-<pre><code class="bash"><span class="hl-4">npm</span><span class="hl-2"> </span><span class="hl-5">install</span><span class="hl-2"> </span><span class="hl-5">github:memoriainfinita/UMT#v0.6.0</span>
+<p><strong>pnpm (from GitHub) - ESM with types</strong></p>
+<pre><code class="bash"><span class="hl-4">pnpm</span><span class="hl-2"> </span><span class="hl-5">add</span><span class="hl-2"> </span><span class="hl-5">github:memoriainfinita/UMT#v0.6.0</span>
 </code><button type="button">Copy</button></pre>
 
 <pre><code class="typescript"><span class="hl-13">import</span><span class="hl-2"> { </span><span class="hl-6">parseChordSymbol</span><span class="hl-2">, </span><span class="hl-6">TET12</span><span class="hl-2">, </span><span class="hl-6">Harmony</span><span class="hl-2">, </span><span class="hl-6">SetTheory</span><span class="hl-2"> } </span><span class="hl-13">from</span><span class="hl-2"> </span><span class="hl-5">&#39;universal-music-theory-library&#39;</span><span class="hl-2">;</span>
@@ -38,7 +38,7 @@ temperament without modification.</p>
 </code><button type="button">Copy</button></pre>
 
 <p><strong>Build from source</strong></p>
-<pre><code class="bash"><span class="hl-4">npm</span><span class="hl-2"> </span><span class="hl-5">install</span><br/><span class="hl-4">npm</span><span class="hl-2"> </span><span class="hl-5">run</span><span class="hl-2"> </span><span class="hl-5">build</span><span class="hl-2">   </span><span class="hl-0"># dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)</span>
+<pre><code class="bash"><span class="hl-4">pnpm</span><span class="hl-2"> </span><span class="hl-5">install</span><br/><span class="hl-4">pnpm</span><span class="hl-2"> </span><span class="hl-5">run</span><span class="hl-2"> </span><span class="hl-5">build</span><span class="hl-2">   </span><span class="hl-0"># dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)</span>
 </code><button type="button">Copy</button></pre>
 
 <hr>
@@ -353,7 +353,7 @@ temperament without modification.</p>
 <p><strong>Enharmonic spelling:</strong> the library uses circle-of-fifths logic to choose flats vs. sharps - not a hardcoded list. <code>preferFlats</code> is stored per <code>Note</code> and propagated through all transformations. Interval-based overrides ensure m3, m7 etc. are always spelled as flat-side intervals regardless of key. Heptatonic scales are spelled one letter per degree, so F# major contains E# and D harmonic minor contains C#; their diatonic chords take the same letters (<code>E#dim</code>).</p>
 <hr>
 <h2 id="tests" class="tsd-anchor-link">Tests<a href="#tests" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<pre><code class="bash"><span class="hl-4">npm</span><span class="hl-2"> </span><span class="hl-5">run</span><span class="hl-2"> </span><span class="hl-5">test:unit</span><span class="hl-2">    </span><span class="hl-0"># 1016 unit tests via vitest, one file per module</span><br/><span class="hl-4">npm</span><span class="hl-2"> </span><span class="hl-5">run</span><span class="hl-2"> </span><span class="hl-5">typecheck</span><span class="hl-2">    </span><span class="hl-0"># TypeScript type checking</span>
+<pre><code class="bash"><span class="hl-4">pnpm</span><span class="hl-2"> </span><span class="hl-5">run</span><span class="hl-2"> </span><span class="hl-5">test:unit</span><span class="hl-2">    </span><span class="hl-0"># 1016 unit tests via vitest, one file per module</span><br/><span class="hl-4">pnpm</span><span class="hl-2"> </span><span class="hl-5">run</span><span class="hl-2"> </span><span class="hl-5">typecheck</span><span class="hl-2">    </span><span class="hl-0"># TypeScript type checking</span>
 </code><button type="button">Copy</button></pre>
 
 <hr>
