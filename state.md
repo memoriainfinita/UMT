@@ -15,7 +15,7 @@ last_updated: 2026-10-11
 
 - Repo: https://github.com/memoriainfinita/UMT
 - Demo: https://memoriainfinita.github.io/UMT (GitHub Pages, branch `main`, root `/`)
-- API Docs: https://memoriainfinita.github.io/UMT/api-docs/ (TypeDoc, generado en `api-docs/`)
+- API Docs: https://memoriainfinita.github.io/UMT/api-docs/ (TypeDoc, generado en `api-docs/`, con el diseño de la demo: `docs-theme/custom.css` y `custom.js`)
 - CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.6.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
 - Versión: 0.6.0 (tag `v0.6.0`). Cambios por versión en `CHANGELOG.md`; `v0.1.0` es el estado previo a la auditoría de 2026-10 (`801e5ec`)
 - Auditoría 2026-10 cerrada: detalle en `docs/auditoria-2026-10.md`; peticiones de MODUS y respuestas en `docs/notas-desde-modus-2026-10.md` (los dos sin versionar)
@@ -42,6 +42,7 @@ last_updated: 2026-10-11
 - [build] `pnpm run build` genera `dist/umt.js`, `dist/umt.mjs` y `dist/umt.d.ts`; los tres se commitean y la CI falla si no coinciden con las fuentes. Confirmed 2026-10.
 - [package-manager] pnpm, no npm, por los ataques a paquetes de npm de 2026: no instala versiones de menos de un día y solo ejecuta scripts de instalación aprobados. Lo que importa la configuración va declarado (`@eslint/js`: con npm funcionaba sin declarar). En la CI, la acción de pnpm va fijada a commit. Confirmed 2026-10.
 - [docs] Toda exportación lleva JSDoc, también cada campo de los objetos que devuelve, sacado del código. Los ejemplos de `GUIDE.md` y del README se ejecutan contra `dist/umt.mjs` antes de publicarlos: el valor del comentario es el que devuelve. Confirmed 2026-10.
+- [docs] Cada exportación lleva `@category` con el grupo de su módulo en la sección Modules del README; el menú de las API docs se agrupa con eso. Sin la etiqueta cae en Guides sin aviso. El wiki de GitHub queda desactivado: la documentación vive en el repo y se versiona con el código. Confirmed 2026-10.
 - [tests] Un archivo de tests por módulo de `lib/music-theory/` (harmony por tema: analysis, chromatic, voice-leading), con las fuentes teóricas que cita el módulo en la cabecera. Confirmed 2026-10.
 - [audio-lib] Tone.js via CDN para audio en demo vanilla. Confirmed 2026-04.
 - [sheet-music] abcjs via CDN + ABCBridge para partituras en demo vanilla. Confirmed 2026-04.
