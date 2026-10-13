@@ -6,6 +6,7 @@ import { Note } from './note';
 import { Chord, chordDegreeLabel } from './chord';
 import { Harmony } from './harmony';
 import { parseChordSymbol } from './parser';
+import { TET12 } from './tuning';
 
 /**
  * One sounding note of a voicing, bottom to top.
@@ -81,6 +82,13 @@ function dropType(sorted: number[]): VoicingAnalysis['drop'] {
  */
 export function analyzeVoicing(notes: Note[], chord?: Chord): VoicingAnalysis | null {
   if (notes.length === 0) return null;
+  // another tuning: analysed through the 12-TET notes its steps stand for
+  if (notes[0].tuningSystem.octaveSteps !== 12) {
+    const twelve = notes.map(n => n.retune(TET12));
+    const chord12 = chord ? chord.retune(TET12) : undefined;
+    if (twelve.some(n => n === null) || chord12 === null) return null;
+    return analyzeVoicing(twelve as Note[], chord12);
+  }
   const sortedNotes = [...notes].sort((a, b) => a.frequency - b.frequency);
   if (!chord) {
     const name = Harmony.detectChords(sortedNotes)[0];

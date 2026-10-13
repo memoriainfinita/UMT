@@ -6,7 +6,7 @@
 import { Chord } from './chord';
 import { parseScaleSymbol, parseChordSymbol } from './parser';
 import { spellByLetter, get12TETName, chordToneOffset } from './utils';
-import { EDO } from './tuning';
+import { EDO, TET12 } from './tuning';
 
 const pc12 = (step: number) => ((step % 12) + 12) % 12;
 const baseName = (name: string) => name.replace(/-?\d+$/, '');
@@ -78,13 +78,17 @@ export function spellPitchInKey(stepsFromA4: number, keySymbol: string): string 
  * Names the chord's notes by their interval above the root, from the root as written in
  * `rootName` (default: the chord's own name). Cm7b5 is C Eb Gb Bb, C7#11 has F#, Bdim7
  * has Ab. Same order and octaves as `chord.getNotes()` (slash bass first). Other
- * tunings: the names `getNotes()` gives.
+ * tunings: spelled as in 12-TET when every note stands for a 12-TET note (`Chord.retune`),
+ * else the names `getNotes()` gives.
  * @category Tonal harmony
  */
 export function spellChord(chord: Chord, rootName?: string): string[] {
   const notes = chord.getNotes();
   const ts = chord.tuningSystem;
-  if (!(ts instanceof EDO && ts.divisions === 12)) return notes.map(n => n.name);
+  if (!(ts instanceof EDO && ts.divisions === 12)) {
+    const twelve = chord.retune(TET12);
+    return twelve ? spellChord(twelve, rootName) : notes.map(n => n.name);
+  }
   const letter = (rootName ?? chord.name)[0]?.toUpperCase();
   const pcs = new Set(chord.intervalsInSteps.map(pc12));
   const toneByPc = new Map<number, number>();   // pitch class above the root → letter offset
@@ -104,13 +108,18 @@ export function spellChord(chord: Chord, rootName?: string): string[] {
  * letters leaves fewer accidentals across the chord tones, the root's counted twice (C in
  * F# major, not B# with D## F##); on a tie, the key's spelling (`spellPitchInKey`). A slash bass is named by
  * its interval in the chord, or by the key when it is not a chord tone.
- * Returns the chord unchanged when the key is unknown or the tuning is not 12-TET.
+ * In another tuning the chord is spelled as in 12-TET (`Chord.retune`). Returns the chord
+ * unchanged when the key is unknown or one of its notes stands for no 12-TET note.
  * @category Tonal harmony
  */
 export function spellChordInKey(chord: Chord, keySymbol: string): Chord {
   const ts = chord.tuningSystem;
   const key = keyLetters(keySymbol);
-  if (!(ts instanceof EDO && ts.divisions === 12) || !key) return chord;
+  if (!key) return chord;
+  if (!(ts instanceof EDO && ts.divisions === 12)) {
+    const twelve = chord.retune(TET12);
+    return (twelve && spellChordInKey(twelve, keySymbol).retune(ts)) ?? chord;
+  }
   const [main, slash] = chord.name.split('/');
   const suffix = main.replace(/^[A-G][#b]*/, '');
   const keyRoot = baseName(spellPitchInKey(chord.rootStep, keySymbol));

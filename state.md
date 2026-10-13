@@ -16,8 +16,8 @@ last_updated: 2026-10-11
 - Repo: https://github.com/memoriainfinita/UMT
 - Demo: https://memoriainfinita.github.io/UMT (GitHub Pages, branch `main`, root `/`)
 - API Docs: https://memoriainfinita.github.io/UMT/api-docs/ (TypeDoc, generado en `api-docs/`, con el diseño de la demo: `docs-theme/custom.css` y `custom.js`)
-- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.6.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
-- Versión: 0.6.0 (tag `v0.6.0`). Cambios por versión en `CHANGELOG.md`; `v0.1.0` es el estado previo a la auditoría de 2026-10 (`801e5ec`)
+- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.7.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
+- Versión: 0.7.0 (tag `v0.7.0`). Cambios por versión en `CHANGELOG.md`; `v0.1.0` es el estado previo a la auditoría de 2026-10 (`801e5ec`)
 - Auditoría 2026-10 cerrada: detalle en `docs/auditoria-2026-10.md`; peticiones de MODUS y respuestas en `docs/notas-desde-modus-2026-10.md` (los dos sin versionar)
 - Consumidores: MODUS y notae, cada uno fijado a un tag. Solo la sesión de UMT commitea aquí; MODUS deja sus peticiones en las notas
 - Status: publicado y en producción.
@@ -26,10 +26,10 @@ last_updated: 2026-10-11
 
 ## Dependencies
 
-- esbuild (fijado 0.28.2) - compila `dist/umt.js` (IIFE, 147 kb) y `dist/umt.mjs` (ESM)
+- esbuild (fijado 0.28.2) - compila `dist/umt.js` (IIFE, 152 kb) y `dist/umt.mjs` (ESM)
 - dts-bundle-generator (fijado 9.5.1) - tipos en un solo `dist/umt.d.ts`
 - typedoc - genera API docs HTML en `api-docs/` (`pnpm run docs`); `pnpm run docs:check` falla si una exportación no tiene JSDoc (en la CI)
-- vitest - tests unitarios (`pnpm run test:unit`) - 1016 tests, un archivo por módulo
+- vitest - tests unitarios (`pnpm run test:unit`) - 1315 tests, un archivo por módulo más la batería de afinaciones (`tuning-conformance.test.ts`)
 - GitHub Actions (`.github/workflows/ci.yml`) - typecheck, lint, tests, build y `dist` igual a las fuentes
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo

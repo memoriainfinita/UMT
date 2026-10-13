@@ -3,6 +3,7 @@
  * and their tension labels.
  */
 import { Chord } from './chord';
+import { TET12 } from './tuning';
 import { parseChordSymbol } from './parser';
 import { preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 
@@ -44,7 +45,14 @@ const UST_TABLE: { offset: number; tensions: string[]; label: string }[] = [
  */
 export function getUpperStructures(dominantChord: Chord): UpperStructure[] {
   const ts = dominantChord.tuningSystem;
-  if (ts.octaveSteps !== 12) return [];
+  if (ts.octaveSteps !== 12) {
+    // the 12-TET answer, retuned; a triad the tuning cannot hold is left out
+    const twelve = dominantChord.retune(TET12);
+    if (!twelve) return [];
+    return getUpperStructures(twelve)
+      .map(u => ({ ...u, triad: u.triad.retune(ts), overChord: u.overChord.retune(ts) }))
+      .filter((u): u is UpperStructure => u.triad !== null && u.overChord !== null);
+  }
   const pcs = new Set(dominantChord.intervalsInSteps.map(i => ((i % 12) + 12) % 12));
   if (!pcs.has(4) || !pcs.has(10)) return [];
 

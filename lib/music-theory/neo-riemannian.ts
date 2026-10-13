@@ -2,6 +2,7 @@
  * Neo-Riemannian PLR transformations: geometric voice-leading operations on major/minor triads.
  */
 import { Chord } from './chord';
+import { EDO, TET12 } from './tuning';
 import { get12TETBaseName, preferFlatsForKey, NOTE_NAMES_12TET_FLAT } from './utils';
 
 /**
@@ -35,11 +36,24 @@ export class NeoRiemannian {
   }
 
   /**
+   * The chord in 12-TET when its tuning is another one: `null` when a note stands for no 12-TET
+   * note, `undefined` when it is already 12-TET. P, L and R are taken there and retuned back,
+   * so their names are right in any tuning.
+   */
+  private static inTwelve(chord: Chord): Chord | null | undefined {
+    const ts = chord.tuningSystem;
+    if (ts instanceof EDO && ts.divisions === 12) return undefined;
+    return chord.retune(TET12);
+  }
+
+  /**
    * Parallel Transformation (P)
    * Moves the third of the chord by a half-step.
    * C Major -> C Minor
    */
   static P(chord: Chord): Chord | null {
+    const twelve = NeoRiemannian.inTwelve(chord);
+    if (twelve !== undefined) return twelve && (NeoRiemannian.P(twelve)?.retune(chord.tuningSystem) ?? null);
     const type = this.getTriadType(chord);
     if (!type) return null;
 
@@ -60,6 +74,8 @@ export class NeoRiemannian {
    * Minor: Fifth moves up a half-step (A Minor -> F Major)
    */
   static L(chord: Chord): Chord | null {
+    const twelve = NeoRiemannian.inTwelve(chord);
+    if (twelve !== undefined) return twelve && (NeoRiemannian.L(twelve)?.retune(chord.tuningSystem) ?? null);
     const type = this.getTriadType(chord);
     if (!type) return null;
 
@@ -86,6 +102,8 @@ export class NeoRiemannian {
    * Minor: Root moves down a whole-step (A Minor -> C Major)
    */
   static R(chord: Chord): Chord | null {
+    const twelve = NeoRiemannian.inTwelve(chord);
+    if (twelve !== undefined) return twelve && (NeoRiemannian.R(twelve)?.retune(chord.tuningSystem) ?? null);
     const type = this.getTriadType(chord);
     if (!type) return null;
 

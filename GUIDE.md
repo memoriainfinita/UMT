@@ -4,25 +4,25 @@ How to load UMT, the objects it works with, what it accepts, what it returns, an
 
 ## Loading UMT
 
-Pin a release tag (`v0.6.0`). `main` may change, and breaking changes are listed in [`CHANGELOG.md`](CHANGELOG.md).
+Pin a release tag (`v0.7.0`). `main` may change, and breaking changes are listed in [`CHANGELOG.md`](CHANGELOG.md).
 
 ```html
 <!-- Script tag: a global UMT -->
-<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.6.0/dist/umt.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.7.0/dist/umt.js"></script>
 <script>
   UMT.parseChordSymbol('Cmaj7').getNotes().map(n => n.name); // ['C4', 'E4', 'G4', 'B4']
 </script>
 
 <!-- ES module from the CDN -->
 <script type="module">
-  import { parseChordSymbol } from 'https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.6.0/dist/umt.mjs';
+  import { parseChordSymbol } from 'https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.7.0/dist/umt.mjs';
 </script>
 ```
 
 In a project, install from the GitHub tag. The package ships ESM and bundled TypeScript types (`dist/umt.d.ts`); it has no runtime dependencies.
 
 ```bash
-pnpm add github:memoriainfinita/UMT#v0.6.0
+pnpm add github:memoriainfinita/UMT#v0.7.0
 ```
 
 ```typescript
@@ -43,7 +43,8 @@ c4.name;            // 'C4'
 
 new Note(TET12, -9).name;               // 'C4'
 new Note(TET12, 60 - 69).name;          // MIDI 60 → 'C4' (MIDI = steps + 69 in 12-TET)
-new Note(TET31, 5).getName();           // 'Step 5': tunings without note names
+new Note(TET31, -23).name;              // 'C4': the step stands for C (see Other tunings)
+new Note(TET31, -22).name;              // 'Step -22': it stands for no 12-TET note
 ```
 
 `parseNote` reads 12-TET note names, with or without an octave (`'Bb3'`, `'F##4'`, `'C'` is C4). For other tunings, build `Note` from a step.
@@ -58,7 +59,7 @@ new Note(TET31, 5).getName();           // 'Step 5': tunings without note names
 | Non-octave tunings | `BohlenPierce`, or `new NonOctaveTuning(...)` |
 | Scala files | `parseScala(text)` |
 
-Parsers take the tuning as an optional argument (default `TET12`): `parseChordSymbol('C', TET31)`, `parseScaleSymbol('C major', TET31)`. Chord and scale formulas are written in 12-TET semitones and mapped to the nearest step of the tuning.
+Parsers take the tuning as an optional argument (default `TET12`): `parseChordSymbol('C', TET31)`, `parseScaleSymbol('C major', TET31)`. Chord and scale formulas are written in 12-TET semitones; each note goes to the step of the tuning that stands for it, and a symbol whose notes the tuning does not have is refused (see Other tunings).
 
 ### Chords
 
@@ -149,15 +150,32 @@ translateSymbol('Sol menor', es);   // 'G minor', for parseScaleSymbol or parseC
 | Situation | Result |
 |---|---|
 | A string a parser cannot read (`parseNote`, `parseChordSymbol`, `parseScaleSymbol`, `parseRomanProgression`, key arguments) | throws `Error` |
+| A chord or scale whose notes the tuning does not have (`parseScaleSymbol('C major', PtolemaicJI)`) | throws `RangeError` |
 | An argument of the wrong size or value (durations that do not match the notes, a non-integer degree, overlapping events in an exporter) | throws `RangeError` |
-| `Harmony.detectChords` with no chord found | `['Unknown Chord']` |
+| `Harmony.detectChords` with no chord found, or notes that stand for no 12-TET note | `['Unknown Chord']` |
 | Other detections (`Schenker.findUrlinie`, `NeoRiemannian.getTriadType`, `P`/`L`/`R` on a non-triad) | `null` |
 | Searches with no result (`getSuggestedScales` for a chord without a third, `getFretboardVoicings`) | `[]` |
 | Classifications with no match (`detectSequence`, `analyzeHarmonic`) | `'unknown'` |
 
-### 12-TET-only functions
+### Other tunings
 
-Chord naming and some analysis assume 12 notes per octave. In other tunings `Harmony.detectChords` returns `['Unknown Chord']`, `getNegativeHarmony` returns the reflected notes as a chord without a name (`'Negative of C'`), and the Tonnetz, counterpoint and figured bass read each note at its nearest 12-TET pitch class.
+A step of a tuning that repeats at the octave **stands for** a 12-TET note when it is the tuning's step for that note (`getStepFromStandard`) and the nearest to it in cents: `tuning.getStandardStep(step)` gives the note, or `null`. In a 12-note tuning (12-TET, Werckmeister III, `FiveLimitJI`) every step stands for itself; in 19- and 31-EDO the steps that stand for notes are the meantone images of the 12 notes; a quarter tone of 24-EDO stands for none, and nothing does in a tuning that does not repeat at the octave (Bohlen-Pierce).
+
+Everything that names or analyses reads a chord, scale or note through the 12-TET notes its steps stand for, and gives back chords and scales in the original tuning:
+
+- Note names, chord and scale names, spelling, Roman numerals, functions, cadences and modulations, chord detection, voicings, P/L/R, substitutions, borrowed chords, suggested scales, negative harmony, solfège: the same answer as in 12-TET.
+- When a note stands for no 12-TET note, the function gives its "nothing found" value from the table above: `'Step n'` as a note name, `null`, `[]`, `['Unknown Chord']`, `'?'` in solfège.
+- Lists (substitutions, borrowed chords, containing scales, upper structures) leave out the chords and scales the tuning cannot hold.
+- `chord.retune(tuning)`, `scale.retune(tuning)` and `note.retune(tuning)` move material between tunings by the same rule; `null` when a note has no counterpart.
+
+What stays as it was:
+
+- The Tonnetz, counterpoint, figured bass and `KeyDetection` read each note at its nearest 12-TET semitone, quarter tones included.
+- `SetTheory.getPitchClasses` counts in steps of the tuning (31 pitch classes in 31-EDO); `getPitchClassesC0` gives 12-TET pitch classes for the Forte catalogue.
+- `getFretboardVoicings` and `getFretboardScale` place one fret per step of the chord's tuning; the instrument presets are 12-TET, so a chord of another tuning goes on a guitar as `chord.retune(TET12)`.
+- The exporters write the tuning's pitches with fractional alterations (MusicXML `<alter>`).
+
+In 31-EDO C sharp and D flat are different notes (steps -21 and -20 from A4); UMT does not model spelled notes yet, so only the step that stands for the 12-TET C sharp/D flat (-21) is named.
 
 ## Recipes
 
@@ -246,7 +264,13 @@ Tunings: `GUITAR_STANDARD`, `GUITAR_DROPPED_D`, `GUITAR_OPEN_G`, `BASS_STANDARD`
 ```typescript
 const scale = parseScaleSymbol('C major', TET31);
 scale.getNotes().map(n => n.stepsFromBase);   // [-23, -18, -13, -10, -5, 0, 5, 8]
+scale.getNotes().map(n => n.name);            // ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5']
 scale.getNotes().map(n => n.frequency);       // Hz, for playback
+
+const ii = parseChordSymbol('Dm7', TET31);
+Harmony.analyzeProgression([ii, parseChordSymbol('G7', TET31)], 'C major').analysis.map(a => a.roman);   // ['ii7', 'V7']
+ii.retune(WerckmeisterIII)?.getNotes().map(n => n.name);   // ['D4', 'F4', 'A4', 'C5'], tuned as Werckmeister did
+parseScaleSymbol('A major', PtolemaicJI).getNotes().map(n => n.name);   // ['A4', 'B4', 'C#5', 'D5', 'E5', 'F#5', 'G#5', 'A5']
 
 TemperamentAnalysis.compare([TET12, WerckmeisterIII, TET31], [[3, 2], [5, 4]]);   // cents and error per interval
 ```

@@ -32,12 +32,43 @@ export abstract class TuningSystem {
   abstract get octaveSteps(): number;
 
   /**
-   * Returns a human-readable note name for the given step.
-   * Subclasses should override this when meaningful names are available.
-   * Default: `"Step N"`.
+   * Returns a note name for the given step: the 12-TET name of the note the step stands for
+   * (`getStandardStep`), in sharps (`"C#4"`, `"A4"`), or `"Step N"` when it stands for none.
    */
   getNoteName(step: number): string {
-    return `Step ${step}`;
+    const standard = this.getStandardStep(step);
+    return standard === null ? `Step ${step}` : get12TETName(standard);
+  }
+
+  /**
+   * The 12-TET note a step stands for: the 12-TET step (A4 = 0) nearest in cents, when
+   * `getStepFromStandard` maps that note back to this step. Names, chord qualities and Roman
+   * numerals in any tuning are read through it.
+   * - In a tuning with 12 steps per octave (12-TET, Werckmeister III, 5-limit JI) every step
+   *   stands for itself.
+   * - In 19- or 31-EDO the steps that stand for a note are the meantone images of the 12
+   *   notes; in 31-EDO C is step -23 and C# step -21, and steps -22 and -20 stand for none
+   *   (spelled notes, where the 31-EDO D flat is step -20, are not modelled yet).
+   * - A quarter tone in 24-EDO stands for none.
+   * @returns The 12-TET step, or `null` when the step stands for no 12-TET note, and always
+   *   in a tuning that does not repeat at the octave.
+   */
+  getStandardStep(step: number): number | null {
+    const standard = Math.round(this.getInterval(step).cents / 100);
+    return this.getStepFromStandard(standard) === step ? standard : null;
+  }
+
+  /**
+   * The step of `target` that stands for the same 12-TET note as `step` does here
+   * (`getStandardStep` on both sides): C4 is step -9 in 12-TET and step -23 in 31-EDO.
+   * @returns The step in `target`, or `null` when `step` stands for no note or `target` has
+   *   no step for it.
+   */
+  retuneStep(step: number, target: TuningSystem): number | null {
+    const standard = this.getStandardStep(step);
+    if (standard === null) return null;
+    const mapped = target.getStepFromStandard(standard);
+    return target.getStandardStep(mapped) === standard ? mapped : null;
   }
 
   /**
@@ -108,15 +139,6 @@ export class EDO extends TuningSystem {
     return Math.round((standardStep * this.divisions) / 12);
   }
 
-  /**
-   * Returns a note name for the given step.
-   * For 12-TET, uses standard note names (e.g. "C#4", "Bb3").
-   * For other EDOs, falls back to `"Step N"`.
-   */
-  getNoteName(step: number): string {
-    if (this.divisions === 12) return get12TETName(step);
-    return `Step ${step}`;
-  }
 }
 
 /**
@@ -269,6 +291,11 @@ export class NonOctaveTuning extends TuningSystem {
   /** Steps per period (not an octave - the period is `periodRatio : 1`). */
   get octaveSteps(): number {
     return this.stepsPerPeriod;
+  }
+
+  /** Always `null`: the 12 notes repeat at the octave, and this tuning does not. */
+  getStandardStep(): number | null {
+    return null;
   }
 
 }

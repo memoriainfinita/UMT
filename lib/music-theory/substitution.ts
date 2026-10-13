@@ -2,6 +2,7 @@
  * Chord substitution engine: tritone subs, diatonic substitutions, sus4, and deceptive resolutions.
  */
 import { Chord, chordQualityFromIntervals } from './chord';
+import { TET12 } from './tuning';
 import { parseChordSymbol, parseScaleSymbol } from './parser';
 import { get12TETBaseName, preferFlatsForKey, NOTE_NAMES_12TET_FLAT, NOTE_NAMES_12TET_SHARP } from './utils';
 
@@ -39,7 +40,14 @@ function noteName(pc: number, flat: boolean): string {
  */
 export function getSubstitutions(chord: Chord, keySymbol: string): SubstitutionOption[] {
   const oct = chord.tuningSystem.octaveSteps;
-  if (oct !== 12) return [];
+  if (oct !== 12) {
+    // the 12-TET answer, retuned; a substitute the tuning cannot hold is left out
+    const twelve = chord.retune(TET12);
+    if (!twelve) return [];
+    return getSubstitutions(twelve, keySymbol)
+      .map(o => ({ ...o, chord: o.chord.retune(chord.tuningSystem) }))
+      .filter((o): o is SubstitutionOption => o.chord !== null);
+  }
 
   const tuning = chord.tuningSystem;
   const results: SubstitutionOption[] = [];

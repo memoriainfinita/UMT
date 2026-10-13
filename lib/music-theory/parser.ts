@@ -3,7 +3,7 @@ import { TET12, TuningSystem } from './tuning';
 import { Chord } from './chord';
 import { Scale } from './scale';
 import { Note } from './note';
-import { parseNoteToStep12TET, preferFlatsForKey, spellByLetter } from './utils';
+import { get12TETName, parseNoteToStep12TET, preferFlatsForKey, spellByLetter } from './utils';
 
 /**
  * Attempts to parse a chord suffix using a compositional grammar when the
@@ -108,6 +108,23 @@ function normalizeSuffix(type: string): string {
 }
 
 /**
+ * Maps 12-TET steps (A4 = 0) to the steps of `tuning` that stand for the same notes. Each note
+ * is mapped where it is, not as an interval from A4, so unequal tunings keep their intervals.
+ * @throws RangeError when the tuning has no step standing for a note (`getStandardStep`):
+ *   the symbol is refused rather than turned into other notes.
+ */
+function toTuning(standardSteps: number[], tuning: TuningSystem, symbol: string, caller: string): number[] {
+  return standardSteps.map(s => {
+    const step = tuning.getStepFromStandard(s);
+    if (tuning.getStandardStep(step) !== s) {
+      const note = get12TETName(s).replace(/-?\d+$/, '');
+      throw new RangeError(`${caller}: "${symbol}" needs ${note}, which ${tuning.name} does not have.`);
+    }
+    return step;
+  });
+}
+
+/**
  * Parses a standard chord symbol into a `Chord` object.
  *
  * Supported formats:
@@ -128,9 +145,10 @@ function normalizeSuffix(type: string): string {
  * Root is case-insensitive (`cmaj7` = `Cmaj7`).
  *
  * @param symbol - Chord symbol string.
- * @param tuning - Target tuning system (default: 12-TET). Intervals are mapped via `getStepFromStandard`.
+ * @param tuning - Target tuning system (default: 12-TET). Each note goes to the step that stands for it (`getStandardStep`).
  * @param octave - Octave for the root note (default: 4).
- * @throws if the symbol cannot be parsed or the chord type is neither in the dictionary nor compositionally valid.
+ * @throws if the symbol cannot be parsed or the chord type is neither in the dictionary nor compositionally valid;
+ *   `RangeError` if the tuning has no step for one of its notes (C in a 7-note JI scale on A).
  * @category Core
  */
 export function parseChordSymbol(symbol: string, tuning: TuningSystem = TET12, octave: number = 4): Chord {
@@ -152,13 +170,14 @@ export function parseChordSymbol(symbol: string, tuning: TuningSystem = TET12, o
   const intervals12TET = CHORD_FORMULAS[type] ?? parseCompositionalSuffix(type);
   if (!intervals12TET) throw new Error(`parseChordSymbol: unknown chord type "${typeRaw}" in "${symbol}".`);
 
-  const intervals = intervals12TET.map(s => tuning.getStepFromStandard(s));
-  const rootStep = tuning.getStepFromStandard(parseNoteToStep12TET(rootName, octave));
+  const rootStandard = parseNoteToStep12TET(rootName, octave);
+  const [rootStep] = toTuning([rootStandard], tuning, symbol, 'parseChordSymbol');
+  const intervals = toTuning(intervals12TET.map(i => rootStandard + i), tuning, symbol, 'parseChordSymbol').map(s => s - rootStep);
 
   let bassStep: number | undefined = undefined;
   if (bassSymbol) {
     const bassNormalized = bassSymbol.trim().charAt(0).toUpperCase() + bassSymbol.trim().slice(1);
-    bassStep = tuning.getStepFromStandard(parseNoteToStep12TET(bassNormalized, octave));
+    [bassStep] = toTuning([parseNoteToStep12TET(bassNormalized, octave)], tuning, symbol, 'parseChordSymbol');
   }
 
   const pf = rootName.includes('#') ? false : rootName.includes('b') ? true : preferFlatsForKey(rootName);
@@ -172,9 +191,10 @@ export function parseChordSymbol(symbol: string, tuning: TuningSystem = TET12, o
  * Root is case-insensitive. Scale type must match a key in `SCALE_PATTERNS` (case-insensitive).
  *
  * @param symbol - Scale symbol string with root and type separated by a space.
- * @param tuning - Target tuning system (default: 12-TET). Pattern steps are mapped via `getPatternFromStandard` (positions, not single steps).
+ * @param tuning - Target tuning system (default: 12-TET). Each note goes to the step that stands for it (`getStandardStep`).
  * @param octave - Octave for the root note (default: 4).
- * @throws if the symbol cannot be parsed or the scale type is unknown.
+ * @throws if the symbol cannot be parsed or the scale type is unknown; `RangeError` if the tuning
+ *   has no step for one of its notes.
  * @category Core
  */
 export function parseScaleSymbol(symbol: string, tuning: TuningSystem = TET12, octave: number = 4): Scale {
@@ -187,9 +207,12 @@ export function parseScaleSymbol(symbol: string, tuning: TuningSystem = TET12, o
   const pattern12TET = SCALE_PATTERNS[type];
   if (!pattern12TET) throw new Error(`parseScaleSymbol: unknown scale type "${typeRaw}" in "${symbol}".`);
 
-  const pattern = tuning.getPatternFromStandard(pattern12TET);
   const rootNormalized = rootName.charAt(0).toUpperCase() + rootName.slice(1);
-  const rootStep = tuning.getStepFromStandard(parseNoteToStep12TET(rootNormalized, octave));
+  const rootStandard = parseNoteToStep12TET(rootNormalized, octave);
+  let position = rootStandard;
+  const tones = toTuning([rootStandard, ...pattern12TET.map(s => (position += s))], tuning, symbol, 'parseScaleSymbol');
+  const rootStep = tones[0];
+  const pattern = tones.slice(1).map((t, k) => t - tones[k]);
   const pf = rootNormalized.includes('#') ? false : rootNormalized.includes('b') ? true : preferFlatsForKey(rootNormalized, type);
   return new Scale(symbol, tuning, rootStep, pattern, pf);
 }

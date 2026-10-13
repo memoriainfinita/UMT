@@ -1,6 +1,26 @@
 # Changelog
 
-Versions are git tags. Pin one (`github:memoriainfinita/UMT#v0.6.0` in `package.json`, `@v0.6.0` on jsDelivr); `main` may change.
+Versions are git tags. Pin one (`github:memoriainfinita/UMT#v0.7.0` in `package.json`, `@v0.7.0` on jsDelivr); `main` may change.
+
+## 0.7.0 - 2026-10-13
+
+Other tunings answer as 12-TET does, or not at all. A battery runs every analysis in Werckmeister III, 5-limit JI, 19-, 24-, 31- and 53-EDO and Ptolemy's 7-note JI against its 12-TET answer (`tests/unit/tuning-conformance.test.ts`). Nothing changes in 12-TET: MODUS (380 tests) and notae pass unchanged.
+
+### Breaking changes
+
+Only outside 12-TET.
+
+- The parsers place each note on the tuning's step for that note. They measured intervals from A4, which in an unequal tuning put notes off their own steps: Dm in Ptolemy's JI had an F#
+- The parsers refuse a symbol whose notes the tuning lacks, with a `RangeError`, instead of moving them: `parseScaleSymbol('C major', PtolemaicJI)` gave the seven notes of A major (the tuning is A B C# D E F# G#)
+- Note names: a step that stands for a 12-TET note (`TuningSystem.getStandardStep`) is named, in sharps or by the note's flat/sharp preference: `'C4'` for step -23 of 31-EDO, every step of Werckmeister III and 5-limit JI. They were `'Step n'`. Steps that stand for none (24-EDO quarter tones) keep `'Step n'`; `EDO.getNoteName` is the inherited `TuningSystem.getNoteName`
+- Wrong answers that are now right: P, L and R named their chords as if steps were semitones (`P(C)` in 31-EDO was A#m); `analyzeProgression` read ii7 V7 Imaj7 as II V I and found no modulation; `getDiatonicChords` named chords `'C4(0,10,18,28)'`; `detectSequence` and `classifyModulation` measured steps as semitones; `getSuggestedScales` gave E ionian for E7 in Ptolemy's JI; `Solfege.fixedDo` called G of 19-EDO fa#
+- Functions that gave nothing now answer as in 12-TET: `detectChords`, `detectChordsScored`, `analyzeVoicing`, `getTritoneSubstitution`, `getNegativeHarmony`, `getSubstitutions`, `getUpperStructures`, `getBorrowedChords`, `getAllContainingScales`, `getColtraneSubstitutions`, `analyzeSlash`, `respellNote`, `respellChord`, `spellChord`, `spellChordInKey`, `Solfege.movableDo`, the modal methods of `Scale`. Lists leave out the chords and scales the tuning cannot hold
+
+### Added
+
+- `TuningSystem.getStandardStep(step)`: the 12-TET note a step stands for, or `null`; `retuneStep(step, target)`
+- `Chord.retune(tuning)`, `Scale.retune(tuning)`, `Note.retune(tuning)`: the same material in another tuning, or `null`
+- Guide: [Other tunings](GUIDE.md#other-tunings)
 
 ## 0.6.0 - 2026-10-12
 

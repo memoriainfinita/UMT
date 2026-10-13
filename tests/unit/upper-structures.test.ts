@@ -59,10 +59,12 @@ describe('getUpperStructures', () => {
     expect(ii!.tensions).toContain('13');
   });
 
-  it('returns empty array for non-12-TET', () => {
+  it('another tuning gets the 12-TET triads, retuned (A7 in 19-EDO)', () => {
     const edo19 = new EDO(19, 440);
-    const c = new Chord('C7', edo19, 0, [0, 6, 11, 16]);
-    expect(getUpperStructures(c)).toHaveLength(0);
+    const a7 = new Chord('A7', edo19, 0, [0, 6, 11, 16]);
+    const usts = getUpperStructures(a7);
+    expect(usts.map(u => u.triad.name)).toEqual(getUpperStructures(parseChordSymbol('A7')).map(u => u.triad.name));
+    expect(usts.every(u => u.triad.tuningSystem === edo19)).toBe(true);
   });
 
   it('UST labels cover bII, II, bIII, bVI, VI, bVII', () => {

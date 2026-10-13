@@ -1,4 +1,4 @@
-import { TuningSystem, EDO } from './tuning';
+import { TuningSystem, EDO, TET12 } from './tuning';
 import { Note } from './note';
 import { get12TETBaseName, preferFlatsForKey, spellByLetter, chordToneOffset, writtenRoot } from './utils';
 
@@ -45,11 +45,38 @@ export class Chord {
   }
 
   /**
+   * The same chord in another tuning: each note goes to the step of `tuning` that stands for
+   * the same 12-TET note (`TuningSystem.retuneStep`). A Cmaj7 of 31-EDO becomes the Cmaj7 of
+   * 12-TET or of Werckmeister III; name and flat/sharp preference are kept.
+   * @returns The chord in `tuning`, or `null` when one of its notes stands for no 12-TET note
+   *   (a quarter tone) or `tuning` has no step for it.
+   */
+  retune(tuning: TuningSystem): Chord | null {
+    const root = this.tuningSystem.retuneStep(this.rootStep, tuning);
+    const tones = this.intervalsInSteps.map(i => this.tuningSystem.retuneStep(this.rootStep + i, tuning));
+    const bass = this.bassStep === undefined ? undefined : this.tuningSystem.retuneStep(this.bassStep, tuning);
+    if (root === null || bass === null || tones.some(t => t === null)) return null;
+    return new Chord(this.name, tuning, root, tones.map(t => t! - root), bass, this.preferFlats);
+  }
+
+  /** This chord in 12-TET, when its tuning is another one and every note stands for a 12-TET note. */
+  private inTwelve(): Chord | null {
+    if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) return null;
+    return this.retune(TET12);
+  }
+
+  /**
    * Returns the notes of the chord in root position. In 12-TET each tone is named by its
    * interval above the written root (D#m → D# F# A#; Cm7b5 → C Eb Gb Bb; C7#11 has F#).
    * For slash chords, the bass note is prepended below the root.
    */
   getNotes(): Note[] {
+    // Another tuning: spelled as in 12-TET, sounding at this tuning's steps.
+    const twelve = this.inTwelve();
+    if (twelve) {
+      return twelve.getNotes().map(n =>
+        new Note(this.tuningSystem, TET12.retuneStep(n.stepsFromBase, this.tuningSystem)!, n.name));
+    }
     // Use stored preferFlats if set (populated by parseChordSymbol / NeoRiemannian).
     // Fall back to root-name heuristic for directly constructed Chord instances.
     const is12TET = this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12;
@@ -269,10 +296,11 @@ export class Chord {
   /**
    * Returns the tritone substitution of this chord.
    * Typically applied to dominant 7th chords (e.g., G7 -> Db7).
-   * NOTE: Only meaningful in 12-TET (tritone = 6 semitones). Returns null for other tuning systems.
+   * In another tuning it is the same substitution, when every note of the chord and of the
+   * substitute stands for a 12-TET note (`retune`); otherwise null.
    */
   getTritoneSubstitution(): Chord | null {
-    if (this.tuningSystem.octaveSteps !== 12) return null;
+    if (this.tuningSystem.octaveSteps !== 12) return this.inTwelve()?.getTritoneSubstitution()?.retune(this.tuningSystem) ?? null;
     // Transpose root by 6 semitones (tritone)
     const tritoneRootStep = this.rootStep + 6;
     // Determine canonical enharmonic for the tritone root via circle of fifths.
@@ -334,15 +362,19 @@ export class Chord {
 }
 
 /**
- * Chord quality from its intervals (12-TET): `'maj7'`, `'m7'`, `'7'`, `'dim7'`, `'m7b5'`,
+ * Chord quality from its intervals: `'maj7'`, `'m7'`, `'7'`, `'dim7'`, `'m7b5'`,
  * `'mM7'`, `'aug7'`, `'augM7'`, `'aug'`, `'dim'`, `'7sus4'`, `'sus2'`, `'sus4'`, `'m'`, `'M'`, or
- * `''` when none fits or the tuning is not 12 steps per octave. Ninths, elevenths and sixths
+ * `''` when none fits. A tuning without 12 steps per octave is read through the 12-TET notes
+ * its steps stand for (`Chord.retune`); `''` when one stands for none. Ninths, elevenths and sixths
  * reduce to the triad or seventh below them (Cadd9 and C6/9 are `'M'`); a chord is sus only
  * without a third.
  * @category Tonal harmony
  */
 export function chordQualityFromIntervals(chord: Chord, oct: number = chord.tuningSystem.octaveSteps): string {
-  if (oct !== 12) return '';
+  if (oct !== 12) {
+    const twelve = chord.retune(TET12);
+    return twelve ? chordQualityFromIntervals(twelve, 12) : '';
+  }
   const pcs = chord.intervalsInSteps.map(i => ((i % oct) + oct) % oct);
   const has = (n: number) => pcs.includes(n);
   if (has(4) && has(7) && has(11)) return 'maj7';

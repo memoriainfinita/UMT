@@ -101,7 +101,11 @@ describe('getPatternFromStandard: scale patterns keep their span', () => {
     expect(new EDO(19).getPatternFromStandard([2, 2, 1, 2, 2, 2, 1])).toEqual([3, 3, 2, 3, 3, 3, 2]);
   });
 
-  it('C major in 7-note Ptolemaic JI is one step per degree', () => {
-    expect(parseScaleSymbol('C major', PtolemaicJI).stepPattern).toEqual([1, 1, 1, 1, 1, 1, 1]);
+  it('A major in 7-note Ptolemaic JI (on A) is one step per degree', () => {
+    expect(parseScaleSymbol('A major', PtolemaicJI).stepPattern).toEqual([1, 1, 1, 1, 1, 1, 1]);
+  });
+
+  it('C major is refused in Ptolemaic JI on A: it has C#, not C', () => {
+    expect(() => parseScaleSymbol('C major', PtolemaicJI)).toThrow(RangeError);
   });
 });

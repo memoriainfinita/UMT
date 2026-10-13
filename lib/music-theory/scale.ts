@@ -1,4 +1,4 @@
-import { TuningSystem, EDO } from './tuning';
+import { TuningSystem, EDO, TET12 } from './tuning';
 import { Note } from './note';
 import { Chord } from './chord';
 import { SCALE_PATTERNS, MODE_PARENT_FAMILY, MODE_BRIGHTNESS } from './dictionaries';
@@ -85,6 +85,28 @@ export class Scale {
   }
 
   /**
+   * The same scale in another tuning: each degree goes to the step of `tuning` that stands for
+   * the same 12-TET note (`TuningSystem.retuneStep`). Name and flat/sharp preference are kept.
+   * @returns The scale in `tuning`, or `null` when one of its degrees stands for no 12-TET note
+   *   or `tuning` has no step for it.
+   */
+  retune(tuning: TuningSystem): Scale | null {
+    let position = this.rootStep;
+    const steps = [this.rootStep, ...this.stepPattern.map(s => (position += s))];
+    const tones = steps.map(s => this.tuningSystem.retuneStep(s, tuning));
+    if (tones.some(t => t === null)) return null;
+    const pattern = tones.slice(1).map((t, k) => t! - tones[k]!);
+    if (pattern.some(p => p <= 0)) return null;
+    return new Scale(this.name, tuning, tones[0]!, pattern, this.preferFlats);
+  }
+
+  /** This scale in 12-TET, when its tuning is another one and every degree stands for a 12-TET note. */
+  private inTwelve(): Scale | null {
+    if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) return null;
+    return this.retune(TET12);
+  }
+
+  /**
    * Returns the notes of the scale across the given number of octaves.
    *
    * The result always includes one extra note at the end: the root repeated one period
@@ -94,6 +116,12 @@ export class Scale {
    * @param octaves - Number of octaves to span (default: 1).
    */
   getNotes(octaves: number = 1): Note[] {
+    // Another tuning: spelled as in 12-TET, sounding at this tuning's steps.
+    const twelve = this.inTwelve();
+    if (twelve) {
+      return twelve.getNotes(octaves).map(n =>
+        new Note(this.tuningSystem, TET12.retuneStep(n.stepsFromBase, this.tuningSystem)!, n.name));
+    }
     const notes: Note[] = [];
     let currentStep = this.rootStep;
 
@@ -211,12 +239,15 @@ export class Scale {
    * - `'triad'` (default): three-note chord (root, 3rd, 5th).
    * - `'seventh'`: four-note chord (root, 3rd, 5th, 7th).
    *
-   * In 12-TET, chord names are canonical (e.g. `Bm7b5`, `Caug`). In other tuning systems
-   * a structural label is used (e.g. `"C (0,3,7)"`) since the chord dictionary is 12-TET specific.
+   * Chord names are canonical (e.g. `Bm7b5`, `Caug`), in 12-TET and in any tuning where every
+   * degree stands for a 12-TET note (`retune`); otherwise a structural label is used
+   * (e.g. `"Step 3(0,5,11)"`).
    *
    * Scales with fewer than 5 notes may not support `'seventh'` on every degree.
    */
   getDiatonicChords(type: 'triad' | 'seventh' = 'triad'): Chord[] {
+    const twelve = this.inTwelve();
+    if (twelve) return twelve.getDiatonicChords(type).map(c => c.retune(this.tuningSystem)!);
     const len = this.stepPattern.length;
     const maxOffset = type === 'seventh' ? 6 : 4;
     const octavesNeeded = Math.ceil((len + maxOffset) / len);
@@ -273,7 +304,9 @@ export class Scale {
       const typeRaw = match[1].trim().toLowerCase();
       if (SCALE_PATTERNS[typeRaw]) return typeRaw;
     }
-    if (!(this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12)) return null;
+    if (!(this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12)) {
+      return this.inTwelve()?.getCanonicalType() ?? null;
+    }
     const key = this.stepPattern.join(',');
     for (const [type, pat] of Object.entries(SCALE_PATTERNS)) {
       if (pat.join(',') === key) return type;
@@ -285,10 +318,13 @@ export class Scale {
    * Returns modal characteristics: brightness (relative to Ionian), the degrees that
    * differ from the parallel major, traditional jazz avoid notes, and parent-family info.
    *
-   * `characteristicDegrees`/`characteristicIntervals` and `avoidNotes` are only computed
-   * in 12-TET. Brightness uses `MODE_BRIGHTNESS`; returns 0 if the mode is unknown.
+   * `characteristicDegrees`/`characteristicIntervals` and `avoidNotes` are computed in 12-TET
+   * and in any tuning where every degree stands for a 12-TET note; otherwise they are empty.
+   * Brightness uses `MODE_BRIGHTNESS`; returns 0 if the mode is unknown.
    */
   getModalCharacteristics(): ModalCharacteristics {
+    const twelve = this.inTwelve();
+    if (twelve) return twelve.getModalCharacteristics();
     const type = this.getCanonicalType();
     const parent = type ? MODE_PARENT_FAMILY[type] : undefined;
     const brightness = type && MODE_BRIGHTNESS[type] !== undefined ? MODE_BRIGHTNESS[type] : 0;
@@ -343,6 +379,8 @@ export class Scale {
    * this scale is not a recognized mode of a known family.
    */
   getParentScale(): Scale | null {
+    const twelve = this.inTwelve();
+    if (twelve) return twelve.getParentScale()?.retune(this.tuningSystem) ?? null;
     const type = this.getCanonicalType();
     if (!type) return null;
     const parent = MODE_PARENT_FAMILY[type];
@@ -374,6 +412,8 @@ export class Scale {
    * Returns null if the target mode is in a different family or either mode is unknown.
    */
   getRelativeMode(targetModeName: string): Scale | null {
+    const twelve = this.inTwelve();
+    if (twelve) return twelve.getRelativeMode(targetModeName)?.retune(this.tuningSystem) ?? null;
     const parent = this.getParentScale();
     if (!parent) return null;
     const target = targetModeName.trim().toLowerCase();

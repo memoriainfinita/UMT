@@ -33,10 +33,11 @@ describe('Harmony.getBorrowedChords - shape', () => {
     expect(typeof first.characteristic).toBe('boolean');
   });
 
-  it('non-12-TET returns empty array', () => {
+  it('another tuning gets the 12-TET chords, retuned (19-EDO)', () => {
     const edo19 = new EDO(19);
     const results = Harmony.getBorrowedChords('C major', { tuning: edo19 });
-    expect(results).toEqual([]);
+    expect(results.map(b => b.chord.name)).toEqual(Harmony.getBorrowedChords('C major').map(b => b.chord.name));
+    expect(results.every(b => b.chord.tuningSystem === edo19)).toBe(true);
   });
 });
 

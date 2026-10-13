@@ -2,9 +2,9 @@
 
 ## What is this
 
-A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 1016 tests, zero runtime dependencies.
+A standalone TypeScript music theory library (`UMT`) covering 12-TET, microtonal tunings, world music, post-tonal theory, rhythm, and notation export. 40+ modules, 1315 tests, zero runtime dependencies.
 
-The library compiles to a standalone IIFE (`dist/umt.js`, 147 kb) for script tags and jsDelivr, and to an ESM bundle (`dist/umt.mjs`) with bundled types (`dist/umt.d.ts`). Releases are git tags with notes in `CHANGELOG.md`.
+The library compiles to a standalone IIFE (`dist/umt.js`, 152 kb) for script tags and jsDelivr, and to an ESM bundle (`dist/umt.mjs`) with bundled types (`dist/umt.d.ts`). Releases are git tags with notes in `CHANGELOG.md`.
 
 The demo is a single vanilla HTML file (`index.html`) with 12 interactive sections in four groups (tonal harmony, scales and tuning, rhythm, beyond), its own CSS with light and dark themes. The original Next.js scaffolding and old demo versions are in `archive/` (gitignored).
 
@@ -106,10 +106,10 @@ All pitch positions are **steps from A4 = 0** within a `TuningSystem`. A4 = 440H
 
 - `TuningSystem` is abstract. Always use `EDO`, `JustIntonation`, `CentTuning`, or `NonOctaveTuning`.
 - `Chord.smoothTransition` handles voice leading automatically - use it for progressions.
-- Parser functions accept an optional `tuning: TuningSystem = TET12` parameter. Interval values from `CHORD_FORMULAS`/`SCALE_PATTERNS` are mapped to the target tuning via `tuning.getStepFromStandard()` (nearest step in cents).
+- Parser functions accept an optional `tuning: TuningSystem = TET12` parameter. Each note of a formula goes to the step of the tuning that stands for it (`getStandardStep`); a symbol whose notes the tuning lacks throws `RangeError`.
 - `parseRomanProgression` supports: `ii7`, `V7`, `V7alt`, `V7/ii` (applied chords), `subV7` (tritone sub). Upper-case `7` is a dominant (`I7` = C7); the major seventh is `Imaj7`. `analyzeProgression` numerals read back with it.
 - `ScalaTuning` (from `.scl` files) requires the last entry to be the octave (`2/1` or `1200.0`).
-- `Harmony.detectChords` is 12-TET only: it returns `['Unknown Chord']` for other tunings. `Harmony.getNegativeHarmony` reflects the notes in any tuning but only names the result in 12-TET (`'Negative of C'` otherwise).
+- Other tunings are read through the 12-TET notes their steps stand for (`TuningSystem.getStandardStep`, `Chord/Scale/Note.retune`): a function written for 12-TET retunes its input to `TET12`, computes, and retunes the result back; a step that stands for no note gives the function's "nothing found" value. `tests/unit/tuning-conformance.test.ts` checks every analysis in 12-note tunings, 19/24/31/53-EDO and a 7-note JI against the 12-TET answer; a new analysis function goes into its battery.
 - All library strings are in English. No Spanish strings in library code.
 - Every export carries JSDoc, fields of returned objects included; `docs:check` fails otherwise. Every export also carries `@category` with its README module group, which builds the API docs menu. `GUIDE.md` (developer guide) and `CONTRIBUTING.md` are part of the API docs; their examples were run against `dist/umt.mjs`.
 - `dist/umt.js` is tracked in git intentionally - it is the distributable artifact, not a build byproduct to ignore.

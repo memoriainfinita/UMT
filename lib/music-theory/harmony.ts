@@ -10,7 +10,22 @@ import { CHORD_FORMULAS, SCALE_PATTERNS, MODE_BRIGHTNESS } from './dictionaries'
 import { Note } from './note';
 import { Scale } from './scale';
 import { KeyDetection } from './key-detection';
-import { TuningSystem, TET12 } from './tuning';
+import { TuningSystem, TET12, EDO } from './tuning';
+
+/** Whether a tuning is 12-TET itself. */
+const isTwelveTET = (ts: TuningSystem): boolean => ts instanceof EDO && ts.divisions === 12;
+
+/** The chords in 12-TET, when every note of every chord stands for a 12-TET note. */
+function chordsInTwelve(chords: Chord[]): Chord[] | null {
+  const mapped = chords.map(c => c.retune(TET12));
+  return mapped.some(c => c === null) ? null : mapped as Chord[];
+}
+
+/** The notes in 12-TET, when they are in another tuning and each stands for a 12-TET note. */
+function notesInTwelve(notes: Note[]): Note[] | null {
+  const mapped = notes.map(n => n.retune(TET12));
+  return mapped.some(n => n === null) ? null : mapped as Note[];
+}
 
 // ============================================================================
 //  Module constants
@@ -886,6 +901,18 @@ export class Harmony {
       throw new RangeError(`analyzeProgression: ${chords.length} chords but ${options.durations.length} durations`);
     }
     const tuning = chords[0].tuningSystem;
+    // another tuning: the 12-TET analysis, with its chords retuned
+    if (!isTwelveTET(tuning)) {
+      const twelve = chordsInTwelve(chords);
+      if (twelve) {
+        const r = Harmony.analyzeProgression(twelve, keySymbol, options);
+        return {
+          ...r,
+          analysis: r.analysis.map((a, i) => ({ ...a, chord: a.chord.retune(tuning) ?? chords[i] })),
+          modulations: r.modulations.map(m => ({ ...m, pivotChord: m.pivotChord?.retune(tuning) ?? undefined })),
+        };
+      }
+    }
     const spelling = options.spelling ?? 'key';
     const homeKey = parseKey(keySymbol, tuning, spelling);
 
@@ -1039,7 +1066,10 @@ export class Harmony {
     if (notes.length === 0) return [];
     const octave = notes[0].tuningSystem.octaveSteps;
 
-    if (octave !== 12) return ['Unknown Chord'];
+    if (octave !== 12) {
+      const twelve = notesInTwelve(notes);
+      return twelve ? Harmony.detectChords(twelve) : ['Unknown Chord'];
+    }
 
     const pitchClasses = Array.from(new Set(notes.map(n => ((n.stepsFromBase % octave) + octave) % octave)));
     const bassStep = ((notes[0].stepsFromBase % octave) + octave) % octave;
@@ -1090,7 +1120,11 @@ export class Harmony {
    * // → { name: 'C7/E', omitted: ['5'], rootInBass: false, score: 0.55, … }
    */
   static detectChordsScored(notes: Note[]): ChordCandidate[] {
-    if (notes.length === 0 || notes[0].tuningSystem.octaveSteps !== 12) return [];
+    if (notes.length === 0) return [];
+    if (notes[0].tuningSystem.octaveSteps !== 12) {
+      const twelve = notesInTwelve(notes);
+      return twelve ? Harmony.detectChordsScored(twelve) : [];
+    }
     const pcOf = (n: Note) => ((n.stepsFromBase % 12) + 12) % 12;
     const lowest = notes.reduce((a, b) => (b.stepsFromBase < a.stepsFromBase ? b : a));
     const bassPc = pcOf(lowest);
@@ -1137,6 +1171,10 @@ export class Harmony {
    * Returns the Negative Harmony equivalent of a chord in a given key.
    */
   static getNegativeHarmony(chord: Chord, keyCenter: string): Chord {
+    if (chord.tuningSystem.octaveSteps !== 12) {
+      const negative = chord.retune(TET12) && Harmony.getNegativeHarmony(chord.retune(TET12)!, keyCenter).retune(chord.tuningSystem);
+      if (negative) return negative;
+    }
     const match = keyCenter.match(/^([A-G][#b]*)/i);
     const keyRootName = match ? match[1] : 'C';
     const ts = chord.tuningSystem;
@@ -1152,7 +1190,9 @@ export class Harmony {
     const tuning = chord.tuningSystem;
     const negativeNotes = negativeSteps.map(step => new Note(tuning, step)).sort((a, b) => a.frequency - b.frequency);
 
-    const detectedNames = this.detectChords(negativeNotes);
+    // reached in another tuning only when the negative chord has a note it cannot hold:
+    // the reflected steps are kept, unnamed
+    const detectedNames = ts.octaveSteps === 12 ? this.detectChords(negativeNotes) : ['Unknown Chord'];
     const lowestStep = negativeNotes[0].stepsFromBase;
     if (detectedNames[0] === 'Unknown Chord') {
       return new Chord(`Negative of ${chord.name}`, tuning, lowestStep, negativeNotes.map(n => n.stepsFromBase - lowestStep));
@@ -1194,7 +1234,12 @@ export class Harmony {
     options?: { sources?: string[]; tuning?: TuningSystem; type?: 'triad' | 'seventh' }
   ): BorrowedChord[] {
     const tuning = options?.tuning ?? TET12;
-    if (tuning.octaveSteps !== 12) return [];
+    if (tuning.octaveSteps !== 12) {
+      // the 12-TET answer, retuned; a chord the tuning cannot hold is left out
+      return Harmony.getBorrowedChords(keySymbol, { ...options, tuning: TET12 })
+        .map(b => ({ ...b, chord: b.chord.retune(tuning) }))
+        .filter((b): b is BorrowedChord => b.chord !== null);
+    }
 
     const match = keySymbol.match(/^([A-G][#b]*)\s+(.+)$/i);
     if (!match) return [];
@@ -1323,6 +1368,11 @@ export class Harmony {
     keyA: string,
     keyB: string
   ): 'direct' | 'pivot' | 'enharmonic' | 'chromatic' | 'common-tone' {
+    if (![...chordsA, ...chordsB].every(c => isTwelveTET(c.tuningSystem))) {
+      // read through 12-TET; a chord with a note that stands for none can be neither pivot nor common tone
+      const twelve = (cs: Chord[]) => cs.map(c => c.retune(TET12)).filter((c): c is Chord => c !== null);
+      return Harmony.classifyModulation(twelve(chordsA), twelve(chordsB), keyA, keyB);
+    }
     const tuning = TET12;
 
     let scaleA: Scale, scaleB: Scale;
@@ -1399,7 +1449,12 @@ export class Harmony {
    */
   static getColtraneSubstitutions(chord: Chord, _keySymbol: string): Chord[] {
     const oct = chord.tuningSystem.octaveSteps;
-    if (oct !== 12) return [];
+    if (oct !== 12) {
+      const twelve = chord.retune(TET12);
+      if (!twelve) return [];
+      return Harmony.getColtraneSubstitutions(twelve, _keySymbol)
+        .map(c => c.retune(chord.tuningSystem)).filter((c): c is Chord => c !== null);
+    }
 
     const rootPc = pcMod(chord.rootStep, 12);
     const pc1 = (rootPc + 4) % 12;
@@ -1519,10 +1574,14 @@ export class Harmony {
     hint?: string;
   }[] {
     const ts = chord.tuningSystem;
+    // another tuning: read through the 12-TET notes its steps stand for
+    if (!(ts instanceof EDO && ts.divisions === 12)) {
+      const twelve = chord.retune(TET12);
+      return twelve ? Harmony.getSuggestedScales(twelve, nextChord?.retune(TET12) ?? undefined, ruleset) : [];
+    }
     const oct = ts.octaveSteps;
     const rootPf = chord.preferFlats ?? false;
-    // the root as written, or the nearest 12-TET name (steps of other tunings are not semitones)
-    const rootSemitones = oct === 12 ? chord.rootStep : Math.round(12 * Math.log2(new Note(ts, chord.rootStep).frequency / 440));
+    const rootSemitones = chord.rootStep;
     const root = writtenRoot(chord.name.split('/')[0], rootSemitones) ?? get12TETBaseName(rootSemitones, rootPf);
 
     const pcs = chord.intervalsInSteps.map(i => ((i % oct) + oct) % oct);
@@ -1643,6 +1702,10 @@ export class Harmony {
     /** 0 to 1: 1 for an exact match, 0 for `'unknown'`. */
     confidence: number;
   } {
+    if (chords.length > 0 && !chords.every(c => isTwelveTET(c.tuningSystem))) {
+      const twelve = chordsInTwelve(chords);
+      return twelve ? Harmony.detectSequence(twelve) : { type: 'unknown', confidence: 0 };
+    }
     if (chords.length < 3) return { type: 'unknown', confidence: 0 };
     const oct = chords[0].tuningSystem.octaveSteps;
     const roots = chords.map(c => ((c.rootStep % oct) + oct) % oct);
@@ -1756,7 +1819,17 @@ export class Harmony {
   static analyzeSlash(chord: Chord): SlashAnalysis {
     const ts = chord.tuningSystem;
     const oct = ts.octaveSteps;
-    if (oct !== 12) return { type: 'hybrid' };
+    if (oct !== 12) {
+      const twelve = chord.retune(TET12);
+      if (!twelve) return { type: 'hybrid' };
+      const r = Harmony.analyzeSlash(twelve);
+      return {
+        ...r,
+        upperStructure: r.upperStructure?.retune(ts) ?? undefined,
+        lowerChord: r.lowerChord?.retune(ts) ?? undefined,
+        lowerRoot: r.lowerRoot?.retune(ts) ?? undefined,
+      };
+    }
     if (chord.bassStep === undefined) return { type: 'inversion' };
 
     const bassPc = ((chord.bassStep % oct) + oct) % oct;
@@ -1815,7 +1888,13 @@ export class Harmony {
   }[] {
     const ts = chord.tuningSystem;
     const oct = ts.octaveSteps;
-    if (oct !== 12) return [];
+    if (oct !== 12) {
+      const twelve = chord.retune(TET12);
+      if (!twelve) return [];
+      return Harmony.getAllContainingScales(twelve)
+        .map(r => ({ ...r, scale: r.scale.retune(ts) }))
+        .filter((r): r is { scale: Scale; completeness: number } => r.scale !== null);
+    }
 
     const chordPcsArr = chord.getPitchClasses();
     if (chordPcsArr.length === 0) return [];
@@ -1876,7 +1955,10 @@ export class Harmony {
    */
   static respellNote(note: Note, context: RespellContext): Note {
     const ts = note.tuningSystem;
-    if (ts.octaveSteps !== 12) return note;
+    if (ts.octaveSteps !== 12) {
+      const twelve = note.retune(TET12);
+      return twelve ? new Note(ts, note.stepsFromBase, Harmony.respellNote(twelve, context).name) : note;
+    }
     if (context.keySymbol) return new Note(ts, note.stepsFromBase, spellPitchInKey(note.stepsFromBase, context.keySymbol));
 
     let useFlats: boolean;
@@ -1902,7 +1984,10 @@ export class Harmony {
    */
   static respellChord(chord: Chord, context: RespellContext): Chord {
     const ts = chord.tuningSystem;
-    if (ts.octaveSteps !== 12) return chord;
+    if (ts.octaveSteps !== 12) {
+      const twelve = chord.retune(TET12);
+      return (twelve && Harmony.respellChord(twelve, context).retune(ts)) ?? chord;
+    }
     if (context.keySymbol) return spellChordInKey(chord, context.keySymbol);
 
     let useFlats: boolean;

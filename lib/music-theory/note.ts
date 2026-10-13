@@ -29,6 +29,17 @@ export class Note {
   ) {}
 
   /**
+   * The same note in another tuning: the step of `tuning` that stands for the same 12-TET
+   * note (`TuningSystem.retuneStep`). The written name and flat/sharp preference are kept.
+   * @returns The note in `tuning`, or `null` when this note stands for no 12-TET note or
+   *   `tuning` has no step for it.
+   */
+  retune(tuning: TuningSystem): Note | null {
+    const step = this.tuningSystem.retuneStep(this.stepsFromBase, tuning);
+    return step === null ? null : new Note(tuning, step, this._name, this._preferFlats);
+  }
+
+  /**
    * The full note name including octave number (e.g. `"C4"`, `"Bb3"`, `"F#5"`).
    * In 12-TET, the octave follows scientific pitch notation: C4 = middle C.
    * Uses the flat/sharp preference set at construction.
@@ -64,6 +75,11 @@ export class Note {
     const useFlats = this._preferFlats ?? options?.preferFlats ?? false;
     if (this.tuningSystem instanceof EDO && this.tuningSystem.divisions === 12) {
       return get12TETName(this.stepsFromBase, useFlats);
+    }
+    // another tuning: the name of the 12-TET note the step stands for, if any
+    const standard = this.tuningSystem.getStandardStep(this.stepsFromBase);
+    if (standard !== null && this.tuningSystem.getNoteName(this.stepsFromBase) === get12TETName(standard)) {
+      return get12TETName(standard, useFlats);
     }
     return this.tuningSystem.getNoteName(this.stepsFromBase);
   }

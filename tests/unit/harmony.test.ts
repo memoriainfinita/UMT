@@ -86,10 +86,12 @@ describe('Harmony.getAllContainingScales', () => {
     expect(results.length).toBeGreaterThan(0);
   });
 
-  it('returns empty array for non-12-TET', () => {
+  it('another tuning gets the 12-TET scales, retuned (Amaj7 in 19-EDO)', () => {
     const edo19 = new EDO(19, 440);
-    const c = new Chord('Cmaj7', edo19, 0, [0, 6, 11, 17]);
-    expect(Harmony.getAllContainingScales(c)).toHaveLength(0);
+    const c = new Chord('Amaj7', edo19, 0, [0, 6, 11, 17]);
+    const scales = Harmony.getAllContainingScales(c);
+    expect(scales.map(s => s.scale.name)).toEqual(Harmony.getAllContainingScales(parseChordSymbol('Amaj7')).map(s => s.scale.name));
+    expect(scales.every(s => s.scale.tuningSystem === edo19)).toBe(true);
   });
 
   it('whole tone scale contains C augmented triad', () => {
@@ -133,9 +135,18 @@ describe('Harmony.respellNote', () => {
     expect(result.name).toBe('Gb4');
   });
 
-  it('non-12-TET returns original note', () => {
+  it('another tuning: respelled as the 12-TET note its step stands for (19-EDO)', () => {
     const edo19 = new EDO(19, 440);
-    const note = new Note(edo19, 3);
+    const gSharp = new Note(edo19, -2);   // the 19-EDO image of G#4
+    const respelled = Harmony.respellNote(gSharp, { direction: 'descending' });
+    expect(respelled.name).toBe('Ab4');
+    expect(respelled.stepsFromBase).toBe(-2);
+    expect(respelled.tuningSystem).toBe(edo19);
+  });
+
+  it('another tuning: a step that stands for no 12-TET note is returned unchanged', () => {
+    const edo19 = new EDO(19, 440);
+    const note = new Note(edo19, 1);      // 63 cents above A4: neither A nor A#
     expect(Harmony.respellNote(note, { direction: 'ascending' })).toBe(note);
   });
 });

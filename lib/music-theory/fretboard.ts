@@ -134,8 +134,10 @@ function toNoteNames(tuning: readonly number[], ts: Chord['tuningSystem']): stri
  * position (lowest fret first), then by stretch, then by number of muted strings.
  *
  * @param chord - The chord to voice.
- * @param tuning - Open string steps from A4, low→high. Use the exported presets
- *   (`GUITAR_STANDARD`, `UKULELE_STANDARD`, etc.) or supply a custom array.
+ * @param tuning - Open string steps from A4, low→high, in steps of the chord's tuning, one fret
+ *   per step (a 31-EDO guitar has a fret per 31-EDO step). The exported presets
+ *   (`GUITAR_STANDARD`, `UKULELE_STANDARD`, etc.) are 12-TET: to place a chord of another
+ *   tuning on a 12-TET instrument, pass `chord.retune(TET12)`.
  * @param options - Search constraints: `maxFret` (default 12), `maxStretch` (default 4).
  * @returns Array of voicings sorted by playability. Empty if no valid voicing exists.
  * @category Core
@@ -236,7 +238,9 @@ export function getFretboardVoicings(
  * Each string entry is an array of fret numbers (0–`maxFret`) where a scale note appears.
  *
  * @param scale - The scale to map.
- * @param tuning - Open string steps from A4, low→high.
+ * @param tuning - Open string steps from A4, low→high, in steps of the scale's tuning (one fret per
+ *   step). The exported presets are 12-TET: for a scale of another tuning on a 12-TET
+ *   instrument, pass `scale.retune(TET12)`.
  * @param options - `maxFret` controls how far up the neck to scan (default 12).
  * @returns A single result with all scale positions across the neck.
  * @category Core
@@ -277,7 +281,9 @@ export function getFretboardScale(
  * Useful for CAGED-style position practice on any instrument.
  *
  * @param scale - The scale to map.
- * @param tuning - Open string steps from A4, low→high.
+ * @param tuning - Open string steps from A4, low→high, in steps of the scale's tuning (one fret per
+ *   step). The exported presets are 12-TET: for a scale of another tuning on a 12-TET
+ *   instrument, pass `scale.retune(TET12)`.
  * @param options - `maxFret` (default 12), `windowSize` (default 4).
  * @returns Array of position boxes ordered by starting fret, each with at least one note.
  * @category Core

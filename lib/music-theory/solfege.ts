@@ -33,10 +33,14 @@ function doPitchClass(keySymbol: string): number | null {
 export class Solfege {
   /**
    * Returns the fixed-do solfège syllable for a note (C = do always).
-   * Uses Spanish naming convention (do, re, mi, fa, sol, la, si).
+   * Uses Spanish naming convention (do, re, mi, fa, sol, la, si). In another tuning, the
+   * syllable of the 12-TET note the step stands for (`TuningSystem.getStandardStep`); `'?'`
+   * when it stands for none.
    */
   static fixedDo(note: Note, preferFlats = false): string {
-    const pc = ((note.stepsFromBase % 12) + 12) % 12;
+    const standard = note.tuningSystem.getStandardStep(note.stepsFromBase);
+    if (standard === null) return '?';
+    const pc = ((standard % 12) + 12) % 12;
     return preferFlats ? FIXED_DO_FLAT[pc] : FIXED_DO_SHARP[pc];
   }
 
@@ -44,17 +48,19 @@ export class Solfege {
    * Returns the movable-do solfège syllable for a note in a given key.
    * "Do" is the tonic of a major key; minor keys and the church modes sing from their
    * parent major's do (la-based minor: in A minor, A is "la"; in D dorian, D is "re").
-   * Only works in 12-TET. Returns `'?'` for chromatic notes, unknown modes or unsupported tunings.
+   * In another tuning the note is read as the 12-TET note its step stands for. Returns `'?'` for
+   * chromatic notes, unknown modes, and steps that stand for no 12-TET note.
    *
    * @param note - The note to solmize.
    * @param keySymbol - Key, e.g. `'C major'`, `'A minor'`, `'D dorian'`.
    */
   static movableDo(note: Note, keySymbol: string): string {
-    if (note.tuningSystem.octaveSteps !== 12) return '?';
+    const standard = note.tuningSystem.getStandardStep(note.stepsFromBase);
+    if (standard === null) return '?';
 
     const doPc = doPitchClass(keySymbol);
     if (doPc === null) return '?';
-    const notePc = ((note.stepsFromBase % 12) + 12) % 12;
+    const notePc = ((standard % 12) + 12) % 12;
     const relPc = ((notePc - doPc + 12) % 12);
 
     const degreeIdx = MAJOR_STEPS.indexOf(relPc);

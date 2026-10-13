@@ -102,11 +102,31 @@ export declare abstract class TuningSystem {
 	 */
 	abstract get octaveSteps(): number;
 	/**
-	 * Returns a human-readable note name for the given step.
-	 * Subclasses should override this when meaningful names are available.
-	 * Default: `"Step N"`.
+	 * Returns a note name for the given step: the 12-TET name of the note the step stands for
+	 * (`getStandardStep`), in sharps (`"C#4"`, `"A4"`), or `"Step N"` when it stands for none.
 	 */
 	getNoteName(step: number): string;
+	/**
+	 * The 12-TET note a step stands for: the 12-TET step (A4 = 0) nearest in cents, when
+	 * `getStepFromStandard` maps that note back to this step. Names, chord qualities and Roman
+	 * numerals in any tuning are read through it.
+	 * - In a tuning with 12 steps per octave (12-TET, Werckmeister III, 5-limit JI) every step
+	 *   stands for itself.
+	 * - In 19- or 31-EDO the steps that stand for a note are the meantone images of the 12
+	 *   notes; in 31-EDO C is step -23 and C# step -21, and steps -22 and -20 stand for none
+	 *   (spelled notes, where the 31-EDO D flat is step -20, are not modelled yet).
+	 * - A quarter tone in 24-EDO stands for none.
+	 * @returns The 12-TET step, or `null` when the step stands for no 12-TET note, and always
+	 *   in a tuning that does not repeat at the octave.
+	 */
+	getStandardStep(step: number): number | null;
+	/**
+	 * The step of `target` that stands for the same 12-TET note as `step` does here
+	 * (`getStandardStep` on both sides): C4 is step -9 in 12-TET and step -23 in 31-EDO.
+	 * @returns The step in `target`, or `null` when `step` stands for no note or `target` has
+	 *   no step for it.
+	 */
+	retuneStep(step: number, target: TuningSystem): number | null;
 	/**
 	 * Converts a standard 12-TET step (A4 = 0) to the step of this tuning nearest in cents
 	 * (`standardStep` × 100¢ above step 0). Works for any tuning whose steps rise: unequal
@@ -139,12 +159,6 @@ export declare class EDO extends TuningSystem {
 	get octaveSteps(): number;
 	/** Maps a 12-TET step to the nearest step in this EDO via linear scaling. */
 	getStepFromStandard(standardStep: number): number;
-	/**
-	 * Returns a note name for the given step.
-	 * For 12-TET, uses standard note names (e.g. "C#4", "Bb3").
-	 * For other EDOs, falls back to `"Step N"`.
-	 */
-	getNoteName(step: number): string;
 }
 /**
  * Just Intonation - pitch classes defined by exact frequency ratios within one octave.
@@ -228,6 +242,8 @@ export declare class NonOctaveTuning extends TuningSystem {
 	getFrequency(steps: number): Hertz;
 	/** Steps per period (not an octave - the period is `periodRatio : 1`). */
 	get octaveSteps(): number;
+	/** Always `null`: the 12 notes repeat at the octave, and this tuning does not. */
+	getStandardStep(): number | null;
 }
 /**
  * Standard 12-TET singleton - used as the default tuning throughout the library.
@@ -257,6 +273,13 @@ export declare class Note {
 	 *   Ignored when `_name` is provided (the explicit name takes precedence).
 	 */
 	constructor(tuningSystem: TuningSystem, stepsFromBase: number, _name?: string | undefined, _preferFlats?: boolean | undefined);
+	/**
+	 * The same note in another tuning: the step of `tuning` that stands for the same 12-TET
+	 * note (`TuningSystem.retuneStep`). The written name and flat/sharp preference are kept.
+	 * @returns The note in `tuning`, or `null` when this note stands for no 12-TET note or
+	 *   `tuning` has no step for it.
+	 */
+	retune(tuning: TuningSystem): Note | null;
 	/**
 	 * The full note name including octave number (e.g. `"C4"`, `"Bb3"`, `"F#5"`).
 	 * In 12-TET, the octave follows scientific pitch notation: C4 = middle C.
@@ -351,6 +374,16 @@ export declare class Chord {
 	 */
 	constructor(name: string, tuningSystem: TuningSystem, rootStep: number, intervalsInSteps: readonly number[], bassStep?: number | undefined, preferFlats?: boolean | undefined);
 	/**
+	 * The same chord in another tuning: each note goes to the step of `tuning` that stands for
+	 * the same 12-TET note (`TuningSystem.retuneStep`). A Cmaj7 of 31-EDO becomes the Cmaj7 of
+	 * 12-TET or of Werckmeister III; name and flat/sharp preference are kept.
+	 * @returns The chord in `tuning`, or `null` when one of its notes stands for no 12-TET note
+	 *   (a quarter tone) or `tuning` has no step for it.
+	 */
+	retune(tuning: TuningSystem): Chord | null;
+	/** This chord in 12-TET, when its tuning is another one and every note stands for a 12-TET note. */
+	private inTwelve;
+	/**
 	 * Returns the notes of the chord in root position. In 12-TET each tone is named by its
 	 * interval above the written root (D#m → D# F# A#; Cm7b5 → C Eb Gb Bb; C7#11 has F#).
 	 * For slash chords, the bass note is prepended below the root.
@@ -393,7 +426,8 @@ export declare class Chord {
 	/**
 	 * Returns the tritone substitution of this chord.
 	 * Typically applied to dominant 7th chords (e.g., G7 -> Db7).
-	 * NOTE: Only meaningful in 12-TET (tritone = 6 semitones). Returns null for other tuning systems.
+	 * In another tuning it is the same substitution, when every note of the chord and of the
+	 * substitute stands for a 12-TET note (`retune`); otherwise null.
 	 */
 	getTritoneSubstitution(): Chord | null;
 	/**
@@ -404,9 +438,10 @@ export declare class Chord {
 	static smoothTransition(currentNotes: Note[], targetChord: Chord): Note[];
 }
 /**
- * Chord quality from its intervals (12-TET): `'maj7'`, `'m7'`, `'7'`, `'dim7'`, `'m7b5'`,
+ * Chord quality from its intervals: `'maj7'`, `'m7'`, `'7'`, `'dim7'`, `'m7b5'`,
  * `'mM7'`, `'aug7'`, `'augM7'`, `'aug'`, `'dim'`, `'7sus4'`, `'sus2'`, `'sus4'`, `'m'`, `'M'`, or
- * `''` when none fits or the tuning is not 12 steps per octave. Ninths, elevenths and sixths
+ * `''` when none fits. A tuning without 12 steps per octave is read through the 12-TET notes
+ * its steps stand for (`Chord.retune`); `''` when one stands for none. Ninths, elevenths and sixths
  * reduce to the triad or seventh below them (Cadd9 and C6/9 are `'M'`); a chord is sus only
  * without a third.
  * @category Tonal harmony
@@ -469,6 +504,15 @@ export declare class Scale {
 	 */
 	constructor(name: string, tuningSystem: TuningSystem, rootStep: number, stepPattern: readonly number[], preferFlats?: boolean | undefined);
 	/**
+	 * The same scale in another tuning: each degree goes to the step of `tuning` that stands for
+	 * the same 12-TET note (`TuningSystem.retuneStep`). Name and flat/sharp preference are kept.
+	 * @returns The scale in `tuning`, or `null` when one of its degrees stands for no 12-TET note
+	 *   or `tuning` has no step for it.
+	 */
+	retune(tuning: TuningSystem): Scale | null;
+	/** This scale in 12-TET, when its tuning is another one and every degree stands for a 12-TET note. */
+	private inTwelve;
+	/**
 	 * Returns the notes of the scale across the given number of octaves.
 	 *
 	 * The result always includes one extra note at the end: the root repeated one period
@@ -505,8 +549,9 @@ export declare class Scale {
 	 * - `'triad'` (default): three-note chord (root, 3rd, 5th).
 	 * - `'seventh'`: four-note chord (root, 3rd, 5th, 7th).
 	 *
-	 * In 12-TET, chord names are canonical (e.g. `Bm7b5`, `Caug`). In other tuning systems
-	 * a structural label is used (e.g. `"C (0,3,7)"`) since the chord dictionary is 12-TET specific.
+	 * Chord names are canonical (e.g. `Bm7b5`, `Caug`), in 12-TET and in any tuning where every
+	 * degree stands for a 12-TET note (`retune`); otherwise a structural label is used
+	 * (e.g. `"Step 3(0,5,11)"`).
 	 *
 	 * Scales with fewer than 5 notes may not support `'seventh'` on every degree.
 	 */
@@ -526,8 +571,9 @@ export declare class Scale {
 	 * Returns modal characteristics: brightness (relative to Ionian), the degrees that
 	 * differ from the parallel major, traditional jazz avoid notes, and parent-family info.
 	 *
-	 * `characteristicDegrees`/`characteristicIntervals` and `avoidNotes` are only computed
-	 * in 12-TET. Brightness uses `MODE_BRIGHTNESS`; returns 0 if the mode is unknown.
+	 * `characteristicDegrees`/`characteristicIntervals` and `avoidNotes` are computed in 12-TET
+	 * and in any tuning where every degree stands for a 12-TET note; otherwise they are empty.
+	 * Brightness uses `MODE_BRIGHTNESS`; returns 0 if the mode is unknown.
 	 */
 	getModalCharacteristics(): ModalCharacteristics;
 	/**
@@ -770,9 +816,10 @@ export declare const MODE_BRIGHTNESS: Readonly<Record<string, number>>;
  * Root is case-insensitive (`cmaj7` = `Cmaj7`).
  *
  * @param symbol - Chord symbol string.
- * @param tuning - Target tuning system (default: 12-TET). Intervals are mapped via `getStepFromStandard`.
+ * @param tuning - Target tuning system (default: 12-TET). Each note goes to the step that stands for it (`getStandardStep`).
  * @param octave - Octave for the root note (default: 4).
- * @throws if the symbol cannot be parsed or the chord type is neither in the dictionary nor compositionally valid.
+ * @throws if the symbol cannot be parsed or the chord type is neither in the dictionary nor compositionally valid;
+ *   `RangeError` if the tuning has no step for one of its notes (C in a 7-note JI scale on A).
  * @category Core
  */
 export declare function parseChordSymbol(symbol: string, tuning?: TuningSystem, octave?: number): Chord;
@@ -783,9 +830,10 @@ export declare function parseChordSymbol(symbol: string, tuning?: TuningSystem, 
  * Root is case-insensitive. Scale type must match a key in `SCALE_PATTERNS` (case-insensitive).
  *
  * @param symbol - Scale symbol string with root and type separated by a space.
- * @param tuning - Target tuning system (default: 12-TET). Pattern steps are mapped via `getPatternFromStandard` (positions, not single steps).
+ * @param tuning - Target tuning system (default: 12-TET). Each note goes to the step that stands for it (`getStandardStep`).
  * @param octave - Octave for the root note (default: 4).
- * @throws if the symbol cannot be parsed or the scale type is unknown.
+ * @throws if the symbol cannot be parsed or the scale type is unknown; `RangeError` if the tuning
+ *   has no step for one of its notes.
  * @category Core
  */
 export declare function parseScaleSymbol(symbol: string, tuning?: TuningSystem, octave?: number): Scale;
@@ -2056,6 +2104,12 @@ export declare class NeoRiemannian {
 		isMajor: boolean;
 	} | null;
 	/**
+	 * The chord in 12-TET when its tuning is another one: `null` when a note stands for no 12-TET
+	 * note, `undefined` when it is already 12-TET. P, L and R are taken there and retuned back,
+	 * so their names are right in any tuning.
+	 */
+	private static inTwelve;
+	/**
 	 * Parallel Transformation (P)
 	 * Moves the third of the chord by a half-step.
 	 * C Major -> C Minor
@@ -2637,7 +2691,8 @@ export declare function spellPitchInKey(stepsFromA4: number, keySymbol: string):
  * Names the chord's notes by their interval above the root, from the root as written in
  * `rootName` (default: the chord's own name). Cm7b5 is C Eb Gb Bb, C7#11 has F#, Bdim7
  * has Ab. Same order and octaves as `chord.getNotes()` (slash bass first). Other
- * tunings: the names `getNotes()` gives.
+ * tunings: spelled as in 12-TET when every note stands for a 12-TET note (`Chord.retune`),
+ * else the names `getNotes()` gives.
  * @category Tonal harmony
  */
 export declare function spellChord(chord: Chord, rootName?: string): string[];
@@ -2649,7 +2704,8 @@ export declare function spellChord(chord: Chord, rootName?: string): string[];
  * letters leaves fewer accidentals across the chord tones, the root's counted twice (C in
  * F# major, not B# with D## F##); on a tie, the key's spelling (`spellPitchInKey`). A slash bass is named by
  * its interval in the chord, or by the key when it is not a chord tone.
- * Returns the chord unchanged when the key is unknown or the tuning is not 12-TET.
+ * In another tuning the chord is spelled as in 12-TET (`Chord.retune`). Returns the chord
+ * unchanged when the key is unknown or one of its notes stands for no 12-TET note.
  * @category Tonal harmony
  */
 export declare function spellChordInKey(chord: Chord, keySymbol: string): Chord;
@@ -2753,14 +2809,17 @@ export declare const MAQAMAT: Record<string, Maqam>;
 export declare class Solfege {
 	/**
 	 * Returns the fixed-do solfège syllable for a note (C = do always).
-	 * Uses Spanish naming convention (do, re, mi, fa, sol, la, si).
+	 * Uses Spanish naming convention (do, re, mi, fa, sol, la, si). In another tuning, the
+	 * syllable of the 12-TET note the step stands for (`TuningSystem.getStandardStep`); `'?'`
+	 * when it stands for none.
 	 */
 	static fixedDo(note: Note, preferFlats?: boolean): string;
 	/**
 	 * Returns the movable-do solfège syllable for a note in a given key.
 	 * "Do" is the tonic of a major key; minor keys and the church modes sing from their
 	 * parent major's do (la-based minor: in A minor, A is "la"; in D dorian, D is "re").
-	 * Only works in 12-TET. Returns `'?'` for chromatic notes, unknown modes or unsupported tunings.
+	 * In another tuning the note is read as the 12-TET note its step stands for. Returns `'?'` for
+	 * chromatic notes, unknown modes, and steps that stand for no 12-TET note.
 	 *
 	 * @param note - The note to solmize.
 	 * @param keySymbol - Key, e.g. `'C major'`, `'A minor'`, `'D dorian'`.
@@ -3468,8 +3527,10 @@ export type FretboardScaleResult = {
  * position (lowest fret first), then by stretch, then by number of muted strings.
  *
  * @param chord - The chord to voice.
- * @param tuning - Open string steps from A4, low→high. Use the exported presets
- *   (`GUITAR_STANDARD`, `UKULELE_STANDARD`, etc.) or supply a custom array.
+ * @param tuning - Open string steps from A4, low→high, in steps of the chord's tuning, one fret
+ *   per step (a 31-EDO guitar has a fret per 31-EDO step). The exported presets
+ *   (`GUITAR_STANDARD`, `UKULELE_STANDARD`, etc.) are 12-TET: to place a chord of another
+ *   tuning on a 12-TET instrument, pass `chord.retune(TET12)`.
  * @param options - Search constraints: `maxFret` (default 12), `maxStretch` (default 4).
  * @returns Array of voicings sorted by playability. Empty if no valid voicing exists.
  * @category Core
@@ -3480,7 +3541,9 @@ export declare function getFretboardVoicings(chord: Chord, tuning: readonly numb
  * Each string entry is an array of fret numbers (0–`maxFret`) where a scale note appears.
  *
  * @param scale - The scale to map.
- * @param tuning - Open string steps from A4, low→high.
+ * @param tuning - Open string steps from A4, low→high, in steps of the scale's tuning (one fret per
+ *   step). The exported presets are 12-TET: for a scale of another tuning on a 12-TET
+ *   instrument, pass `scale.retune(TET12)`.
  * @param options - `maxFret` controls how far up the neck to scan (default 12).
  * @returns A single result with all scale positions across the neck.
  * @category Core
@@ -3492,7 +3555,9 @@ export declare function getFretboardScale(scale: Scale, tuning: readonly number[
  * Useful for CAGED-style position practice on any instrument.
  *
  * @param scale - The scale to map.
- * @param tuning - Open string steps from A4, low→high.
+ * @param tuning - Open string steps from A4, low→high, in steps of the scale's tuning (one fret per
+ *   step). The exported presets are 12-TET: for a scale of another tuning on a 12-TET
+ *   instrument, pass `scale.retune(TET12)`.
  * @param options - `maxFret` (default 12), `windowSize` (default 4).
  * @returns Array of position boxes ordered by starting fret, each with at least one note.
  * @category Core
