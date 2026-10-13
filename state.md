@@ -71,6 +71,6 @@ last_updated: 2026-10-11
 
 ## TODO
 
-- Ninguno abierto
+- Pasos 2 a 4 del plan en `docs/plan-2026-10.md` (sin versionar). Siguiente: diseño del paso 2 (notas escritas, referencia de altura, `Interval` con calidad), a presentar antes de implementar
 
 Lo pasado: `state-history.md`.

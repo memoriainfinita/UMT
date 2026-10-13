@@ -94,6 +94,7 @@ docs/
   UMT-*.png               # README screenshots (the only tracked files in docs/)
   auditoria-2026-10.md    # Audit of October 2026: findings and plan (local, gitignored)
   notas-desde-modus-2026-10.md # MODUS requests and replies (local, gitignored)
+  plan-2026-10.md         # Plan after v0.7.0: written notes, other traditions, 1.0 (local, gitignored)
   plan-teoria-completa.md # Design history - 10-phase expansion plan (local, gitignored)
   superpowers/            # Older plans (local, gitignored)
 ```
