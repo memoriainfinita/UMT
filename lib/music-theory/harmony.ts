@@ -27,6 +27,49 @@ function notesInTwelve(notes: Note[]): Note[] | null {
   return mapped.some(n => n === null) ? null : mapped as Note[];
 }
 
+// Triads, sixths and sevenths as pitch classes over the root: played with the root in the bass,
+// `analyzeSlash` reads them whole (C E G B is Cmaj7, not Em over C)
+const ROOT_POSITION_SETS = [
+  '0,4,7', '0,3,7', '0,3,6', '0,4,8', '0,4,7,9', '0,3,7,9',
+  '0,4,7,11', '0,4,7,10', '0,3,7,10', '0,3,6,10', '0,3,6,9', '0,3,7,11', '0,4,8,10', '0,4,8,11',
+];
+
+/**
+ * Played notes as a slash chord for `analyzeSlash`: the chord the notes above the bass make
+ * (without the bass's pitch class) over the lowest note, unless all the notes are a triad,
+ * sixth or seventh on the bass; otherwise, or when the notes above make no chord of three
+ * pitch classes, the chord `detectChords` names for all of them. In the notes' tuning.
+ */
+function slashChordFromNotes(notes: Note[]): Chord | null {
+  if (notes.length === 0) return null;
+  const ts = notes[0].tuningSystem;
+  const twelve = isTwelveTET(ts) ? notes : notesInTwelve(notes);
+  if (!twelve) return null;
+  const sorted = twelve.slice().sort((a, b) => a.stepsFromBase - b.stepsFromBase);
+  const bass = sorted[0];
+  const bassPc = pcMod(bass.stepsFromBase, 12);
+  const upper = sorted.filter(n => pcMod(n.stepsFromBase, 12) !== bassPc);
+  const overBass = [...new Set(sorted.map(n => pcMod(n.stepsFromBase - bass.stepsFromBase, 12)))].sort((a, b) => a - b);
+  const rootPosition = ROOT_POSITION_SETS.includes(overBass.join(','));
+
+  let found: Chord | null = null;
+  if (!rootPosition && new Set(upper.map(n => pcMod(n.stepsFromBase, 12))).size >= 3) {
+    const name = Harmony.detectChords(upper)[0];
+    if (name && name !== 'Unknown Chord') {
+      const up = parseChordSymbol(name.split('/')[0]);
+      const bassName = bass.name.replace(/-?\d+$/, '');
+      found = new Chord(`${up.name}/${bassName}`, TET12, up.rootStep, up.intervalsInSteps, bass.stepsFromBase, up.preferFlats);
+    }
+  }
+  if (!found) {
+    const name = Harmony.detectChords(sorted)[0];
+    if (!name || name === 'Unknown Chord') return null;
+    found = parseChordSymbol(name);
+    if (found.bassStep !== undefined) found.bassStep = bass.stepsFromBase;
+  }
+  return isTwelveTET(ts) ? found : found.retune(ts);
+}
+
 // ============================================================================
 //  Module constants
 // ============================================================================
@@ -1815,8 +1858,19 @@ export class Harmony {
   /**
    * Analyzes a slash chord and classifies it as inversion, hybrid, polychord, or upper-structure.
    * Returns `{ type: 'inversion' }` for chords without a bass note.
+   *
+   * Given played notes, the lowest is the bass and the notes above it, without its pitch class,
+   * are read as a chord over it: C3 D4 F#4 A4 is D over C (`'upper-structure'`, 9 #11 13), not
+   * D7/C. All the notes are read as one chord, as `detectChords` names it, when they are a
+   * triad, sixth or seventh on the bass (C3 E4 G4 B4 is Cmaj7, not Em over C) or when the notes
+   * above make no chord of three or more pitch classes (E3 C4 G4 is C/E, an inversion).
+   * No recognizable chord → `{ type: 'hybrid' }`.
    */
-  static analyzeSlash(chord: Chord): SlashAnalysis {
+  static analyzeSlash(chord: Chord | Note[]): SlashAnalysis {
+    if (Array.isArray(chord)) {
+      const read = slashChordFromNotes(chord);
+      return read ? Harmony.analyzeSlash(read) : { type: 'hybrid' };
+    }
     const ts = chord.tuningSystem;
     const oct = ts.octaveSteps;
     if (oct !== 12) {

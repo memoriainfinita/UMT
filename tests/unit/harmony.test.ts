@@ -54,6 +54,35 @@ describe('Harmony.analyzeSlash', () => {
     expect(Harmony.analyzeSlash(chord('D/C')).resultingTensions).toEqual(['9', '#11', '13']);
   });
 
+  it('reads played notes as the chord above the bass', () => {
+    const d_c = Harmony.analyzeSlash(notes('C3', 'D4', 'F#4', 'A4'));
+    expect(d_c.type).toBe('upper-structure');
+    expect(d_c.upperStructure?.name).toBe('D');
+    expect(d_c.lowerRoot?.name).toBe('C3');
+    expect(d_c.resultingTensions).toEqual(['9', '#11', '13']);
+
+    const d_e = Harmony.analyzeSlash(notes('E3', 'D4', 'F#4', 'A4'));
+    expect(d_e.type).toBe('upper-structure');
+    expect(d_e.upperStructure?.name).toBe('D');
+
+    // Order does not matter, and the bass doubled above is still the bass
+    const shuffled = Harmony.analyzeSlash(notes('A4', 'C3', 'F#4', 'D4', 'C5'));
+    expect(shuffled.type).toBe('upper-structure');
+    expect(shuffled.upperStructure?.name).toBe('D');
+  });
+
+  it('reads played notes as one chord when the notes above the bass make none', () => {
+    const c_e = Harmony.analyzeSlash(notes('E3', 'C4', 'G4'));
+    expect(c_e.type).toBe('inversion');
+    expect(c_e.lowerRoot?.name).toBe('E3');
+    expect(Harmony.analyzeSlash(notes('C3', 'E4', 'G4', 'C5')).type).toBe('inversion');
+    // A triad or seventh on the bass is read whole: Cmaj7 and Cm7, not Em or Eb over C
+    expect(Harmony.analyzeSlash(notes('C3', 'E4', 'G4', 'B4')).type).toBe('inversion');
+    expect(Harmony.analyzeSlash(notes('C3', 'Eb4', 'G4', 'Bb4')).type).toBe('inversion');
+    expect(Harmony.analyzeSlash(notes('C4', 'C#4', 'D4'))).toEqual({ type: 'hybrid' });
+    expect(Harmony.analyzeSlash([])).toEqual({ type: 'hybrid' });
+  });
+
   it('resultingTensions is an array when bass is foreign', () => {
     const d_c = chord('D/C');
     const result = Harmony.analyzeSlash(d_c);

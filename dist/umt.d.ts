@@ -1574,8 +1574,15 @@ export declare class Harmony {
 	/**
 	 * Analyzes a slash chord and classifies it as inversion, hybrid, polychord, or upper-structure.
 	 * Returns `{ type: 'inversion' }` for chords without a bass note.
+	 *
+	 * Given played notes, the lowest is the bass and the notes above it, without its pitch class,
+	 * are read as a chord over it: C3 D4 F#4 A4 is D over C (`'upper-structure'`, 9 #11 13), not
+	 * D7/C. All the notes are read as one chord, as `detectChords` names it, when they are a
+	 * triad, sixth or seventh on the bass (C3 E4 G4 B4 is Cmaj7, not Em over C) or when the notes
+	 * above make no chord of three or more pitch classes (E3 C4 G4 is C/E, an inversion).
+	 * No recognizable chord → `{ type: 'hybrid' }`.
 	 */
-	static analyzeSlash(chord: Chord): SlashAnalysis;
+	static analyzeSlash(chord: Chord | Note[]): SlashAnalysis;
 	/**
 	 * Returns all scales from the dictionary that contain every pitch class of the chord.
 	 * `completeness` = chord notes / scale notes (how much of the scale the chord fills).
