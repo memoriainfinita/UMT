@@ -1,6 +1,18 @@
 # Changelog
 
-Versions are git tags. Pin one (`github:memoriainfinita/UMT#v0.7.0` in `package.json`, `@v0.7.0` on jsDelivr); `main` may change.
+Versions are git tags. Pin one (`github:memoriainfinita/UMT#v0.7.1` in `package.json`, `@v0.7.1` on jsDelivr); `main` may change.
+
+## 0.7.1 - 2026-10-19
+
+Slash chords, reported from MODUS.
+
+### Fixed
+
+- `Harmony.analyzeSlash` read the upper structure with the bass inside it: D/C gave `D7/C`, C/D `Cadd9/D`, E/C `CaugM7`, Gb/C `Gbadd#11/C`. Now `D`, `C`, `E`, `Gb`. E/C read as a polychord because the chord found was rooted on the bass; it still is one, now for its own root (E over C)
+
+### Added
+
+- `Harmony.analyzeSlash(notes)`: played notes, lowest first or in any order. The lowest is the bass and the notes above it, without its pitch class, are read as a chord over it: C3 D4 F#4 A4 is D over C (`'upper-structure'`, 9 #11 13), where `detectChordsScored` gives only `D7/C`. All the notes are read as one chord when they are a triad, sixth or seventh on the bass (C3 E4 G4 B4 is Cmaj7, not Em over C) or when the notes above make no chord of three pitch classes (E3 C4 G4 is C/E)
 
 ## 0.7.0 - 2026-10-13
 
