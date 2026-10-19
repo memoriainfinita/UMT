@@ -1843,8 +1843,8 @@ export class Harmony {
       return { type: 'inversion', lowerRoot };
     }
 
-    // Detect what the upper voices form
-    const upperNotes = chord.getNotes();
+    // Detect what the upper voices form: the chord tones without the bass, which is not one of them
+    const upperNotes = chord.getNotes().filter(n => pcMod(n.stepsFromBase, oct) !== bassPc);
     const upperDetected = Harmony.detectChords(upperNotes);
     const upperChordName = upperDetected[0] !== 'Unknown Chord' ? upperDetected[0] : null;
 

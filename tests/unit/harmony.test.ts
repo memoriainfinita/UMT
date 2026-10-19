@@ -37,6 +37,23 @@ describe('Harmony.analyzeSlash', () => {
     expect(result.lowerRoot).toBeDefined();
   });
 
+  it('the upper structure leaves the bass out', () => {
+    const cases: [string, string, string][] = [
+      ['D/C', 'upper-structure', 'D'],
+      ['C/D', 'upper-structure', 'C'],
+      ['F/G', 'upper-structure', 'F'],
+      ['Db/C', 'upper-structure', 'Db'],
+      ['E/C', 'polychord', 'E'],
+      ['Gb/C', 'polychord', 'Gb'],
+    ];
+    for (const [symbol, type, upper] of cases) {
+      const r = Harmony.analyzeSlash(chord(symbol));
+      expect(r.type, symbol).toBe(type);
+      expect(r.upperStructure?.name, symbol).toBe(upper);
+    }
+    expect(Harmony.analyzeSlash(chord('D/C')).resultingTensions).toEqual(['9', '#11', '13']);
+  });
+
   it('resultingTensions is an array when bass is foreign', () => {
     const d_c = chord('D/C');
     const result = Harmony.analyzeSlash(d_c);
