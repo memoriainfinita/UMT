@@ -1,6 +1,6 @@
 ---
 created: 2026-04-28
-last_updated: 2026-10-11
+last_updated: 2026-10-19
 ---
 
 # State - Universal Music Theory Library
@@ -16,8 +16,8 @@ last_updated: 2026-10-11
 - Repo: https://github.com/memoriainfinita/UMT
 - Demo: https://memoriainfinita.github.io/UMT (GitHub Pages, branch `main`, root `/`)
 - API Docs: https://memoriainfinita.github.io/UMT/api-docs/ (TypeDoc, generado en `api-docs/`, con el diseño de la demo: `docs-theme/custom.css` y `custom.js`)
-- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.7.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
-- Versión: 0.7.0 (tag `v0.7.0`). Cambios por versión en `CHANGELOG.md`; `v0.1.0` es el estado previo a la auditoría de 2026-10 (`801e5ec`)
+- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.7.1/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
+- Versión: 0.7.1 (tag `v0.7.1`). Cambios por versión en `CHANGELOG.md`; `v0.1.0` es el estado previo a la auditoría de 2026-10 (`801e5ec`)
 - Auditoría 2026-10 cerrada: detalle en `docs/auditoria-2026-10.md`; peticiones de MODUS y respuestas en `docs/notas-desde-modus-2026-10.md` (los dos sin versionar)
 - Consumidores: MODUS y notae, cada uno fijado a un tag. Solo la sesión de UMT commitea aquí; MODUS deja sus peticiones en las notas
 - Status: publicado y en producción.
@@ -29,7 +29,7 @@ last_updated: 2026-10-11
 - esbuild (fijado 0.28.2) - compila `dist/umt.js` (IIFE, 152 kb) y `dist/umt.mjs` (ESM)
 - dts-bundle-generator (fijado 9.5.1) - tipos en un solo `dist/umt.d.ts`
 - typedoc - genera API docs HTML en `api-docs/` (`pnpm run docs`); `pnpm run docs:check` falla si una exportación no tiene JSDoc (en la CI)
-- vitest - tests unitarios (`pnpm run test:unit`) - 1315 tests, un archivo por módulo más la batería de afinaciones (`tuning-conformance.test.ts`)
+- vitest - tests unitarios (`pnpm run test:unit`) - 1318 tests, un archivo por módulo más la batería de afinaciones (`tuning-conformance.test.ts`)
 - GitHub Actions (`.github/workflows/ci.yml`) - typecheck, lint, tests, build y `dist` igual a las fuentes
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
@@ -67,10 +67,12 @@ last_updated: 2026-10-11
 - [harmony] `style: 'blues'` en `analyzeProgression`: I7, IV7 y V7 son de la tonalidad (T, S, D), salvo el I7 precedido de su ii, que sigue siendo V7/IV. Sin la opción, I7 → IV es V7/IV. Cadencia auténtica y rota solo con la sensible en el V. Confirmed 2026-10.
 - [neo-riemannian] P, L y R solo sobre tríadas mayores y menores exactas; cualquier otro acorde da `null`. Confirmed 2026-10.
 - [data] Los datos de referencia se contrastan con fuente y los tests fijan los valores: Forte de la lista de Wikipedia (223 clases, prime forms de Rahn, Z mayúscula), maqamat de maqamworld.com (forma ascendente), ragas de las fichas de Wikipedia (vadi y samvadi como número de svara, Sa = 1 … Ni = 7). La fuente va citada en la cabecera del módulo. Confirmed 2026-10.
+- [slash] `analyzeSlash`: la estructura superior es el acorde sin el bajo (D/C → D). Con notas tocadas, la más grave es el bajo y las de encima, sin su clase de altura, se leen sobre él (C3 D4 F#4 A4 = D sobre C); se lee el conjunto entero si es tríada, sexta o cuatríada con la fundamental en el bajo (Cmaj7, no Em/C) o si las de encima no forman acorde de tres clases (E3 C4 G4 = C/E). Confirmed 2026-10.
 - [substitution] Sustitutos diatónicos: el acorde de la escala a una tercera con la misma función (I → iii, vi; ii ↔ IV; V ↔ vii°), en mayor y menor natural, con la grafía y el tipo (tríada o cuatríada) de la escala. En mayor, IV y ii toman la subdominante menor (iv, bVII7, iiø7), y esta vuelve a IV. Confirmed 2026-10.
 
 ## TODO
 
+- Petición de MODUS del 2026-10-19 en `docs/notas-desde-modus-2026-10.md`, "tonalidades modales y préstamos habituales": `analyzeProgression` con un modo como tonalidad (diatónicos, préstamos y funciones del modo; cadencia sin sensible), detección de modos en `KeyDetection`, marca `common` en `getBorrowedChords`. Sin diseño
 - Pasos 2 a 4 del plan en `docs/plan-2026-10.md` (sin versionar). Siguiente: diseño del paso 2 (notas escritas, referencia de altura, `Interval` con calidad), a presentar antes de implementar
 
 Lo pasado: `state-history.md`.

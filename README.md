@@ -321,7 +321,7 @@ scaleToMusicXML(scale);            // MusicXML document
 ## Tests
 
 ```bash
-pnpm run test:unit    # 1315 unit tests via vitest: one file per module, plus the tuning conformance battery
+pnpm run test:unit    # 1318 unit tests via vitest: one file per module, plus the tuning conformance battery
 pnpm run typecheck    # TypeScript type checking
 ```
 
