@@ -1,6 +1,6 @@
 ---
 created: 2026-04-28
-last_updated: 2026-10-20
+last_updated: 2026-10-21
 ---
 
 # State - Universal Music Theory Library
@@ -16,8 +16,8 @@ last_updated: 2026-10-20
 - Repo: https://github.com/memoriainfinita/UMT
 - Demo: https://memoriainfinita.github.io/UMT (GitHub Pages, branch `main`, root `/`)
 - API Docs: https://memoriainfinita.github.io/UMT/api-docs/ (TypeDoc, generado en `api-docs/`, con el diseño de la demo: `docs-theme/custom.css` y `custom.js`)
-- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.9.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
-- Versión: 0.9.0 (tag `v0.9.0`). Cambios por versión en `CHANGELOG.md`; `v0.1.0` es el estado previo a la auditoría de 2026-10 (`801e5ec`)
+- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.10.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
+- Versión: 0.10.0 (tag `v0.10.0`). Cambios por versión en `CHANGELOG.md`; `v0.1.0` es el estado previo a la auditoría de 2026-10 (`801e5ec`)
 - Auditoría 2026-10 cerrada: detalle en `docs/auditoria-2026-10.md`; peticiones de MODUS y respuestas en `docs/notas-desde-modus-2026-10.md` (los dos sin versionar)
 - Consumidores: MODUS y notae, cada uno fijado a un tag. Solo la sesión de UMT commitea aquí; MODUS deja sus peticiones en las notas
 - Status: publicado y en producción.
@@ -29,7 +29,7 @@ last_updated: 2026-10-20
 - esbuild (fijado 0.28.2) - compila `dist/umt.js` (IIFE, 152 kb) y `dist/umt.mjs` (ESM)
 - dts-bundle-generator (fijado 9.5.1) - tipos en un solo `dist/umt.d.ts`
 - typedoc - genera API docs HTML en `api-docs/` (`pnpm run docs`); `pnpm run docs:check` falla si una exportación no tiene JSDoc (en la CI)
-- vitest - tests unitarios (`pnpm run test:unit`) - 1339 tests, un archivo por módulo más la batería de afinaciones (`tuning-conformance.test.ts`)
+- vitest - tests unitarios (`pnpm run test:unit`) - 1347 tests, un archivo por módulo más la batería de afinaciones (`tuning-conformance.test.ts`)
 - GitHub Actions (`.github/workflows/ci.yml`) - typecheck, lint, tests, build y `dist` igual a las fuentes
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
@@ -52,6 +52,8 @@ last_updated: 2026-10-20
 - [harmony] Función: toda secundaria (V7/x, vii°/x) es D. VII en menor es D; bVII en mayor es S. Confirmed 2026-10.
 - [modes] Un modo como tonalidad (dórico, frigio, lidio, mixolidio, locrio; jónico y eólico son mayor y menor): cada acorde conserva la función de su grado (Open Music Theory, "Modal Schemas"); todo acorde del séptimo grado es D; el V del locrio es `unknown`. Una séptima de dominante diatónica del modo no es secundaria (G7 en Re dórico es IV7, S). Préstamos desde el modo: los demás modos por cercanía de brillo, luego menor armónica y melódica. Confirmed 2026-10.
 - [cadence] Auténtica, rota y semicadencia (también la frigia) piden la sensible en el V: v → i y → v no son cadencias. Confirmed 2026-10.
+- [borrowed] Préstamo habitual (`common`, Open Music Theory, "Modal Mixture"): en mayor, el eólico sobre ii, iii, iv, vi y vii; en menor, la picarda (I del jónico) y el IV del dórico; en un modo, ninguno (no hay lista con fuente). El jónico es fuente de préstamo; en mayor se descarta por tener las mismas notas. Confirmed 2026-10.
+- [key-detection] `modes: true`: la colección diatónica con más peso da las notas; la tónica, el grado cuya tríada pesa más (fundamental doble). El modo va primero solo si supera estrictamente a las tónicas mayor y menor; los empates son para mayor y menor. La mejor tonalidad por correlación no sirve como colección (Dm7 G7 da D menor, con Bb). Confirmed 2026-10.
 - [harmony] En menor natural, V, V7, vii° y vii°7 con la sensible elevada son diatónicos (menor armónica), y el vii° se escribe sin alteración. Lo de la menor melódica (IV mayor) sigue prestado. Confirmed 2026-10.
 - [harmony] Acorde de sensible secundario: dim, dim7 o m7b5 cromático un semitono bajo un grado diatónico no disminuido → `vii°/x`, `vii°7/x`, `viiø7/x`. Los diatónicos conservan su lectura (ii° en menor). Confirmed 2026-10.
 - [harmony] El sustituto tritonal de V (bII7) es D. Una secundaria no se marca además como prestada (D7 en C es V7/V, no lidio). Confirmed 2026-10.
@@ -74,7 +76,6 @@ last_updated: 2026-10-20
 
 ## TODO
 
-- Petición de MODUS del 2026-10-19 en `docs/notas-desde-modus-2026-10.md`, "tonalidades modales y préstamos habituales" (Modus: lo único que le bloquea). Hecho el punto 1 (`v0.9.0`). Pendientes: punto 2, marca `common` en `getBorrowedChords` con criterio con fuente, y el jónico como fuente de préstamo (picarda en menor); punto 3, detección de modos en `KeyDetection`, propuesto no hacerlo por ahora, sin decidir
 - Pasos 2 a 4 del plan en `docs/plan-2026-10.md` (sin versionar). Siguiente: diseño del paso 2 (notas escritas, referencia de altura, `Interval` con calidad), a presentar antes de implementar
 
 Lo pasado: `state-history.md`.
