@@ -1,6 +1,19 @@
 # Changelog
 
-Versions are git tags. Pin one (`github:memoriainfinita/UMT#v0.7.1` in `package.json`, `@v0.7.1` on jsDelivr); `main` may change.
+Versions are git tags. Pin one (`github:memoriainfinita/UMT#v0.8.0` in `package.json`, `@v0.8.0` on jsDelivr); `main` may change.
+
+## 0.8.0 - 2026-10-20
+
+Movable do, requested by MODUS. No breaking changes.
+
+### Added
+
+- `Solfege.movableDo(note, key, { syllables: 'ti' })`: tonic sol-fa and Kodály syllables, ti on the seventh and the chromatic degrees by the note's letter: di ri fi si li raised, ra me se le te lowered (C# in C major is "di", Db "ra", G# in A minor "si"). An alteration the system has no syllable for (Cb, E# in C major) gives `'?'`. The default, `'si'`, stays Latin and diatonic
+- `Solfege.fromSolfege(…, 'movable', { syllables })` reads "ti" and the chromatic syllables; "si" is the seventh by default and the raised fifth with `'ti'`
+
+### Fixed
+
+- `movableDo` and `fromSolfege` take the tonic in lower case: `'c major'` threw "Invalid note name: c"
 
 ## 0.7.1 - 2026-10-19
 

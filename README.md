@@ -1,6 +1,6 @@
 # UMT
 
-[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.7.1/dist/umt.js)
+[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange)](https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.8.0/dist/umt.js)
 [![Live demo](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://memoriainfinita.github.io/UMT)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
@@ -45,11 +45,11 @@ SetTheory.getZRelated([0, 1, 4, 6]);      // Z-related sets
 
 ## Installation
 
-Releases are git tags (`v0.7.1`); pin one, since `main` may change. Breaking changes are listed in `CHANGELOG.md`.
+Releases are git tags (`v0.8.0`); pin one, since `main` may change. Breaking changes are listed in `CHANGELOG.md`.
 
 **Browser - CDN (jsDelivr)**
 ```html
-<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.7.1/dist/umt.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.8.0/dist/umt.js"></script>
 <script>
   const chord = UMT.parseChordSymbol('Cmaj9');
   console.log(chord.getNotes().map(n => n.name));
@@ -63,7 +63,7 @@ Releases are git tags (`v0.7.1`); pin one, since `main` may change. Breaking cha
 
 **pnpm (from GitHub) - ESM with types**
 ```bash
-pnpm add github:memoriainfinita/UMT#v0.7.1
+pnpm add github:memoriainfinita/UMT#v0.8.0
 ```
 ```typescript
 import { parseChordSymbol, TET12, Harmony, SetTheory } from 'universal-music-theory-library';
@@ -72,7 +72,7 @@ import { parseChordSymbol, TET12, Harmony, SetTheory } from 'universal-music-the
 **Browser - ESM from the CDN**
 ```html
 <script type="module">
-  import { parseChordSymbol } from 'https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.7.1/dist/umt.mjs';
+  import { parseChordSymbol } from 'https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.8.0/dist/umt.mjs';
 </script>
 ```
 
@@ -321,7 +321,7 @@ scaleToMusicXML(scale);            // MusicXML document
 ## Tests
 
 ```bash
-pnpm run test:unit    # 1318 unit tests via vitest: one file per module, plus the tuning conformance battery
+pnpm run test:unit    # 1333 unit tests via vitest: one file per module, plus the tuning conformance battery
 pnpm run typecheck    # TypeScript type checking
 ```
 

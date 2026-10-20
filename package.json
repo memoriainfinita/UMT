@@ -1,6 +1,6 @@
 {
   "name": "universal-music-theory-library",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "private": true,
   "packageManager": "pnpm@11.1.1",
   "description": "Music theory library: 12-TET and microtonal tunings, harmony and analysis, post-tonal theory, rhythm, and notation export.",
