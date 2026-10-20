@@ -1,6 +1,18 @@
 # Changelog
 
-Versions are git tags. Pin one (`github:memoriainfinita/UMT#v0.8.0` in `package.json`, `@v0.8.0` on jsDelivr); `main` may change.
+Versions are git tags. Pin one (`github:memoriainfinita/UMT#v0.9.0` in `package.json`, `@v0.9.0` on jsDelivr); `main` may change.
+
+## 0.9.0 - 2026-10-20
+
+Church modes as keys in `analyzeProgression` ('D Dorian', 'G Mixolydian'…), requested by MODUS. Major and minor keys read as before, except for the half cadence.
+
+### Breaking changes
+
+- `Harmony.analyzeCadence`: a half cadence arrives at V with the leading tone, as the authentic and deceptive cadences need it since 0.6.0. Dm → Em in A minor and Cmaj7 → Am7 in D dorian are no cadence (they were `'Half Cadence (-> V)'`); the Phrygian half cadence needs it too
+- In a church mode (dorian, phrygian, lydian, mixolydian, locrian), chords keep the function of their degree (Open Music Theory, "Modal Schemas"). Every chord on the seventh degree is D: F in G mixolydian and Em7 in F lydian were `'unknown'`. Locrian's V, on the diminished fifth, is `'unknown'` (was D)
+- In a church mode, a diatonic dominant seventh is the mode's own chord, not a secondary dominant: G7 is IV7 (S) in D dorian, I7 (T) in G mixolydian, II7 (S) in F lydian. Natural minor keeps VII7 as V7/III
+- In a church mode, `borrowedFrom` is measured from the mode: the other modes by closeness in brightness, then harmonic and melodic minor. D7 in G mixolydian comes from `'major'` (was `'harmonic minor'`)
+- `getBorrowedChords` and `findPivotChords` read functions in a church mode the same way
 
 ## 0.8.0 - 2026-10-20
 
