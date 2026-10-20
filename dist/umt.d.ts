@@ -2810,6 +2810,21 @@ export interface Maqam {
  */
 export declare const MAQAMAT: Record<string, Maqam>;
 /**
+ * Syllable system for movable do. `'si'`: the Latin syllables (do re mi fa sol la si), diatonic
+ * only. `'ti'`: tonic sol-fa and Kodály (… la ti), with the chromatic syllables di ri fi si li
+ * (raised) and ra me se le te (lowered); here "si" is the raised fifth.
+ * @category World music
+ */
+export type MovableDoSyllables = "si" | "ti";
+/**
+ * Options for `Solfege.movableDo` and `Solfege.fromSolfege`.
+ * @category World music
+ */
+export interface MovableDoOptions {
+	/** Syllable system (default `'si'`). */
+	syllables?: MovableDoSyllables;
+}
+/**
  * Solfège (solmization) tools.
  * @category World music
  */
@@ -2826,12 +2841,19 @@ export declare class Solfege {
 	 * "Do" is the tonic of a major key; minor keys and the church modes sing from their
 	 * parent major's do (la-based minor: in A minor, A is "la"; in D dorian, D is "re").
 	 * In another tuning the note is read as the 12-TET note its step stands for. Returns `'?'` for
-	 * chromatic notes, unknown modes, and steps that stand for no 12-TET note.
+	 * unknown modes and steps that stand for no 12-TET note.
+	 *
+	 * With `syllables: 'si'` (default) chromatic notes give `'?'`. With `syllables: 'ti'` the
+	 * note's letter gives the degree and its accidental the syllable: C# in C major is "di", Db is
+	 * "ra", G# in A minor is "si". A note spelled without regard to the key (MIDI input in flats)
+	 * can be spelled first with `spellPitchInKey`. An alteration the system has no syllable for
+	 * (Cb, E# in C major) gives `'?'`.
 	 *
 	 * @param note - The note to solmize.
-	 * @param keySymbol - Key, e.g. `'C major'`, `'A minor'`, `'D dorian'`.
+	 * @param keySymbol - Key, e.g. `'C major'`, `'A minor'`, `'D dorian'`; the tonic in either case.
+	 * @param options - `syllables`: `'si'` (default) or `'ti'`.
 	 */
-	static movableDo(note: Note, keySymbol: string): string;
+	static movableDo(note: Note, keySymbol: string, options?: MovableDoOptions): string;
 	/**
 	 * Converts a solfège syllable back to a Note in the given key, in the octave that starts
 	 * on do: fixed do gives C4–B4; movable do counts up from the key's tonic in octave 4
@@ -2839,9 +2861,15 @@ export declare class Solfege {
 	 *
 	 * @param syllable - Solfège syllable (e.g., `'do'`, `'sol'`).
 	 * @param keySymbol - Key context.
+	 * Movable do takes "ti" and the chromatic syllables (di ri fi li, ra me se le te) in either
+	 * system; "si" is the seventh with `syllables: 'si'` (default) and the raised fifth with `'ti'`.
+	 *
+	 * @param syllable - Solfège syllable (e.g., `'do'`, `'sol'`).
+	 * @param keySymbol - Key context.
 	 * @param mode - `'fixed'` (C=do) or `'movable'` (tonic=do). Default: `'movable'`.
+	 * @param options - `syllables`: `'si'` (default) or `'ti'`, for movable do.
 	 */
-	static fromSolfege(syllable: string, keySymbol: string, mode?: "fixed" | "movable"): Note;
+	static fromSolfege(syllable: string, keySymbol: string, mode?: "fixed" | "movable", options?: MovableDoOptions): Note;
 }
 /**
  * A Guidonian hexachord syllable (solfège name within the hexachord).

@@ -134,6 +134,7 @@ function batteryEntries(t: TuningSystem, m: Material): Record<string, () => Resu
     'analyzeCadence': () => { const r = Harmony.analyzeCadence(chord(m.dominant), chord(m.triad), m.key); return r || NOTHING; },
     'fixed do': () => chord(m.dominant).getNotes().map(n => Solfege.fixedDo(n)),
     'movable do': () => chord(m.dominant).getNotes().map(n => { const r = Solfege.movableDo(n, m.key); return r === '?' ? NOTHING : r; }),
+    'movable do (ti)': () => chord(m.dominant).getNotes().map(n => { const r = Solfege.movableDo(n, m.key, { syllables: 'ti' }); return r === '?' ? NOTHING : r; }),
     'figured bass': () => FiguredBass.realize(chord(m.slash).getNotes()[0], '6', m.key).name,
     'figures of a chord': () => FiguredBass.fromChord(chord(m.slash), chord(m.slash).getNotes()[0]),
     'Tonnetz path': () => Tonnetz.pathBetween(chord(m.triad), chord(m.minorTriad)).map(p => [p.x, p.y]),

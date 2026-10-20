@@ -136,7 +136,7 @@ pnpm run build   # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
 |--------|-------------|
 | `ragas.ts` | 10 Hindustani ragas - aroha, avaroha, vadi, samvadi, time, description |
 | `maqamat.ts` | 8 Arabic maqamat in 24-EDO quarter-tone intervals |
-| `solfege.ts` | Fixed-do and movable-do solfege |
+| `solfege.ts` | Fixed-do and movable-do solfege; movable do in Latin syllables (si) or tonic sol-fa (ti) with chromatic syllables |
 | `hexachord.ts` | Guidonian hexachord system |
 
 ### Rhythm

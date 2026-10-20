@@ -66,6 +66,42 @@ describe('Solfege.movableDo', () => {
     const g4 = parseNote('G4');
     expect(Solfege.movableDo(g4, 'G major')).toBe('do');
   });
+
+  it('the tonic of the key in either case', () => {
+    expect(Solfege.movableDo(parseNote('E4'), 'c major')).toBe('mi');
+    expect(Solfege.movableDo(parseNote('F#4'), 'f# major')).toBe('do');
+    expect(Solfege.movableDo(parseNote('A4'), 'a minor')).toBe('la');
+    expect(Solfege.fromSolfege('sol', 'g major').name).toBe('D5');
+  });
+});
+
+describe('Solfege.movableDo with syllables: ti', () => {
+  const ti = { syllables: 'ti' } as const;
+  const sing = (notes: string[], key: string) => notes.map(n => Solfege.movableDo(parseNote(n), key, ti));
+
+  it('diatonic: ti on the seventh', () => {
+    expect(sing(['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'], 'C major')).toEqual(['do', 're', 'mi', 'fa', 'sol', 'la', 'ti']);
+    expect(sing(['E#4', 'F#4'], 'F# major')).toEqual(['ti', 'do']);
+  });
+
+  it('raised and lowered degrees by the written letter', () => {
+    expect(sing(['C#4', 'D#4', 'F#4', 'G#4', 'A#4'], 'C major')).toEqual(['di', 'ri', 'fi', 'si', 'li']);
+    expect(sing(['Db4', 'Eb4', 'Gb4', 'Ab4', 'Bb4'], 'C major')).toEqual(['ra', 'me', 'se', 'le', 'te']);
+  });
+
+  it('la-based minor and modes', () => {
+    expect(sing(['A4', 'B4', 'C5', 'G#4', 'F#4'], 'A minor')).toEqual(['la', 'ti', 'do', 'si', 'fi']);
+    expect(sing(['D4', 'B4', 'Bb4'], 'D dorian')).toEqual(['re', 'ti', 'te']);
+  });
+
+  it('an alteration without a syllable is ?', () => {
+    expect(sing(['Cb4', 'E#4', 'Fb4', 'B#4', 'C##4'], 'C major')).toEqual(['?', '?', '?', '?', '?']);
+  });
+
+  it('the default stays Latin and diatonic', () => {
+    expect(Solfege.movableDo(parseNote('B4'), 'C major')).toBe('si');
+    expect(Solfege.movableDo(parseNote('Bb4'), 'C major')).toBe('?');
+  });
 });
 
 describe('Solfege.fromSolfege', () => {
@@ -84,6 +120,14 @@ describe('Solfege.fromSolfege', () => {
   it('fixed do: do → C PC', () => {
     const note = Solfege.fromSolfege('do', 'C major', 'fixed');
     expect(((note.stepsFromBase % 12) + 12) % 12).toBe(3);
+  });
+
+  it('movable do: ti and the chromatic syllables', () => {
+    const pc = (s: string, opts = {}) => ((Solfege.fromSolfege(s, 'C major', 'movable', opts).stepsFromBase % 12) + 12) % 12;
+    expect(pc('ti')).toBe(2); // B
+    expect(pc('si')).toBe(2); // B: Latin seventh
+    expect(pc('si', { syllables: 'ti' })).toBe(11); // G#: raised fifth
+    expect(['di', 'ri', 'fi', 'li', 'ra', 'me', 'se', 'le', 'te'].map(s => pc(s))).toEqual([4, 6, 9, 1, 4, 6, 9, 11, 1]);
   });
 
   it('throws for unknown syllable', () => {
