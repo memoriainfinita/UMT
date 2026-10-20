@@ -1,6 +1,16 @@
 # Changelog
 
-Versions are git tags. Pin one (`github:memoriainfinita/UMT#v0.9.0` in `package.json`, `@v0.9.0` on jsDelivr); `main` may change.
+Versions are git tags. Pin one (`github:memoriainfinita/UMT#v0.10.0` in `package.json`, `@v0.10.0` on jsDelivr); `main` may change.
+
+## 0.10.0 - 2026-10-21
+
+Usual borrowings and church modes in key detection, requested by MODUS. No breaking changes.
+
+### Added
+
+- `BorrowedChord.common`: a usual borrowing (Open Music Theory, "Modal Mixture"). In a major key, the parallel minor's chords on ii, iii, iv, vi and vii (Ddim/Dm7b5, Eb, Fm, Ab, Bb in C); in a minor key, the Picardy I (from ionian) and the dorian IV. None in a church-mode key, for which there is no established list
+- `Harmony.getBorrowedChords` takes ionian as a source: the Picardy third in a minor key, the major key's chords in a church-mode key (D in G mixolydian). Major keys are unchanged; minor and church-mode keys get the new entries
+- `KeyDetection.detect(…, { modes: true })` and `detectFromHistogram`: the diatonic collection holding the most weight gives the notes, and the degree whose triad weighs most (root counted twice) the tonic. When a church mode outweighs the major and minor tonics it goes first, with the confidence of the best key: a Dm7 G7 vamp is `'D Dorian'`, G F C G `'G Mixolydian'`. Ties go to major and minor. Only notes count, not chord roots or the bass
 
 ## 0.9.0 - 2026-10-20
 
