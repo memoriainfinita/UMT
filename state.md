@@ -1,6 +1,6 @@
 ---
 created: 2026-04-28
-last_updated: 2026-10-19
+last_updated: 2026-10-20
 ---
 
 # State - Universal Music Theory Library
@@ -16,8 +16,8 @@ last_updated: 2026-10-19
 - Repo: https://github.com/memoriainfinita/UMT
 - Demo: https://memoriainfinita.github.io/UMT (GitHub Pages, branch `main`, root `/`)
 - API Docs: https://memoriainfinita.github.io/UMT/api-docs/ (TypeDoc, generado en `api-docs/`, con el diseño de la demo: `docs-theme/custom.css` y `custom.js`)
-- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.7.1/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
-- Versión: 0.7.1 (tag `v0.7.1`). Cambios por versión en `CHANGELOG.md`; `v0.1.0` es el estado previo a la auditoría de 2026-10 (`801e5ec`)
+- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.8.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
+- Versión: 0.8.0 (tag `v0.8.0`). Cambios por versión en `CHANGELOG.md`; `v0.1.0` es el estado previo a la auditoría de 2026-10 (`801e5ec`)
 - Auditoría 2026-10 cerrada: detalle en `docs/auditoria-2026-10.md`; peticiones de MODUS y respuestas en `docs/notas-desde-modus-2026-10.md` (los dos sin versionar)
 - Consumidores: MODUS y notae, cada uno fijado a un tag. Solo la sesión de UMT commitea aquí; MODUS deja sus peticiones en las notas
 - Status: publicado y en producción.
@@ -29,7 +29,7 @@ last_updated: 2026-10-19
 - esbuild (fijado 0.28.2) - compila `dist/umt.js` (IIFE, 152 kb) y `dist/umt.mjs` (ESM)
 - dts-bundle-generator (fijado 9.5.1) - tipos en un solo `dist/umt.d.ts`
 - typedoc - genera API docs HTML en `api-docs/` (`pnpm run docs`); `pnpm run docs:check` falla si una exportación no tiene JSDoc (en la CI)
-- vitest - tests unitarios (`pnpm run test:unit`) - 1318 tests, un archivo por módulo más la batería de afinaciones (`tuning-conformance.test.ts`)
+- vitest - tests unitarios (`pnpm run test:unit`) - 1333 tests, un archivo por módulo más la batería de afinaciones (`tuning-conformance.test.ts`)
 - GitHub Actions (`.github/workflows/ci.yml`) - typecheck, lint, tests, build y `dist` igual a las fuentes
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
@@ -58,7 +58,7 @@ last_updated: 2026-10-19
 - [roman] `parseRomanProgression`: la mayúscula o minúscula da la tercera; lo que el numeral no dice lo pone la tonalidad (`vii` en C = Bdim, `vii7` = Bm7b5). Mayúscula con `7` es siempre dominante, convención de jazz (`I7` = C7, `IV7` = F7, `V7` = G7); la séptima mayor se escribe `maj7`; `dom` es alias (`Idom7`). Si la tercera no es la de la tonalidad, el acorde simple del caso (`II` = D). Las alteraciones mueven el grado de la propia escala: en menor `VII` y `VI` son los naturales y `bVII` en La menor es Gb. En menor natural, `vii°`, `vii°7` y `viiø7` van sobre la sensible elevada; un disminuido sobre la 7ª natural se escribe `VIIdim`. Sufijo desconocido → error. `analyzeProgression` escribe numerales que el parser vuelve a leer igual (`viim7` para Bm7 en C). Confirmed 2026-10.
 - [harmony] `analyzeProgression(chords, key, { spelling })`: `'key'` (por defecto) toma la letra de una fundamental cromática de `spellChordInKey`; `'written'` conserva la letra del nombre si coincide con la altura (Gb en C = `bV`), para acordes que llegan ya nombrados. Confirmed 2026-10.
 - [interval] Calidad de intervalo por letras: `getIntervalBetween('C4', 'F#4')` = A4; `getIntervalName(semitonos, true, letras)`. Sin letras, 6 semitonos es d5. Confirmed 2026-10.
-- [solfege] Do móvil con la menor desde la (Kodály): en La menor A es "la"; los modos eclesiásticos cantan desde el do de su mayor (en Re dórico D es "re"). Confirmed 2026-10.
+- [solfege] Do móvil con la menor desde la (Kodály): en La menor A es "la"; los modos eclesiásticos cantan desde el do de su mayor (en Re dórico D es "re"). Por defecto sílabas latinas (si), solo diatónicas; con `syllables: 'ti'` (tonic sol-fa, Kodály) séptimo "ti" y cromáticas di ri fi si li / ra me se le te según la letra escrita de la nota. Las cromáticas no van en el sistema latino: "si" chocaría con el quinto elevado. Confirmed 2026-10.
 - [twelve-tone] Las formas de una serie se nombran por su primera clase de altura (Straus): la serie dada es `P(row[0])`; la matriz es la estándar (primera fila la serie, primera columna su inversión). Confirmed 2026-10.
 - [counterpoint] `checkSpecies` lee el contrapunto en una rejilla de tiempos por nota del cantus (1, 2, 4, 2, 4 según especie; en 5ª una nota larga repite su altura). Confirmed 2026-10.
 - [tuning] `getStepFromStandard` lleva un paso de 12-TET al paso de la afinación más cercano en cents (clase base); EDO redondea y las afinaciones de 12 clases van uno a uno. Los módulos 12-TET (Tonnetz, contrapunto, cifrado) leen las notas de otras afinaciones por su semitono más cercano según la frecuencia. Confirmed 2026-10.
