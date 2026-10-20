@@ -380,3 +380,28 @@ describe('Harmony.getBorrowedChords - diatonic in minor, characteristic degrees'
     expect(dorian.filter(b => b.characteristic).map(b => b.chord.name).sort()).toEqual(['Am7b5', 'Bbmaj7', 'F7']);
   });
 });
+
+describe('Harmony.getBorrowedChords - usual borrowings (Open Music Theory, Modal Mixture)', () => {
+  const common = (key: string, type: 'triad' | 'seventh' = 'triad') =>
+    Harmony.getBorrowedChords(key, { type }).filter(b => b.common).map(b => `${b.chord.name} ${b.sourceMode}`);
+
+  it('in major: the parallel minor on ii, iii, iv, vi and vii', () => {
+    expect(common('C major')).toEqual(['Ddim aeolian', 'Eb aeolian', 'Fm aeolian', 'Ab aeolian', 'Bb aeolian']);
+    expect(common('C major', 'seventh')).toEqual(['Dm7b5 aeolian', 'Ebmaj7 aeolian', 'Fm7 aeolian', 'Abmaj7 aeolian', 'Bb7 aeolian']);
+  });
+
+  it('in minor: the Picardy I from ionian and the dorian IV', () => {
+    expect(common('A minor')).toEqual(['A ionian', 'D dorian']);
+    expect(common('A minor', 'seventh')).toEqual(['Amaj7 ionian', 'D7 dorian']);
+  });
+
+  it('none in a church-mode key; ionian is a source there', () => {
+    expect(common('G mixolydian')).toEqual([]);
+    const ionian = Harmony.getBorrowedChords('G mixolydian', { type: 'triad', sources: ['ionian'] }).map(b => b.chord.name);
+    expect(ionian).toContain('D');
+  });
+
+  it('a major key does not borrow from ionian, its own notes', () => {
+    expect(Harmony.getBorrowedChords('C major').some(b => b.sourceMode === 'ionian')).toBe(false);
+  });
+});

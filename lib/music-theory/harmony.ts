@@ -250,6 +250,13 @@ export interface BorrowedChord {
    * (#4 lydian, b7 mixolydian, 6 dorian, b6 aeolian, b2 phrygian, b2 or b5 locrian…).
    */
   characteristic: boolean;
+  /**
+   * A usual borrowing (Open Music Theory, "Modal Mixture"). In a major key, the chords of the
+   * parallel minor (aeolian) on ii, iii, iv, vi and vii: ii°/iiø7, bIII, iv, bVI, bVII. In a
+   * minor key, the major tonic (Picardy third, from ionian) and the major IV of dorian.
+   * Never in a church-mode key, for which there is no established list.
+   */
+  common: boolean;
 }
 
 /**
@@ -1299,9 +1306,12 @@ export class Harmony {
    *
    * Returns `BorrowedChord[]`.
    * Each entry includes the source mode, brightness, harmonic function in the
-   * home key, and whether the chord is characteristic of its source mode.
-   * Chords that `analyzeProgression` reads as diatonic are left out: in a minor key, the
-   * dominant and leading-tone chords of the harmonic minor (E7 and G#dim7 in A minor).
+   * home key, whether the chord is characteristic of its source mode, and whether it is a
+   * usual borrowing (`common`: iv, bVI, bVII… in major; the Picardy I and dorian IV in minor).
+   * Sources: the seven modes (ionian gives the Picardy third in minor and the major chords of a
+   * church-mode key), harmonic and melodic minor, harmonic major; a mode with the home key's
+   * notes is skipped. Chords that `analyzeProgression` reads as diatonic are left out: in a
+   * minor key, the dominant and leading-tone chords of the harmonic minor (E7 and G#dim7 in A minor).
    *
    * @param keySymbol - e.g. `'C major'`, `'A minor'`
    * @param options.sources - Limit results to these mode names only.
@@ -1328,7 +1338,7 @@ export class Harmony {
     const homePcsArr = [...homeKey.scalePcs].sort((a, b) => a - b);
 
     const candidateModes = [
-      'lydian', 'mixolydian', 'dorian', 'aeolian', 'phrygian', 'locrian',
+      'lydian', 'ionian', 'mixolydian', 'dorian', 'aeolian', 'phrygian', 'locrian',
       'harmonic minor', 'melodic minor', 'harmonic major',
     ];
     const sourcesToCheck = options?.sources
@@ -1370,7 +1380,12 @@ export class Harmony {
           charPcs.some(offset => ((tonicPc + offset) % 12) === pc)
         );
 
-        results.push({ chord: c, sourceMode: mode, brightness, function: fn, characteristic });
+        const homeMajor = homeKey.mode === 'major' || homeKey.mode === 'ionian';
+        const common = homeMajor
+          ? mode === 'aeolian' && [2, 3, 4, 6, 7].includes(degree)
+          : isNaturalMinor(homeKey) && ((mode === 'ionian' && degree === 1) || (mode === 'dorian' && degree === 4));
+
+        results.push({ chord: c, sourceMode: mode, brightness, function: fn, characteristic, common });
       }
     }
 
