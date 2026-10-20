@@ -510,3 +510,51 @@ describe('Harmony.analyzeCadence', () => {
     expect(cad).toContain('Deceptive');
   });
 });
+
+describe('analyzeProgression in a church mode (requested by MODUS)', () => {
+  const read = (names: string, key: string) =>
+    Harmony.analyzeProgression(names.split(' ').map(chord), key, { spelling: 'written' }).analysis;
+
+  it('chords keep the function of their degree; the seventh degree is D', () => {
+    const mixo = read('G F C G', 'G Mixolydian');
+    expect(mixo.map(a => [a.roman, a.function])).toEqual([['I', 'T'], ['VII', 'D'], ['IV', 'S'], ['I', 'T']]);
+    expect(read('F Em7 F', 'F Lydian')[1].function).toBe('D');
+    expect(read('Em Dm Em', 'E Phrygian')[1].function).toBe('D');
+    expect(read('Dm7 Cmaj7 Am7 Dm7', 'D Dorian').map(a => a.function)).toEqual(['T', 'D', 'D', 'T']);
+  });
+
+  it("locrian's V, on the diminished fifth, has no function", () => {
+    expect(read('Bdim F Bdim', 'B Locrian')[1].function).toBe('unknown');
+  });
+
+  it('a diatonic dominant seventh is the mode\'s own chord, not a secondary dominant', () => {
+    const dorian = read('Dm7 G7 Dm7', 'D Dorian')[1];
+    expect([dorian.roman, dorian.function, dorian.isSecondary]).toEqual(['IV7', 'S', false]);
+    const mixo = read('G7 C G7', 'G Mixolydian')[0];
+    expect([mixo.roman, mixo.function, mixo.isSecondary]).toEqual(['I7', 'T', false]);
+    expect(read('F G7 F', 'F Lydian')[1].isSecondary).toBe(false);
+    // natural minor keeps VII7 as V7/III
+    expect(read('Am G7 C', 'A minor')[1].secondaryTarget).toBe('V7/III');
+  });
+
+  it('borrowings are measured from the mode: the nearest in brightness first', () => {
+    const d7 = read('G D7 G', 'G Mixolydian')[1];
+    expect([d7.isBorrowed, d7.borrowedFrom]).toEqual([true, 'major']);
+    // major and minor keys keep their order
+    expect(read('C Fm C', 'C major')[1].borrowedFrom).toBe('minor');
+  });
+
+  it('no cadence assumes a leading tone the mode lacks', () => {
+    expect(read('Cmaj7 Am7', 'D Dorian')[0].cadenceWithNext).toBeUndefined();
+    expect(read('G D7 G', 'G Mixolydian')[1].cadenceWithNext).toBe('Authentic Cadence (V -> I)');
+  });
+});
+
+describe('Harmony.analyzeCadence: the half cadence needs the leading tone', () => {
+  it('→ v is no half cadence; → V is', () => {
+    expect(Harmony.analyzeCadence(chord('Dm'), chord('Em'), 'A minor')).toBe('No standard cadence');
+    expect(Harmony.analyzeCadence(chord('Dm'), chord('E'), 'A minor')).toBe('Half Cadence (-> V)');
+    expect(Harmony.analyzeCadence(chord('C'), chord('Gm'), 'C major')).toBe('No standard cadence');
+    expect(Harmony.analyzeCadence(chord('Dm/F'), chord('Em'), 'A minor')).toBe('No standard cadence');
+  });
+});

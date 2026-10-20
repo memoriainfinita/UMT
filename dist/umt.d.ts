@@ -1525,7 +1525,7 @@ export declare class Harmony {
 	 * Analyzes the cadence between two chords in a given key.
 	 *
 	 * Recognized cadences: Authentic (V→I), Plagal (IV→I), Minor Plagal (iv→i),
-	 * Deceptive (V→vi), Half (→V), Phrygian/Hyper-phrygian (♭II→I or iv→V),
+	 * Deceptive (V→vi), Half (→V, with the leading tone), Phrygian/Hyper-phrygian (♭II→I or iv→V),
 	 * Picardy (minor i → major I), Backdoor (♭VII7→I), Tritone Sub (subV7→I).
 	 */
 	static analyzeCadence(chord1: Chord, chord2: Chord, keySymbol: string): string;

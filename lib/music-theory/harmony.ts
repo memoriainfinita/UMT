@@ -486,18 +486,34 @@ function isNaturalMinor(key: KeyInfo): boolean {
   return key.mode === 'minor' || key.mode === 'aeolian' || key.mode === 'natural minor';
 }
 
+// Church modes other than ionian and aeolian, which read as major and minor
+const MODAL_MODES = ['dorian', 'phrygian', 'lydian', 'mixolydian', 'locrian'];
+
+/** The key is a church mode other than major and minor (D dorian, G mixolydian…). */
+function isModalKey(key: { mode: string }): boolean {
+  return MODAL_MODES.includes(key.mode);
+}
+
 /**
  * Maps a (degree, quality) pair to a functional category T/S/D.
  * Conservative mapping: uses scale degree primarily; quality only disambiguates edge cases.
  * Secondary dominants and leading-tone chords are D whatever their degree; that override
  * lives in `analyzeProgression`, which knows the chord is secondary.
+ *
+ * In a church mode (`mode`), chords keep the function of their degree (Open Music Theory,
+ * "Modal Schemas"): every chord on the seventh degree of the mode is D, the subtonic VII of
+ * mixolydian and dorian as the vii of lydian and phrygian; locrian's V, on the diminished
+ * fifth, has no function.
  */
-function getFunction(degree: number, quality: string, isMinor: boolean, accidental: '' | 'b' | '#' = ''): 'T' | 'S' | 'D' | 'unknown' {
+function getFunction(degree: number, quality: string, isMinor: boolean, accidental: '' | 'b' | '#' = '', mode = ''): 'T' | 'S' | 'D' | 'unknown' {
   if (degree <= 0) return 'unknown';
+  const modal = isModalKey({ mode });
+  if (modal && mode === 'locrian' && degree === 5 && accidental === '') return 'unknown';
   // Dominants: V (any quality), vii° (leading-tone)
   if (degree === 5) return 'D';
   if (degree === 7) {
     if (quality === 'dim' || quality === 'dim7' || quality === 'm7b5') return 'D';
+    if (modal && accidental === '') return 'D';
     // The subtonic VII of a minor key stands in for V (i-VII-i, the Andalusian cadence)
     if (isMinor && accidental === '') return 'D';
     // bVII in major comes from the minor subdominant family (the backdoor bVII7)
@@ -551,6 +567,9 @@ function detectSecondaryDominant(chord: Chord, key: KeyInfo): { isSecondary: boo
   const targetDegree = targetIdx + 1;
   // Only meaningful for dom7 ('7'), or for plain major triads as secondary dominants
   if (quality !== '7') return { isSecondary: false };
+  // In a church mode a diatonic dominant seventh is the mode's own chord: G7 is IV7 in
+  // D dorian, I7 in G mixolydian, II7 in F lydian. Natural minor keeps VII7 as V7/III.
+  if (isModalKey(key) && chord.getPitchClasses().every(pc => key.scalePcs.includes(pc))) return { isSecondary: false };
   return { isSecondary: true, target: `V7/${targetRoman(key, targetIdx, targetDegree)}` };
 }
 
@@ -568,6 +587,19 @@ function targetRoman(key: KeyInfo, targetIdx: number, targetDegree: number): str
 }
 
 /**
+ * Parallel modes a church mode borrows from, nearest in brightness first (`MODE_BRIGHTNESS`),
+ * then harmonic and melodic minor. Ionian and aeolian go by their key names, major and minor.
+ */
+function modalBorrowingCandidates(mode: string): string[] {
+  const names: Record<string, string> = { ionian: 'major', aeolian: 'minor' };
+  const own = MODE_BRIGHTNESS[mode] ?? 0;
+  const modes = ['lydian', 'ionian', 'mixolydian', 'dorian', 'aeolian', 'phrygian', 'locrian']
+    .filter(m => m !== mode)
+    .sort((a, b) => Math.abs(MODE_BRIGHTNESS[a] - own) - Math.abs(MODE_BRIGHTNESS[b] - own) || MODE_BRIGHTNESS[b] - MODE_BRIGHTNESS[a]);
+  return [...modes.map(m => names[m] ?? m), 'harmonic minor', 'melodic minor'];
+}
+
+/**
  * Returns a human-readable tag for a borrowed chord, based on parallel-mode analysis,
  * or null if the chord is not a borrowing from a recognized parallel mode.
  */
@@ -575,10 +607,14 @@ function detectBorrowedFrom(chord: Chord, key: KeyInfo): string | null {
   if (key.tuning.octaveSteps !== 12) return null;
   const chordPcs = new Set(chord.getPitchClasses());
 
-  // Try parallel modes based on whether main key is major or minor
-  const parallelCandidates = key.isMinor
-    ? ['major', 'dorian', 'phrygian', 'mixolydian', 'lydian', 'harmonic minor']
-    : ['minor', 'dorian', 'mixolydian', 'phrygian', 'lydian', 'harmonic minor', 'melodic minor'];
+  // Try parallel modes based on whether main key is major or minor. A church mode measures
+  // from itself: the other modes by closeness in brightness (the brighter first on a tie),
+  // then harmonic and melodic minor; D7 in G mixolydian comes from G major.
+  const parallelCandidates = isModalKey(key)
+    ? modalBorrowingCandidates(key.mode)
+    : key.isMinor
+      ? ['major', 'dorian', 'phrygian', 'mixolydian', 'lydian', 'harmonic minor']
+      : ['minor', 'dorian', 'mixolydian', 'phrygian', 'lydian', 'harmonic minor', 'melodic minor'];
 
   for (const mode of parallelCandidates) {
     let modeScale: Scale;
@@ -976,7 +1012,7 @@ export class Harmony {
     const analysis: ChordAnalysis[] = chords.map((chord, i) => {
       const key = keyAt(i);
       const { roman, degree, accidental, isDiatonic, quality } = getRomanForChord(chord, key);
-      const degreeFn = getFunction(degree, quality, key.isMinor, accidental);
+      const degreeFn = getFunction(degree, quality, key.isMinor, accidental, key.mode);
 
       // In the blues, I7 preceded by its ii (Fm7 Bb7 → Eb7 in Bb) is still V7/IV
       const prev = chords[i - 1];
@@ -1326,7 +1362,7 @@ export class Harmony {
         // Skip chords diatonic to the home key, as analyzeProgression reads them
         const { degree, quality, accidental, isDiatonic } = getRomanForChord(c, homeKey);
         if (isDiatonic) continue;
-        const fn = getFunction(degree, quality, homeKey.isMinor, accidental);
+        const fn = getFunction(degree, quality, homeKey.isMinor, accidental, homeKey.mode);
 
         // characteristic = chord contains a mode-defining PC (relative to home tonic)
         const tonicPc = homeKey.tonicPc;
@@ -1381,8 +1417,8 @@ export class Harmony {
         const degreeB = j + 1;
         const { quality: qualA } = getRomanForChord(cA, kA);
         const { quality: qualB } = getRomanForChord(cB, kB);
-        const fnA = getFunction(degreeA, qualA, kA.isMinor) as 'T' | 'S' | 'D';
-        const fnB = getFunction(degreeB, qualB, kB.isMinor) as 'T' | 'S' | 'D';
+        const fnA = getFunction(degreeA, qualA, kA.isMinor, '', kA.mode) as 'T' | 'S' | 'D';
+        const fnB = getFunction(degreeB, qualB, kB.isMinor, '', kB.mode) as 'T' | 'S' | 'D';
 
         results.push({
           chord: cA,
@@ -1521,7 +1557,7 @@ export class Harmony {
    * Analyzes the cadence between two chords in a given key.
    *
    * Recognized cadences: Authentic (V→I), Plagal (IV→I), Minor Plagal (iv→i),
-   * Deceptive (V→vi), Half (→V), Phrygian/Hyper-phrygian (♭II→I or iv→V),
+   * Deceptive (V→vi), Half (→V, with the leading tone), Phrygian/Hyper-phrygian (♭II→I or iv→V),
    * Picardy (minor i → major I), Backdoor (♭VII7→I), Tritone Sub (subV7→I).
    */
   static analyzeCadence(chord1: Chord, chord2: Chord, keySymbol: string): string {
@@ -1552,6 +1588,8 @@ export class Harmony {
     const isC1Subdominant = r1 === (t + ts.getStepFromStandard(5)) % oct; // IV
     // V with the leading tone (a major third): v → i is not a cadence on the dominant
     const isC1DominantRoot = r1 === (t + ts.getStepFromStandard(7)) % oct && c1Pcs.includes(maj3); // V
+    // A half cadence arrives at V with the leading tone too: → v (Am7 in D dorian) is none
+    const isC2DominantRoot = r2 === (t + ts.getStepFromStandard(7)) % oct && c2Pcs.includes(maj3);
 
     // Picardy: same root, minor → major on tonic pair
     if (r1 === t && r2 === t && c1IsMinor && c2IsMajor) {
@@ -1586,14 +1624,14 @@ export class Harmony {
     const b1 = ((bassOf(chord1) % oct) + oct) % oct;
     const b2 = ((bassOf(chord2) % oct) + oct) % oct;
     const sixthBass = b1 === (t + ts.getStepFromStandard(8)) % oct && b2 === (t + ts.getStepFromStandard(7)) % oct;
-    if (isC1Subdominant && c1IsMinor && r2 === (t + ts.getStepFromStandard(7)) % oct && sixthBass) {
+    if (isC1Subdominant && c1IsMinor && isC2DominantRoot && sixthBass) {
       return 'Phrygian Half Cadence (iv -> V)';
     }
 
     if (isC2Tonic && r1 === (t + ts.getStepFromStandard(10)) % oct && isC1Dominant) {
       return 'Backdoor Cadence (bVII7 -> I)';
     }
-    if (r2 === (t + ts.getStepFromStandard(7)) % oct) {
+    if (isC2DominantRoot) {
       return 'Half Cadence (-> V)';
     }
 
