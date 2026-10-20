@@ -61,7 +61,20 @@ export type KeyProfileName = keyof typeof KEY_PROFILES;
 export interface KeyDetectionOptions {
   /** Key profile to correlate with (default `'krumhansl'`), or a custom pair. */
   profile?: KeyProfileName | KeyProfile;
+  /**
+   * Also read church modes (default false). The diatonic collection that holds the most weight
+   * gives the seven notes (the best key breaks a tie); within them each degree scores the weight
+   * of its triad, the root counted twice. When a degree other than the major and minor tonics
+   * scores strictly higher, its mode is put first,
+   * with the confidence of that key: a Dm7 G7 vamp is `'D Dorian'`. Only notes count, not chord
+   * roots or the bass, so with little music or no clear tonic the mode can be wrong.
+   */
+  modes?: boolean;
 }
+
+// Church modes by degree of their parent major scale; 0 and 5 are the major and minor keys
+const MODE_NAMES = ['Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian'];
+const MAJOR_SCALE = [0, 2, 4, 5, 7, 9, 11];
 
 /**
  * Key Detection Module
@@ -80,12 +93,12 @@ export class KeyDetection {
    * Krumhansl-Schmuckler algorithm). Notes outside 12-TET count for the nearest 12-TET pitch class.
    * @param notes - The notes to analyse.
    * @param durations - Optional duration of each note, in any unit (only proportions matter).
-   * @param options - `profile`: which key profile to correlate with (default Krumhansl-Kessler).
+   * @param options - `profile`: which key profile to correlate with (default Krumhansl-Kessler); `modes`: also read church modes.
    * @returns Array of possible keys sorted by confidence (Pearson correlation coefficient).
    * @throws RangeError if `durations` does not match `notes` in length, or holds a negative or non-finite value.
    */
   static detect(notes: Note[], durations?: readonly number[], options: KeyDetectionOptions = {}): {
-    /** Key name with a capitalized mode: `'C Major'`, `'Eb Minor'`. */
+    /** Key name with a capitalized mode: `'C Major'`, `'Eb Minor'`; with `modes`, the first may be a church mode (`'D Dorian'`). */
     key: string;
     /** Pearson correlation with the profile, -1 to 1. */
     confidence: number;
@@ -104,12 +117,12 @@ export class KeyDetection {
    * Detects the most likely key from a pitch class histogram (index 0 = C, 1 = C#/Db, … 11 = B),
    * e.g. total durations per pitch class accumulated over a piece.
    * @param weights - 12 non-negative weights.
-   * @param options - `profile`: which key profile to correlate with (default Krumhansl-Kessler).
+   * @param options - `profile`: which key profile to correlate with (default Krumhansl-Kessler); `modes`: also read church modes.
    * @returns Array of possible keys sorted by confidence; empty when all weights are 0.
    * @throws RangeError if there are not 12 weights, or one is negative or non-finite.
    */
   static detectFromHistogram(weights: readonly number[], options: KeyDetectionOptions = {}): {
-    /** Key name with a capitalized mode: `'C Major'`, `'Eb Minor'`. */
+    /** Key name with a capitalized mode: `'C Major'`, `'Eb Minor'`; with `modes`, the first may be a church mode (`'D Dorian'`). */
     key: string;
     /** Pearson correlation with the profile, -1 to 1. */
     confidence: number;
@@ -128,7 +141,7 @@ export class KeyDetection {
 
     // Profiles and note names are indexed from A (0 = A, 3 = C).
     const histogram = weights.map((_, j) => weights[(j + 9) % 12]);
-    const results: { key: string, confidence: number }[] = [];
+    const results: { key: string, confidence: number, tonic: number, minor: boolean }[] = [];
 
     for (let i = 0; i < 12; i++) {
       const flatName = NOTE_NAMES_12TET_FLAT[i];
@@ -139,14 +152,44 @@ export class KeyDetection {
       const minorName = minorPf ? flatName : NOTE_NAMES_12TET_SHARP[i];
 
       const rMaj = this.pearsonCorrelation(histogram, this.shiftProfile(profile.major, i));
-      results.push({ key: `${majorName} Major`, confidence: rMaj });
+      results.push({ key: `${majorName} Major`, confidence: rMaj, tonic: i, minor: false });
 
       const rMin = this.pearsonCorrelation(histogram, this.shiftProfile(profile.minor, i));
-      results.push({ key: `${minorName} Minor`, confidence: rMin });
+      results.push({ key: `${minorName} Minor`, confidence: rMin, tonic: i, minor: true });
     }
 
     // Sort by confidence descending
-    return results.sort((a, b) => b.confidence - a.confidence);
+    results.sort((a, b) => b.confidence - a.confidence);
+    const keys = results.map(({ key, confidence }) => ({ key, confidence }));
+    if (!options.modes) return keys;
+    const modal = this.modalKey(histogram, results[0]);
+    return modal ? [modal, ...keys] : keys;
+  }
+
+  /**
+   * The church mode whose tonic triad weighs most (root counted twice) among the seven notes
+   * that hold the most weight, when it outweighs the major and minor tonics; null otherwise.
+   * The best key by correlation breaks a tie between collections, and the major or minor tonic
+   * a tie between degrees. Histogram indexed from A.
+   */
+  private static modalKey(histogram: number[], best: { confidence: number, tonic: number, minor: boolean }): { key: string, confidence: number } | null {
+    // The diatonic collection holding the most weight: Dm7 G7 is C major's, though the best
+    // key by correlation is D minor
+    const bestParent = best.minor ? (best.tonic + 3) % 12 : best.tonic;
+    const inside = (p: number) => MAJOR_SCALE.reduce((sum, s) => sum + histogram[(p + s) % 12], 0);
+    let parent = bestParent;
+    for (let p = 0; p < 12; p++) if (inside(p) > inside(parent)) parent = p;
+
+    const pcs = MAJOR_SCALE.map(s => (parent + s) % 12);
+    const score = (d: number) => 2 * histogram[pcs[d]] + histogram[pcs[(d + 2) % 7]] + histogram[pcs[(d + 4) % 7]];
+    // Major and minor tonics first, so that they win a tie
+    let winner = score(5) > score(0) ? 5 : 0;
+    for (let d = 0; d < 7; d++) if (score(d) > score(winner)) winner = d;
+    if (winner === 0 || winner === 5) return null;
+    const pf = preferFlatsForKey(NOTE_NAMES_12TET_FLAT[parent], 'major');
+    const tonic = pcs[winner];
+    const name = pf ? NOTE_NAMES_12TET_FLAT[tonic] : NOTE_NAMES_12TET_SHARP[tonic];
+    return { key: `${name} ${MODE_NAMES[winner]}`, confidence: best.confidence };
   }
 
   /** 12-TET pitch class (0 = C); other tunings round the note's frequency to the nearest semitone. */

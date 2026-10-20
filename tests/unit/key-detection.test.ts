@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { KeyDetection, KEY_PROFILES, KeyProfileName } from '../../lib/music-theory/key-detection';
-import { parseNote } from '../../lib/music-theory/parser';
+import { parseNote, parseChordSymbol } from '../../lib/music-theory/parser';
 import { EDO } from '../../lib/music-theory/tuning';
 import { Note } from '../../lib/music-theory/note';
 
@@ -82,5 +82,38 @@ describe('KeyDetection profiles (Humdrum keycor presets)', () => {
     const flat = { major: new Array(12).fill(1).map((_, i) => (i === 0 ? 2 : 1)), minor: new Array(12).fill(1), source: 'test' };
     expect(KeyDetection.detectFromHistogram([5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], { profile: flat })[0].key).toBe('C Major');
     expect(() => KeyDetection.detectFromHistogram([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], { profile: { major: [1], minor: [1], source: '' } })).toThrow(RangeError);
+  });
+});
+
+describe('KeyDetection with modes', () => {
+  const chordNotes = (symbols: string) => symbols.split(' ').flatMap(s => parseChordSymbol(s).getNotes());
+  const modal = (symbols: string, durations?: number[]) => {
+    const ns = chordNotes(symbols);
+    return top(KeyDetection.detect(ns, durations, { modes: true }));
+  };
+
+  it('reads a church mode from the weight of its tonic triad', () => {
+    expect(modal('Dm7 G7')).toBe('D Dorian');
+    expect(modal('G F C G')).toBe('G Mixolydian');
+    expect(modal('F G F G Fmaj7')).toBe('F Lydian');
+    // E minor weighs more than F major: E phrygian
+    expect(modal('Em F Em', [2, 2, 2, 1, 1, 1, 2, 2, 2])).toBe('E Phrygian');
+  });
+
+  it('major and minor keys stay, and win a tie', () => {
+    expect(modal('C F G C')).toBe('C Major');
+    expect(modal('Am Dm E Am')).toBe('A Minor');
+    expect(modal('Em F Em F')).toBe('C Major');
+  });
+
+  it('the mode goes first, with the confidence of the best key; the list stays', () => {
+    const plain = KeyDetection.detect(chordNotes('Dm7 G7'));
+    const withModes = KeyDetection.detect(chordNotes('Dm7 G7'), undefined, { modes: true });
+    expect(withModes[0]).toEqual({ key: 'D Dorian', confidence: plain[0].confidence });
+    expect(withModes.slice(1)).toEqual(plain);
+  });
+
+  it('without the option nothing changes', () => {
+    expect(top(KeyDetection.detect(chordNotes('Dm7 G7')))).toBe('D Minor');
   });
 });

@@ -1287,6 +1287,13 @@ export interface BorrowedChord {
 	 * (#4 lydian, b7 mixolydian, 6 dorian, b6 aeolian, b2 phrygian, b2 or b5 locrian…).
 	 */
 	characteristic: boolean;
+	/**
+	 * A usual borrowing (Open Music Theory, "Modal Mixture"). In a major key, the chords of the
+	 * parallel minor (aeolian) on ii, iii, iv, vi and vii: ii°/iiø7, bIII, iv, bVI, bVII. In a
+	 * minor key, the major tonic (Picardy third, from ionian) and the major IV of dorian.
+	 * Never in a church-mode key, for which there is no established list.
+	 */
+	common: boolean;
 }
 /**
  * A chord that functions diatonically in two different keys,
@@ -1476,9 +1483,12 @@ export declare class Harmony {
 	 *
 	 * Returns `BorrowedChord[]`.
 	 * Each entry includes the source mode, brightness, harmonic function in the
-	 * home key, and whether the chord is characteristic of its source mode.
-	 * Chords that `analyzeProgression` reads as diatonic are left out: in a minor key, the
-	 * dominant and leading-tone chords of the harmonic minor (E7 and G#dim7 in A minor).
+	 * home key, whether the chord is characteristic of its source mode, and whether it is a
+	 * usual borrowing (`common`: iv, bVI, bVII… in major; the Picardy I and dorian IV in minor).
+	 * Sources: the seven modes (ionian gives the Picardy third in minor and the major chords of a
+	 * church-mode key), harmonic and melodic minor, harmonic major; a mode with the home key's
+	 * notes is skipped. Chords that `analyzeProgression` reads as diatonic are left out: in a
+	 * minor key, the dominant and leading-tone chords of the harmonic minor (E7 and G#dim7 in A minor).
 	 *
 	 * @param keySymbol - e.g. `'C major'`, `'A minor'`
 	 * @param options.sources - Limit results to these mode names only.
@@ -2165,6 +2175,15 @@ export type KeyProfileName = keyof typeof KEY_PROFILES;
 export interface KeyDetectionOptions {
 	/** Key profile to correlate with (default `'krumhansl'`), or a custom pair. */
 	profile?: KeyProfileName | KeyProfile;
+	/**
+	 * Also read church modes (default false). The diatonic collection that holds the most weight
+	 * gives the seven notes (the best key breaks a tie); within them each degree scores the weight
+	 * of its triad, the root counted twice. When a degree other than the major and minor tonics
+	 * scores strictly higher, its mode is put first,
+	 * with the confidence of that key: a Dm7 G7 vamp is `'D Dorian'`. Only notes count, not chord
+	 * roots or the bass, so with little music or no clear tonic the mode can be wrong.
+	 */
+	modes?: boolean;
 }
 /**
  * Key Detection Module
@@ -2182,12 +2201,12 @@ export declare class KeyDetection {
 	 * Krumhansl-Schmuckler algorithm). Notes outside 12-TET count for the nearest 12-TET pitch class.
 	 * @param notes - The notes to analyse.
 	 * @param durations - Optional duration of each note, in any unit (only proportions matter).
-	 * @param options - `profile`: which key profile to correlate with (default Krumhansl-Kessler).
+	 * @param options - `profile`: which key profile to correlate with (default Krumhansl-Kessler); `modes`: also read church modes.
 	 * @returns Array of possible keys sorted by confidence (Pearson correlation coefficient).
 	 * @throws RangeError if `durations` does not match `notes` in length, or holds a negative or non-finite value.
 	 */
 	static detect(notes: Note[], durations?: readonly number[], options?: KeyDetectionOptions): {
-		/** Key name with a capitalized mode: `'C Major'`, `'Eb Minor'`. */
+		/** Key name with a capitalized mode: `'C Major'`, `'Eb Minor'`; with `modes`, the first may be a church mode (`'D Dorian'`). */
 		key: string;
 		/** Pearson correlation with the profile, -1 to 1. */
 		confidence: number;
@@ -2196,16 +2215,23 @@ export declare class KeyDetection {
 	 * Detects the most likely key from a pitch class histogram (index 0 = C, 1 = C#/Db, … 11 = B),
 	 * e.g. total durations per pitch class accumulated over a piece.
 	 * @param weights - 12 non-negative weights.
-	 * @param options - `profile`: which key profile to correlate with (default Krumhansl-Kessler).
+	 * @param options - `profile`: which key profile to correlate with (default Krumhansl-Kessler); `modes`: also read church modes.
 	 * @returns Array of possible keys sorted by confidence; empty when all weights are 0.
 	 * @throws RangeError if there are not 12 weights, or one is negative or non-finite.
 	 */
 	static detectFromHistogram(weights: readonly number[], options?: KeyDetectionOptions): {
-		/** Key name with a capitalized mode: `'C Major'`, `'Eb Minor'`. */
+		/** Key name with a capitalized mode: `'C Major'`, `'Eb Minor'`; with `modes`, the first may be a church mode (`'D Dorian'`). */
 		key: string;
 		/** Pearson correlation with the profile, -1 to 1. */
 		confidence: number;
 	}[];
+	/**
+	 * The church mode whose tonic triad weighs most (root counted twice) among the seven notes
+	 * that hold the most weight, when it outweighs the major and minor tonics; null otherwise.
+	 * The best key by correlation breaks a tie between collections, and the major or minor tonic
+	 * a tie between degrees. Histogram indexed from A.
+	 */
+	private static modalKey;
 	/** 12-TET pitch class (0 = C); other tunings round the note's frequency to the nearest semitone. */
 	private static pitchClass;
 	private static shiftProfile;
