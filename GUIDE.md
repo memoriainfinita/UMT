@@ -4,25 +4,25 @@ How to load UMT, the objects it works with, what it accepts, what it returns, an
 
 ## Loading UMT
 
-Pin a release tag (`v0.10.0`). `main` may change, and breaking changes are listed in [`CHANGELOG.md`](CHANGELOG.md).
+Pin a release tag (`v0.11.0`). `main` may change, and breaking changes are listed in [`CHANGELOG.md`](CHANGELOG.md).
 
 ```html
 <!-- Script tag: a global UMT -->
-<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.10.0/dist/umt.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.11.0/dist/umt.js"></script>
 <script>
   UMT.parseChordSymbol('Cmaj7').getNotes().map(n => n.name); // ['C4', 'E4', 'G4', 'B4']
 </script>
 
 <!-- ES module from the CDN -->
 <script type="module">
-  import { parseChordSymbol } from 'https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.10.0/dist/umt.mjs';
+  import { parseChordSymbol } from 'https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.11.0/dist/umt.mjs';
 </script>
 ```
 
 In a project, install from the GitHub tag. The package ships ESM and bundled TypeScript types (`dist/umt.d.ts`); it has no runtime dependencies.
 
 ```bash
-pnpm add github:memoriainfinita/UMT#v0.10.0
+pnpm add github:memoriainfinita/UMT#v0.11.0
 ```
 
 ```typescript

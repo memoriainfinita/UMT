@@ -1,6 +1,21 @@
 # Changelog
 
-Versions are git tags. Pin one (`github:memoriainfinita/UMT#v0.10.0` in `package.json`, `@v0.10.0` on jsDelivr); `main` may change.
+Versions are git tags. Pin one (`github:memoriainfinita/UMT#v0.11.0` in `package.json`, `@v0.11.0` on jsDelivr); `main` may change.
+
+## 0.11.0 - 2026-10-22
+
+Scale shapes on the fretboard and example progressions, requested by MODUS.
+
+### Changed
+
+- `getFretboardScale` and `getFretboardScalePositions`: `root` is the scale's written letter when it names the root's pitch (F# lydian is `'F#'` whatever its flat preference); it followed `preferFlats` only. Position boxes are documented as fret windows, not taught positions
+
+### Added
+
+- `getFretboardScaleShapes(scale, tuning, { system })`: named positions with the degree of every note and their `span`. `'3nps'`: three notes per string, one pattern per scale degree, for any tuning and string count. `'caged'`: the five CAGED shapes (E, D, C, A, G, or Em… for a minor tonic triad), for the 6-string guitar in standard tuning and scales that hold the major or minor pentatonic on their tonic; anything else gives `[]`
+- `degrees` in every fretboard scale result: the scale degree of each note, parallel to `frets`
+- `parseRomanProgression`: inversion figures `63`, `64` (triads) and `65`, `43`, `42` (the key's seventh chord, or `ø` / `°`): `iv63` in A minor is Dm/F, `V65` G7/B. A bare `6` stays the added sixth
+- `PROGRESSIONS`: an example of each cadence (authentic, plagal, deceptive, half, Phrygian half, minor plagal) and of modal mixture (bVI-bVII-I, Picardy third), with styles `'cadence'` and `'mixture'` and the new fields `mode`, `cadence` (the cadence the last two chords make, as `analyzeCadence` names it) and `source`
 
 ## 0.10.0 - 2026-10-21
 
