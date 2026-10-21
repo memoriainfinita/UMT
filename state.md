@@ -1,6 +1,6 @@
 ---
 created: 2026-04-28
-last_updated: 2026-10-21
+last_updated: 2026-10-22
 ---
 
 # State - Universal Music Theory Library
@@ -16,8 +16,8 @@ last_updated: 2026-10-21
 - Repo: https://github.com/memoriainfinita/UMT
 - Demo: https://memoriainfinita.github.io/UMT (GitHub Pages, branch `main`, root `/`)
 - API Docs: https://memoriainfinita.github.io/UMT/api-docs/ (TypeDoc, generado en `api-docs/`, con el diseño de la demo: `docs-theme/custom.css` y `custom.js`)
-- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.10.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
-- Versión: 0.10.0 (tag `v0.10.0`). Cambios por versión en `CHANGELOG.md`; `v0.1.0` es el estado previo a la auditoría de 2026-10 (`801e5ec`)
+- CDN: https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.11.0/dist/umt.js (IIFE) y `dist/umt.mjs` (ESM)
+- Versión: 0.11.0 (tag `v0.11.0`). Cambios por versión en `CHANGELOG.md`; `v0.1.0` es el estado previo a la auditoría de 2026-10 (`801e5ec`)
 - Auditoría 2026-10 cerrada: detalle en `docs/auditoria-2026-10.md`; peticiones de MODUS y respuestas en `docs/notas-desde-modus-2026-10.md` (los dos sin versionar)
 - Consumidores: MODUS y notae, cada uno fijado a un tag. Solo la sesión de UMT commitea aquí; MODUS deja sus peticiones en las notas
 - Status: publicado y en producción.
@@ -29,7 +29,7 @@ last_updated: 2026-10-21
 - esbuild (fijado 0.28.2) - compila `dist/umt.js` (IIFE, 152 kb) y `dist/umt.mjs` (ESM)
 - dts-bundle-generator (fijado 9.5.1) - tipos en un solo `dist/umt.d.ts`
 - typedoc - genera API docs HTML en `api-docs/` (`pnpm run docs`); `pnpm run docs:check` falla si una exportación no tiene JSDoc (en la CI)
-- vitest - tests unitarios (`pnpm run test:unit`) - 1347 tests, un archivo por módulo más la batería de afinaciones (`tuning-conformance.test.ts`)
+- vitest - tests unitarios (`pnpm run test:unit`) - 1362 tests, un archivo por módulo más la batería de afinaciones (`tuning-conformance.test.ts`)
 - GitHub Actions (`.github/workflows/ci.yml`) - typecheck, lint, tests, build y `dist` igual a las fuentes
 - Tone.js CDN - audio en demo
 - abcjs CDN - partituras en demo
@@ -54,6 +54,9 @@ last_updated: 2026-10-21
 - [cadence] Auténtica, rota y semicadencia (también la frigia) piden la sensible en el V: v → i y → v no son cadencias. Confirmed 2026-10.
 - [borrowed] Préstamo habitual (`common`, Open Music Theory, "Modal Mixture"): en mayor, el eólico sobre ii, iii, iv, vi y vii; en menor, la picarda (I del jónico) y el IV del dórico; en un modo, ninguno (no hay lista con fuente). El jónico es fuente de préstamo; en mayor se descarta por tener las mismas notas. Confirmed 2026-10.
 - [key-detection] `modes: true`: la colección diatónica con más peso da las notas; la tónica, el grado cuya tríada pesa más (fundamental doble). El modo va primero solo si supera estrictamente a las tónicas mayor y menor; los empates son para mayor y menor. La mejor tonalidad por correlación no sirve como colección (Dm7 G7 da D menor, con Bb). Confirmed 2026-10.
+- [fretboard] `getFretboardScaleShapes`: '3nps' (tres notas por cuerda, un patrón por grado, cualquier afinación; `span` dice si se puede tocar) y 'caged' (cinco formas E D C A G, o Em…, cajas pentatónicas de dos notas por cuerda desde los grados 1 2 3 5 6 con el resto de la escala dentro de sus trastes; solo guitarra de 6 cuerdas en afinación estándar y escalas que contienen su pentatónica mayor o menor; si no, `[]`). Si un patrón cae bajo la cejuela, se sube una octava entero; solo en afinación reentrante se sube cuerda a cuerda. Todo resultado de escala en el mástil lleva `degrees` y la tónica por la letra escrita. Confirmed 2026-10.
+- [roman] Cifras de inversión en `parseRomanProgression`: 63 y 64 en tríadas; 65, 43 y 42 sobre la cuatríada de la tonalidad (`I65` = Cmaj7/E, no C7) o con ø / °. El `6` suelto es acorde de sexta. Confirmed 2026-10.
+- [progressions] Los ejemplos de `PROGRESSIONS` (`style` 'cadence' y 'mixture') llevan `source`, `mode` y `cadence`, la etiqueta de `analyzeCadence` de los dos últimos acordes, comprobada en tests. Confirmed 2026-10.
 - [harmony] En menor natural, V, V7, vii° y vii°7 con la sensible elevada son diatónicos (menor armónica), y el vii° se escribe sin alteración. Lo de la menor melódica (IV mayor) sigue prestado. Confirmed 2026-10.
 - [harmony] Acorde de sensible secundario: dim, dim7 o m7b5 cromático un semitono bajo un grado diatónico no disminuido → `vii°/x`, `vii°7/x`, `viiø7/x`. Los diatónicos conservan su lectura (ii° en menor). Confirmed 2026-10.
 - [harmony] El sustituto tritonal de V (bII7) es D. Una secundaria no se marca además como prestada (D7 en C es V7/V, no lidio). Confirmed 2026-10.
