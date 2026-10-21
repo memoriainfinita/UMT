@@ -98,7 +98,7 @@ pnpm run build   # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
 | `dictionaries.ts` | 100+ chord formulas, 80+ scale patterns |
 | `presets.ts` | Ready-to-use tuning systems, scales, chords |
 | `utils.ts` | MIDI conversion, enharmonic spelling, interval naming |
-| `fretboard.ts` | Chord voicings and scale positions on any fretted instrument; guitar, bass, ukulele and banjo tunings |
+| `fretboard.ts` | Chord voicings and scale positions on any fretted instrument, with the degree of each note; CAGED shapes and three-notes-per-string patterns; guitar, bass, ukulele and banjo tunings |
 
 ### Tonal harmony
 
@@ -109,7 +109,7 @@ pnpm run build   # dist/umt.js (IIFE), dist/umt.mjs (ESM), dist/umt.d.ts (types)
 | `scale.ts` | Modes, diatonic chords, brightness, avoid notes, parent scale navigation |
 | `circle.ts` | Circle of fifths - key signatures, relatives, neighbors, modal distance |
 | `substitution.ts` | Chord substitutions (tritone, sus4, deceptive, diatonic) |
-| `progressions.ts` | 16 named progressions (ii-V-I, Coltrane changes, blues 12, rhythm changes...) |
+| `progressions.ts` | 16 named progressions (ii-V-I, Coltrane changes, blues 12, rhythm changes...) and examples of each cadence and of modal mixture, with sources |
 | `form.ts` | Formal analysis - AABA, ABAB, binary, ternary, through-composed |
 | `upper-structures.ts` | Upper structure triads, slash chord analysis, chord-scale completeness |
 | `key-detection.ts` | Correlation key finding with five key profiles (Krumhansl-Kessler, Aarden-Essen, Bellman-Budge, Temperley-Kostka-Payne, simple) |

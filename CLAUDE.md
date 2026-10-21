@@ -48,13 +48,13 @@ lib/music-theory/         # Core library - all TypeScript (48 modules)
   key-detection.ts        # Correlation key finding, five key profiles (KEY_PROFILES)
   neo-riemannian.ts       # PLR transformations
   substitution.ts         # Chord substitutions (tritone, sus4, deceptive, diatonic)
-  progressions.ts         # 16 named progressions
+  progressions.ts         # 16 named progressions, examples of cadences and modal mixture
   form.ts                 # Formal analysis (AABA, ABAB, binary...)
   upper-structures.ts     # USTs, slash chord analysis, chord-scale completeness
   figured-bass.ts         # Figured bass parsing and realization
   spelling.ts             # Pitches spelled in a key, chord tones by interval
   voicing.ts              # Voicing analysis: inversion, position, drop voicings, doubled/omitted
-  fretboard.ts            # Fretboard voicings and scale positions; guitar, bass, ukulele, banjo tunings
+  fretboard.ts            # Fretboard voicings, scale positions, CAGED and 3nps shapes; guitar, bass, ukulele, banjo tunings
   scale-finder.ts         # Scales of SCALE_PATTERNS that hold a set of notes, ranked
   chord-names.ts          # Chord symbol styles, solfège roots, long names (en, es)
   twelve-tone.ts          # ToneRow, P/I/R/RI, 12x12 matrix

@@ -273,7 +273,14 @@ function romanKey(keySymbol: string, octave: number): RomanKey {
  * of its case (`II` → D, `iv` in major → Fm, `iv7` → Fm7). Accidentals move the key's own degree (`bVII` in C is Bb; in A minor, Gb).
  * In a natural minor key, `vii°`, `vii°7` and `viiø7` stand on the raised leading tone.
  */
-function romanToSymbol(token: string, key: RomanKey): { symbol: string; octave: number } {
+// Inversion figures: the chord tone in the bass (1 the third, 2 the fifth, 3 the seventh), and
+// whether the figure is a seventh chord's. A bare `6` stays the added-sixth chord (`IV6` is F6).
+const INVERSION_FIGURES: Record<string, { inversion: number; seventh: boolean }> = {
+  '63': { inversion: 1, seventh: false }, '64': { inversion: 2, seventh: false },
+  '65': { inversion: 1, seventh: true }, '43': { inversion: 2, seventh: true }, '42': { inversion: 3, seventh: true },
+};
+
+function romanToSymbol(token: string, key: RomanKey): { symbol: string; octave: number; inversion: number } {
   const m = token.match(ROMAN_TOKEN);
   if (!m) throw new Error(`parseRomanProgression: invalid Roman numeral "${token}".`);
   const [, isSub, acc = '', roman, suffixRaw] = m;
@@ -282,7 +289,26 @@ function romanToSymbol(token: string, key: RomanKey): { symbol: string; octave: 
   }
   const degree = ROMAN_VALUES[roman.toLowerCase()];
   const lower = roman === roman.toLowerCase();
-  const suffix = suffixRaw.trim();
+  let suffix = suffixRaw.trim();
+
+  // Inversion figures at the end: `iv63`, `V65`, `viiø43`. A seventh figure takes the key's own
+  // seventh chord (`I65` in C is Cmaj7/E, `V65` G7/B), or the half-diminished or diminished one.
+  const figure = suffix.match(/(63|64|65|43|42)$/);
+  let inversion = 0;
+  if (figure) {
+    const fig = INVERSION_FIGURES[figure[1]];
+    const quality = suffix.slice(0, -2);
+    inversion = fig.inversion;
+    if (fig.seventh) {
+      if (quality === '') suffix = '7';
+      else if (quality === 'ø') suffix = 'ø7';
+      else if (quality === '°' || quality === 'o') suffix = '°7';
+      else throw new Error(`parseRomanProgression: "${token}": a seventh figure takes no quality but ø or °.`);
+    } else {
+      suffix = quality;
+    }
+  }
+  const keySeventh = figure !== null && INVERSION_FIGURES[figure[1]].seventh && suffix === '7';
 
   const degreeName = key.letters[degree - 1];
   const letter = degreeName[0];
@@ -297,14 +323,14 @@ function romanToSymbol(token: string, key: RomanKey): { symbol: string; octave: 
     // explicit dominant (`Idom7` in C is C7, `IVdom9` F9): an alias of the upper-case `7`
     if (lower) throw new Error(`parseRomanProgression: a dominant needs an upper-case numeral, got "${token}".`);
     type = suffix.slice(3);
-  } else if (suffix === '7' && !lower) {
+  } else if (suffix === '7' && !lower && !keySeventh) {
     // jazz convention: an upper-case 7 is a dominant seventh (`I7` is C7); `Imaj7` is Cmaj7
     type = '7';
   } else if (suffix === '' || suffix === '7') {
     const chord = key.scale.getChordOnDegree(degree, suffix === '7' ? 'seventh' : 'triad');
     const pcs = chord.intervalsInSteps.map(i => ((i % 12) + 12) % 12);
     const keyThirdMinor = pcs.includes(3);
-    if (diatonic && keyThirdMinor === lower && !chord.name.includes('(')) {
+    if (diatonic && (keyThirdMinor === lower || keySeventh) && !chord.name.includes('(')) {
       type = chord.name.replace(/^[A-G][#b]*/, '');
     } else {
       type = suffix === '7' ? (lower ? 'm7' : '7') : (lower ? 'm' : '');
@@ -324,7 +350,7 @@ function romanToSymbol(token: string, key: RomanKey): { symbol: string; octave: 
   if (!spelled) throw new Error(`parseRomanProgression: cannot spell the root of "${token}".`);
   const [, root, oct] = spelled.match(/^([A-G][#b]*)(-?\d+)$/)!;
   const canonical = normalizeSuffix(type);
-  return { symbol: `${root}${canonical === 'M' ? '' : canonical}`, octave: parseInt(oct, 10) };
+  return { symbol: `${root}${canonical === 'M' ? '' : canonical}`, octave: parseInt(oct, 10), inversion };
 }
 
 /**
@@ -345,6 +371,9 @@ function romanToSymbol(token: string, key: RomanKey): { symbol: string; octave: 
  * - Applied chords: `V7/ii`, `vii°7/V`, `V/bVI` (read in the major or minor key of the
  *   target, as its case says)
  * - Tritone substitution: `subV7`, `subV7/ii`
+ * - Inversion figures at the end: `63` and `64` for triads (`iv63` in A minor is Dm/F, `I64`
+ *   C/G), `65`, `43` and `42` for the key's seventh chord (`V65` G7/B, `I65` Cmaj7/E, `ii43`
+ *   Dm7/A; `viiø65`, `vii°43`). A bare `6` stays the added-sixth chord (`IV6` is F6)
  *
  * Roots are named as the key writes them (`bII` in E major is F, `V/vi` in Db major is Ab).
  * Example: `parseRomanProgression("ii7 V7 subV7/ii Imaj7", "C major")`
@@ -372,12 +401,19 @@ export function parseRomanProgression(progression: string, keySymbol: string, tu
       const targetMinor = /[iv]/.test(applied[2]);
       chordKey = romanKey(`${targetRoot} ${targetMinor ? 'minor' : 'major'}`, target.octave);
     }
-    const { symbol, octave: rootOctave } = romanToSymbol(applied ? applied[1] : token, chordKey);
+    const { symbol, octave: rootOctave, inversion } = romanToSymbol(applied ? applied[1] : token, chordKey);
+    let chord: Chord;
     try {
-      return parseChordSymbol(symbol, tuning, rootOctave);
+      chord = parseChordSymbol(symbol, tuning, rootOctave);
     } catch {
       throw new Error(`parseRomanProgression: unknown chord type in "${token}" (read as "${symbol}").`);
     }
+    if (inversion === 0) return chord;
+    // The inverted chord: its tone of that rank in the bass, written as a slash chord
+    const tones = chord.getNotes();
+    if (inversion >= tones.length) throw new Error(`parseRomanProgression: "${token}" has no tone to put in the bass.`);
+    const bass = tones[inversion].name.replace(/-?\d+$/, '');
+    return parseChordSymbol(`${symbol}/${bass}`, tuning, rootOctave);
   });
 }
 

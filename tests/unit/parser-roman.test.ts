@@ -66,3 +66,29 @@ describe('getProgression - andalusian in A minor', () => {
     expect(getProgression('andalusian', 'A minor').map(c => c.name)).toEqual(['Am', 'G', 'F', 'E']);
   });
 });
+
+describe('parseRomanProgression - inversion figures', () => {
+  const one = (roman: string, key = 'C major') => parseRomanProgression(roman, key)[0];
+
+  it('63 and 64 invert the triad', () => {
+    expect(one('iv63', 'A minor').name).toBe('Dm/F');
+    expect(one('I64').name).toBe('C/G');
+  });
+
+  it('65, 43 and 42 invert the key\'s seventh chord', () => {
+    expect(['V65', 'V43', 'V42', 'I65', 'ii43'].map(r => one(r).name)).toEqual(['G7/B', 'G7/D', 'G7/F', 'Cmaj7/E', 'Dm7/A']);
+    expect(one('viiø65').name).toBe('Bm7b5/D');
+    expect(one('vii°43').name).toBe('Bdim7/F');
+  });
+
+  it('the bass is the lowest note; applied chords take figures too', () => {
+    const v65 = one('V65');
+    expect(v65.getNotes()[0].name).toBe('B3');
+    expect(one('V65/V').name).toBe('D7/F#');
+  });
+
+  it('a bare 6 stays the added sixth, and a seventh figure takes no other quality', () => {
+    expect(one('IV6').name).toBe('F6');
+    expect(() => one('Vmaj65')).toThrow();
+  });
+});

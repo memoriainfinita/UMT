@@ -13,14 +13,26 @@ export interface ProgressionEntry {
   romanNumerals: string[];
   /** What it is and where it is used. */
   description: string;
-  /** `'jazz'`, `'pop'`, `'blues'`, `'classical'`, `'flamenco'`, `'folk'`. */
+  /**
+   * `'jazz'`, `'pop'`, `'blues'`, `'classical'`, `'flamenco'`, `'folk'`; `'cadence'` and
+   * `'mixture'` for the examples of a cadence or of modal mixture.
+   */
   style: string;
   /** Key it is usually played in, when there is one (`'Bb major'` for the jazz blues). */
   defaultKey?: string;
+  /** The mode its numerals are written in, for the examples that need one (`'minor'` for the Picardy third). */
+  mode?: 'major' | 'minor';
+  /** The cadence its last two chords make, as `Harmony.analyzeCadence` names it. */
+  cadence?: string;
+  /** Where the example comes from. */
+  source?: string;
 }
 
+const CADENCES_SOURCE = 'First-Year Music Theory (Minnesota State), "Cadences"; musictheory.net, "Cadences"';
+const MIXTURE_SOURCE = 'Open Music Theory, "Modal Mixture"';
+
 /**
- * Named progressions by id: ii-V-I, twelve-bar blues, rhythm changes, Coltrane changes, Andalusian cadence… Build one with `getProgression(id, key)`.
+ * Named progressions by id: ii-V-I, twelve-bar blues, rhythm changes, Coltrane changes, Andalusian cadence…, and examples of each cadence and of modal mixture (`style` `'cadence'` and `'mixture'`, with `mode`, `cadence` and `source`). Build one with `getProgression(id, key)`.
  * @category Tonal harmony
  */
 export const PROGRESSIONS: Record<string, ProgressionEntry> = {
@@ -124,6 +136,54 @@ export const PROGRESSIONS: Record<string, ProgressionEntry> = {
     description: "Opening of Giant Steps (bars 1-3): tonics B, G and Eb a major third apart, each reached by its dominant. In B major the roots are spelled with sharps (A#7, D#maj7).",
     style: 'jazz',
     defaultKey: 'B major',
+  },
+  'authentic-cadence': {
+    name: 'authentic-cadence',
+    romanNumerals: ['I', 'IV', 'V7', 'I'],
+    description: 'Authentic cadence: the dominant, with its leading tone, resolves to the tonic.',
+    style: 'cadence', mode: 'major', cadence: 'Authentic Cadence (V -> I)', source: CADENCES_SOURCE,
+  },
+  'plagal-cadence': {
+    name: 'plagal-cadence',
+    romanNumerals: ['I', 'IV', 'I'],
+    description: 'Plagal ("Amen") cadence: the subdominant moves to the tonic.',
+    style: 'cadence', mode: 'major', cadence: 'Plagal Cadence (IV -> I)', source: CADENCES_SOURCE,
+  },
+  'deceptive-cadence': {
+    name: 'deceptive-cadence',
+    romanNumerals: ['I', 'IV', 'V7', 'vi'],
+    description: 'Deceptive cadence: the dominant moves to vi instead of the tonic.',
+    style: 'cadence', mode: 'major', cadence: 'Deceptive Cadence (V -> vi)', source: CADENCES_SOURCE,
+  },
+  'half-cadence': {
+    name: 'half-cadence',
+    romanNumerals: ['I', 'vi', 'IV', 'V'],
+    description: 'Half cadence: the phrase stops on the dominant.',
+    style: 'cadence', mode: 'major', cadence: 'Half Cadence (-> V)', source: CADENCES_SOURCE,
+  },
+  'phrygian-half-cadence': {
+    name: 'phrygian-half-cadence',
+    romanNumerals: ['i', 'iv63', 'V'],
+    description: 'Phrygian half cadence, in minor: iv in first inversion to V, the bass falling a semitone (F → E in A minor).',
+    style: 'cadence', mode: 'minor', cadence: 'Phrygian Half Cadence (iv -> V)', source: CADENCES_SOURCE,
+  },
+  'minor-plagal-cadence': {
+    name: 'minor-plagal-cadence',
+    romanNumerals: ['I', 'IV', 'iv', 'I'],
+    description: 'Minor plagal cadence: the minor iv, borrowed from the parallel minor, moves to the major tonic.',
+    style: 'cadence', mode: 'major', cadence: 'Minor Plagal Cadence (iv -> i)', source: `${CADENCES_SOURCE}; ${MIXTURE_SOURCE}`,
+  },
+  'bVI-bVII-I': {
+    name: 'bVI-bVII-I',
+    romanNumerals: ['I', 'bVI', 'bVII', 'I'],
+    description: 'bVI and bVII, borrowed from the parallel minor, rising to the major tonic.',
+    style: 'mixture', mode: 'major', source: MIXTURE_SOURCE,
+  },
+  'picardy-third': {
+    name: 'picardy-third',
+    romanNumerals: ['i', 'iv', 'V7', 'I'],
+    description: 'Picardy third: a minor-key phrase ends on the major tonic.',
+    style: 'mixture', mode: 'minor', cadence: 'Authentic Cadence (V -> I)', source: MIXTURE_SOURCE,
   },
 };
 

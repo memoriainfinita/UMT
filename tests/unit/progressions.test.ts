@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { PROGRESSIONS, getProgression } from '../../lib/music-theory/progressions';
 import { parseRomanProgression } from '../../lib/music-theory/parser';
+import { Harmony } from '../../lib/music-theory/harmony';
 import { Chord } from '../../lib/music-theory/chord';
 
 function prog(roman: string, key: string): Chord[] { return parseRomanProgression(roman, key); }
@@ -97,5 +98,32 @@ describe('Progressions', () => {
   it('dom gives an explicit dominant; lower case is rejected', () => {
     expect(parseRomanProgression('Idom7 IVdom9 Imaj7', 'C major').map(c => c.name)).toEqual(['C7', 'F9', 'Cmaj7']);
     expect(() => parseRomanProgression('idom7', 'C major')).toThrow();
+  });
+});
+
+describe('PROGRESSIONS - examples of cadences and modal mixture', () => {
+  const examples = Object.values(PROGRESSIONS).filter(p => p.style === 'cadence' || p.style === 'mixture');
+
+  it('each cadence a MODUS lesson needs, with its source', () => {
+    expect(examples.map(p => p.name)).toEqual([
+      'authentic-cadence', 'plagal-cadence', 'deceptive-cadence', 'half-cadence',
+      'phrygian-half-cadence', 'minor-plagal-cadence', 'bVI-bVII-I', 'picardy-third',
+    ]);
+    expect(examples.every(p => p.source && p.mode)).toBe(true);
+  });
+
+  it('the last two chords make the cadence the entry names', () => {
+    for (const p of examples.filter(e => e.cadence)) {
+      const key = p.mode === 'minor' ? 'A minor' : 'C major';
+      const analysis = Harmony.analyzeProgression(getProgression(p.name, key), key).analysis;
+      expect(analysis[analysis.length - 2].cadenceWithNext, p.name).toBe(p.cadence);
+    }
+  });
+
+  it('the mixture examples hold borrowed chords', () => {
+    const borrowed = (id: string, key: string) =>
+      Harmony.analyzeProgression(getProgression(id, key), key).analysis.filter(a => a.isBorrowed).map(a => a.roman);
+    expect(borrowed('bVI-bVII-I', 'C major')).toEqual(['bVI', 'bVII']);
+    expect(borrowed('picardy-third', 'A minor')).toEqual(['I']);
   });
 });

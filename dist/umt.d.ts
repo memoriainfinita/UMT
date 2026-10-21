@@ -867,6 +867,9 @@ export declare function parseNote(noteStr: string, defaultOctave?: number): Note
  * - Applied chords: `V7/ii`, `vii°7/V`, `V/bVI` (read in the major or minor key of the
  *   target, as its case says)
  * - Tritone substitution: `subV7`, `subV7/ii`
+ * - Inversion figures at the end: `63` and `64` for triads (`iv63` in A minor is Dm/F, `I64`
+ *   C/G), `65`, `43` and `42` for the key's seventh chord (`V65` G7/B, `I65` Cmaj7/E, `ii43`
+ *   Dm7/A; `viiø65`, `vii°43`). A bare `6` stays the added-sixth chord (`IV6` is F6)
  *
  * Roots are named as the key writes them (`bII` in E major is F, `V/vi` in Db major is Ab).
  * Example: `parseRomanProgression("ii7 V7 subV7/ii Imaj7", "C major")`
@@ -2270,13 +2273,22 @@ export interface ProgressionEntry {
 	romanNumerals: string[];
 	/** What it is and where it is used. */
 	description: string;
-	/** `'jazz'`, `'pop'`, `'blues'`, `'classical'`, `'flamenco'`, `'folk'`. */
+	/**
+	 * `'jazz'`, `'pop'`, `'blues'`, `'classical'`, `'flamenco'`, `'folk'`; `'cadence'` and
+	 * `'mixture'` for the examples of a cadence or of modal mixture.
+	 */
 	style: string;
 	/** Key it is usually played in, when there is one (`'Bb major'` for the jazz blues). */
 	defaultKey?: string;
+	/** The mode its numerals are written in, for the examples that need one (`'minor'` for the Picardy third). */
+	mode?: "major" | "minor";
+	/** The cadence its last two chords make, as `Harmony.analyzeCadence` names it. */
+	cadence?: string;
+	/** Where the example comes from. */
+	source?: string;
 }
 /**
- * Named progressions by id: ii-V-I, twelve-bar blues, rhythm changes, Coltrane changes, Andalusian cadence… Build one with `getProgression(id, key)`.
+ * Named progressions by id: ii-V-I, twelve-bar blues, rhythm changes, Coltrane changes, Andalusian cadence…, and examples of each cadence and of modal mixture (`style` `'cadence'` and `'mixture'`, with `mode`, `cadence` and `source`). Build one with `getProgression(id, key)`.
  * @category Tonal harmony
  */
 export declare const PROGRESSIONS: Record<string, ProgressionEntry>;
@@ -3576,8 +3588,10 @@ export type FretboardScaleResult = {
 	baseFret: number;
 	/** Open-string note names, low→high. */
 	tuning: string[];
-	/** Root note name. */
+	/** Root note name: the scale's written root when it names the root's pitch (F# lydian → `'F#'`). */
 	root: string;
+	/** Per string, parallel to `frets`: the scale degree of each note (1 = the root). */
+	degrees: number[][];
 	/** Per-string fret offset, echoed from options. Present only when offset was supplied. */
 	stringOffset?: number[];
 };
@@ -3613,7 +3627,8 @@ export declare function getFretboardScale(scale: Scale, tuning: readonly number[
 /**
  * Returns scale position "boxes" — windows of adjacent frets covering the scale.
  * Each box is a `FretboardScaleResult` limited to a `windowSize`-fret span, plus open strings.
- * Useful for CAGED-style position practice on any instrument.
+ * These are fret windows, one per starting fret, not taught positions: for CAGED shapes and
+ * three-notes-per-string patterns use {@link getFretboardScaleShapes}.
  *
  * @param scale - The scale to map.
  * @param tuning - Open string steps from A4, low→high, in steps of the scale's tuning (one fret per
@@ -3624,6 +3639,58 @@ export declare function getFretboardScale(scale: Scale, tuning: readonly number[
  * @category Core
  */
 export declare function getFretboardScalePositions(scale: Scale, tuning: readonly number[], options?: FretboardVoicingOptions): FretboardScaleResult[];
+/**
+ * Options for {@link getFretboardScaleShapes}.
+ * @category Core
+ */
+export type FretboardShapeOptions = {
+	/**
+	 * `'3nps'`: three notes per string, one pattern per scale degree (any tuning and string
+	 * count). `'caged'`: the five CAGED shapes (6-string guitar in standard tuning only).
+	 */
+	system: "3nps" | "caged";
+	/** Per-string fret offset, as in {@link FretboardVoicingOptions}. */
+	stringOffset?: number[];
+};
+/**
+ * A named scale position: a CAGED shape or a three-notes-per-string pattern.
+ * @category Core
+ */
+export type FretboardScaleShape = FretboardScaleResult & {
+	/** `'E shape'` … `'G shape'` (`'Em shape'` … for a minor tonic triad), or `'Pattern 1'` … for 3nps. */
+	name: string;
+	/** Scale degree the shape starts from on the lowest string (1 = the root). */
+	startDegree: number;
+	/** Frets from the lowest to the highest note of the shape: how far the hand stretches. */
+	span: number;
+};
+/**
+ * Named scale positions on a fretted instrument, with the degree of every note.
+ *
+ * - `'3nps'`: three notes per string, one pattern per degree of the scale (seven for a
+ *   seven-note scale). Pattern k starts on degree k at its lowest fret on the lowest string;
+ *   each string goes on with the next three notes of the scale. Works for any tuning and number
+ *   of strings; `span` tells how far a pattern stretches (a reentrant tuning, like the
+ *   ukulele's, gives patterns too wide to play).
+ * - `'caged'`: the five CAGED shapes, in the order they climb the neck: E, D, C, A, G (Em, Dm,
+ *   Cm, Am, Gm when the tonic triad is minor). Each is a two-notes-per-string box of the major
+ *   (or minor) pentatonic starting on degree 1, 2, 3, 5 or 6 on the lowest string, with the
+ *   other notes of the scale placed within the box's frets. Defined for the 6-string guitar in
+ *   standard tuning (E A D G B E, or the same intervals transposed) and for scales that hold the
+ *   major pentatonic (1 2 3 5 6) or the minor pentatonic (1 b3 4 5 b7) on their tonic, in
+ *   12-TET: the major scale and its modes, the pentatonics, blues. Anything else gives `[]`
+ *   (harmonic minor lacks the b7).
+ *
+ * Sources: CAGED and three-notes-per-string as taught for guitar (Learn Jazz Standards,
+ * "CAGED System Scales"; Guitar Masterclass, "Three Notes per String Scales").
+ *
+ * @param scale - The scale to place.
+ * @param tuning - Open string steps from A4, low→high, in steps of the scale's tuning.
+ * @param options - `system` (required) and `stringOffset`.
+ * @returns The shapes, each a {@link FretboardScaleResult} with `name`, `startDegree` and `span`.
+ * @category Core
+ */
+export declare function getFretboardScaleShapes(scale: Scale, tuning: readonly number[], options: FretboardShapeOptions): FretboardScaleShape[];
 /**
  * One sounding note of a voicing, bottom to top.
  * @category Tonal harmony
