@@ -5,6 +5,7 @@
 import { Note } from './note';
 import { Chord } from './chord';
 import { Scale } from './scale';
+import { writtenRoot } from './utils';
 
 // ============================================================================
 // Tuning presets (steps from A4 = 0, low→high)
@@ -105,8 +106,10 @@ export type FretboardScaleResult = {
   baseFret: number;
   /** Open-string note names, low→high. */
   tuning: string[];
-  /** Root note name. */
+  /** Root note name: the scale's written root when it names the root's pitch (F# lydian → `'F#'`). */
   root: string;
+  /** Per string, parallel to `frets`: the scale degree of each note (1 = the root). */
+  degrees: number[][];
   /** Per-string fret offset, echoed from options. Present only when offset was supplied. */
   stringOffset?: number[];
 };
@@ -114,6 +117,17 @@ export type FretboardScaleResult = {
 // ============================================================================
 // Internal helpers
 // ============================================================================
+
+/** The scale's root name: its written letter when it names the root's pitch, else by `preferFlats`. */
+function scaleRootName(scale: Scale): string {
+  const written = scale.tuningSystem.octaveSteps === 12 ? writtenRoot(scale.name, scale.rootStep) : null;
+  return written ?? new Note(scale.tuningSystem, scale.rootStep).getName({ preferFlats: scale.preferFlats }).replace(/\d+$/, '');
+}
+
+/** Scale degree (1 = root) of a pitch class, from the scale's pitch classes in order. */
+function degreeOf(scalePcs: number[], pc: number): number {
+  return scalePcs.indexOf(pc) + 1;
+}
 
 function toNoteNames(tuning: readonly number[], ts: Chord['tuningSystem']): string[] {
   return tuning.map(step => {
@@ -254,23 +268,25 @@ export function getFretboardScale(
   const offset  = options?.stringOffset;
   const ts  = scale.tuningSystem;
   const oct = ts.octaveSteps;
-  const scalePCs = new Set(scale.getPitchClasses());
+  const pcList = scale.getPitchClasses();
+  const scalePCs = new Set(pcList);
   const tuningNames = toNoteNames(tuning, ts);
-  const root = new Note(ts, scale.rootStep)
-    .getName({ preferFlats: scale.preferFlats })
-    .replace(/\d+$/, '');
+  const root = scaleRootName(scale);
 
+  const degrees: number[][] = [];
   const frets: number[][] = Array.from(tuning, (openStep, i) => {
     const off = offset?.[i] ?? 0;
     const positions: number[] = [];
+    const degs: number[] = [];
     for (let fret = 0; fret <= maxFret; fret++) {
       const pc = ((openStep + fret) % oct + oct) % oct;
-      if (scalePCs.has(pc)) positions.push(fret + off);
+      if (scalePCs.has(pc)) { positions.push(fret + off); degs.push(degreeOf(pcList, pc)); }
     }
+    degrees.push(degs);
     return positions;
   });
 
-  const result: FretboardScaleResult = { frets, baseFret: 1, tuning: tuningNames, root };
+  const result: FretboardScaleResult = { frets, baseFret: 1, tuning: tuningNames, root, degrees };
   if (offset) result.stringOffset = offset;
   return result;
 }
@@ -278,7 +294,8 @@ export function getFretboardScale(
 /**
  * Returns scale position "boxes" — windows of adjacent frets covering the scale.
  * Each box is a `FretboardScaleResult` limited to a `windowSize`-fret span, plus open strings.
- * Useful for CAGED-style position practice on any instrument.
+ * These are fret windows, one per starting fret, not taught positions: for CAGED shapes and
+ * three-notes-per-string patterns use {@link getFretboardScaleShapes}.
  *
  * @param scale - The scale to map.
  * @param tuning - Open string steps from A4, low→high, in steps of the scale's tuning (one fret per
@@ -298,36 +315,217 @@ export function getFretboardScalePositions(
   const offset     = options?.stringOffset;
   const ts  = scale.tuningSystem;
   const oct = ts.octaveSteps;
-  const scalePCs = new Set(scale.getPitchClasses());
+  const pcList = scale.getPitchClasses();
+  const scalePCs = new Set(pcList);
   const tuningNames = toNoteNames(tuning, ts);
-  const root = new Note(ts, scale.rootStep)
-    .getName({ preferFlats: scale.preferFlats })
-    .replace(/\d+$/, '');
+  const root = scaleRootName(scale);
 
   const boxes: FretboardScaleResult[] = [];
 
   for (let pos = 1; pos <= maxFret - windowSize + 1; pos++) {
+    const degrees: number[][] = [];
     const frets: number[][] = Array.from(tuning, (openStep, i) => {
       const off = offset?.[i] ?? 0;
       const positions: number[] = [];
+      const degs: number[] = [];
       // Open position: internal fret 0, output fret = off (may be >0 for offset strings)
       const openPc = ((openStep % oct) + oct) % oct;
-      if (scalePCs.has(openPc)) positions.push(off);
+      if (scalePCs.has(openPc)) { positions.push(off); degs.push(degreeOf(pcList, openPc)); }
       // Frets within this window (internal coords), output shifted by off
       for (let fret = pos; fret <= pos + windowSize - 1; fret++) {
         const pc = ((openStep + fret) % oct + oct) % oct;
-        if (scalePCs.has(pc)) positions.push(fret + off);
+        if (scalePCs.has(pc)) { positions.push(fret + off); degs.push(degreeOf(pcList, pc)); }
       }
+      degrees.push(degs);
       return positions;
     });
 
     const total = frets.reduce((n, s) => n + s.length, 0);
     if (total === 0) continue;
 
-    const box: FretboardScaleResult = { frets, baseFret: pos, tuning: tuningNames, root };
+    const box: FretboardScaleResult = { frets, baseFret: pos, tuning: tuningNames, root, degrees };
     if (offset) box.stringOffset = offset;
     boxes.push(box);
   }
 
   return boxes;
+}
+
+/**
+ * Options for {@link getFretboardScaleShapes}.
+ * @category Core
+ */
+export type FretboardShapeOptions = {
+  /**
+   * `'3nps'`: three notes per string, one pattern per scale degree (any tuning and string
+   * count). `'caged'`: the five CAGED shapes (6-string guitar in standard tuning only).
+   */
+  system: '3nps' | 'caged';
+  /** Per-string fret offset, as in {@link FretboardVoicingOptions}. */
+  stringOffset?: number[];
+};
+
+/**
+ * A named scale position: a CAGED shape or a three-notes-per-string pattern.
+ * @category Core
+ */
+export type FretboardScaleShape = FretboardScaleResult & {
+  /** `'E shape'` … `'G shape'` (`'Em shape'` … for a minor tonic triad), or `'Pattern 1'` … for 3nps. */
+  name: string;
+  /** Scale degree the shape starts from on the lowest string (1 = the root). */
+  startDegree: number;
+  /** Frets from the lowest to the highest note of the shape: how far the hand stretches. */
+  span: number;
+};
+
+// Standard guitar tuning as semitones between adjacent strings (E A D G B E)
+const STANDARD_GUITAR_INTERVALS = [5, 5, 5, 4, 5];
+
+/**
+ * The frets of a shape whose notes are given as absolute steps, string by string; null when a
+ * note lies below a string's nut.
+ */
+function shapeFromPitches(
+  scale: Scale, tuning: readonly number[], pitches: number[][], name: string, startDegree: number,
+  offset: number[] | undefined,
+): FretboardScaleShape | null {
+  const oct = scale.tuningSystem.octaveSteps;
+  const pcList = scale.getPitchClasses();
+  const frets = pitches.map((ps, i) => ps.map(p => p - tuning[i]));
+  if (frets.some(fs => fs.some(f => f < 0))) return null;
+  const all = frets.flat();
+  const lo = Math.min(...all);
+  const hi = Math.max(...all);
+  const shape: FretboardScaleShape = {
+    frets: frets.map((fs, i) => fs.map(f => f + (offset?.[i] ?? 0))),
+    baseFret: Math.max(1, lo),
+    tuning: toNoteNames(tuning, scale.tuningSystem),
+    root: scaleRootName(scale),
+    degrees: pitches.map(ps => ps.map(p => degreeOf(pcList, ((p % oct) + oct) % oct))),
+    name,
+    startDegree,
+    span: hi - lo,
+  };
+  if (offset) shape.stringOffset = offset;
+  return shape;
+}
+
+/** The lowest step at or above `from` whose pitch class is in `pcs`. */
+function nextPitch(from: number, pcs: Set<number>, oct: number): number {
+  let p = from;
+  while (!pcs.has(((p % oct) + oct) % oct)) p++;
+  return p;
+}
+
+/**
+ * Notes per string from a start: `perString` consecutive scale notes on each string, each string
+ * going on from the next scale note above the last one of the string below. When a note would
+ * lie below a string's nut the whole pattern starts an octave up (E major's E shape at fret 12,
+ * not 0); when it still would, as on a reentrant ukulele, that string moves up an octave.
+ */
+function consecutivePitches(tuning: readonly number[], pcs: Set<number>, oct: number, start: number, perString: number): number[][] {
+  const build = (from: number, wrap: boolean): number[][] => {
+    const pitches: number[][] = [];
+    let p = from;
+    tuning.forEach((open, i) => {
+      if (i > 0) p = nextPitch(p + 1, pcs, oct);
+      if (wrap) while (p < open) p += oct;
+      const ps: number[] = [p];
+      for (let k = 1; k < perString; k++) { p = nextPitch(p + 1, pcs, oct); ps.push(p); }
+      pitches.push(ps);
+    });
+    return pitches;
+  };
+  const fits = (pitches: number[][]) => pitches.every((ps, i) => ps.every(p => p >= tuning[i]));
+  const here = build(start, false);
+  if (fits(here)) return here;
+  const up = build(start + oct, false);
+  return fits(up) ? up : build(start, true);
+}
+
+/**
+ * Named scale positions on a fretted instrument, with the degree of every note.
+ *
+ * - `'3nps'`: three notes per string, one pattern per degree of the scale (seven for a
+ *   seven-note scale). Pattern k starts on degree k at its lowest fret on the lowest string;
+ *   each string goes on with the next three notes of the scale. Works for any tuning and number
+ *   of strings; `span` tells how far a pattern stretches (a reentrant tuning, like the
+ *   ukulele's, gives patterns too wide to play).
+ * - `'caged'`: the five CAGED shapes, in the order they climb the neck: E, D, C, A, G (Em, Dm,
+ *   Cm, Am, Gm when the tonic triad is minor). Each is a two-notes-per-string box of the major
+ *   (or minor) pentatonic starting on degree 1, 2, 3, 5 or 6 on the lowest string, with the
+ *   other notes of the scale placed within the box's frets. Defined for the 6-string guitar in
+ *   standard tuning (E A D G B E, or the same intervals transposed) and for scales that hold the
+ *   major pentatonic (1 2 3 5 6) or the minor pentatonic (1 b3 4 5 b7) on their tonic, in
+ *   12-TET: the major scale and its modes, the pentatonics, blues. Anything else gives `[]`
+ *   (harmonic minor lacks the b7).
+ *
+ * Sources: CAGED and three-notes-per-string as taught for guitar (Learn Jazz Standards,
+ * "CAGED System Scales"; Guitar Masterclass, "Three Notes per String Scales").
+ *
+ * @param scale - The scale to place.
+ * @param tuning - Open string steps from A4, low→high, in steps of the scale's tuning.
+ * @param options - `system` (required) and `stringOffset`.
+ * @returns The shapes, each a {@link FretboardScaleResult} with `name`, `startDegree` and `span`.
+ * @category Core
+ */
+export function getFretboardScaleShapes(
+  scale: Scale,
+  tuning: readonly number[],
+  options: FretboardShapeOptions,
+): FretboardScaleShape[] {
+  const oct = scale.tuningSystem.octaveSteps;
+  const pcList = scale.getPitchClasses();
+  const pcs = new Set(pcList);
+  const offset = options.stringOffset;
+  if (tuning.length === 0) return [];
+  const lowest = tuning[0];
+  const lowestFretOf = (pc: number) => ((pc - lowest) % oct + oct) % oct;
+
+  if (options.system === '3nps') {
+    return pcList
+      .map((pc, k) => {
+        const pitches = consecutivePitches(tuning, pcs, oct, lowest + lowestFretOf(pc), 3);
+        return shapeFromPitches(scale, tuning, pitches, `Pattern ${k + 1}`, k + 1, offset);
+      })
+      .filter((s): s is FretboardScaleShape => s !== null);
+  }
+
+  // CAGED: 6-string guitar in standard tuning, 12-TET, a major or minor tonic triad
+  if (oct !== 12 || tuning.length !== 6) return [];
+  if (tuning.slice(1).some((t, i) => t - tuning[i] !== STANDARD_GUITAR_INTERVALS[i])) return [];
+  const rootPc = pcList[0];
+  const has = (semis: number) => pcs.has((rootPc + semis) % 12);
+  // The shapes are pentatonic boxes: the scale must hold the major or minor pentatonic
+  const major = [0, 2, 4, 7, 9].every(has);
+  const minor = !major && [0, 3, 5, 7, 10].every(has);
+  if (!major && !minor) return [];
+  const pentatonic = (major ? [0, 2, 4, 7, 9] : [0, 3, 5, 7, 10]).map(s => (rootPc + s) % 12);
+  const pentaPcs = new Set(pentatonic);
+  const names = ['E', 'D', 'C', 'A', 'G'].map(n => `${n}${major ? '' : 'm'} shape`);
+
+  return pentatonic.map((pc, k) => {
+    // The pentatonic box: two notes per string from this degree on the lowest string
+    const box = consecutivePitches(tuning, pentaPcs, 12, lowest + lowestFretOf(pc), 2);
+    const boxFrets = box.flatMap((ps, i) => ps.map(p => p - tuning[i]));
+    const lo = Math.min(...boxFrets);
+    const hi = Math.max(...boxFrets);
+    // Every scale note from the box's lowest to its highest, on the string of the box note
+    // below it, or on the next string when it would fall past the box's frets
+    const pitches: number[][] = box.map(ps => [...ps]);
+    const first = box[0][0];
+    const last = box[5][1];
+    for (let p = nextPitch(lowest + lo, pcs, 12); p <= tuning[5] + hi; p = nextPitch(p + 1, pcs, 12)) {
+      if (pentaPcs.has(((p % 12) + 12) % 12) && p >= first && p <= last) continue; // a box note already
+      let s = 0;
+      while (s < 5 && box[s + 1][0] <= p) s++;
+      if (p - tuning[s] > hi && s < 5 && p - tuning[s + 1] >= lo) s++;
+      const fret = p - tuning[s];
+      if (fret < lo || fret > hi) continue;
+      pitches[s].push(p);
+    }
+    pitches.forEach(ps => ps.sort((a, b) => a - b));
+    const degree = pcList.indexOf(pc) + 1;
+    return shapeFromPitches(scale, tuning, pitches, names[k], degree, offset);
+  }).filter((s): s is FretboardScaleShape => s !== null);
 }
